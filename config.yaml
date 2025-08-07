@@ -1,6 +1,6 @@
 General:
     BATCH_SIZE: 16
-    TOP_K: 10
+    TOP_K: 50
     NUM_WORKERS: 4
     DEVICE: 1
 
@@ -9,4 +9,13 @@ FashionIQ:
     IMAGE_SIZE: 224
     OUTPUT_DIR: '/data/data_fxu/FashionIQ/downloaded_images'
     CAPTION_FOLDER: '/data/data_fxu/FashionIQ/captions'
-    BATCH_SIZE: 32
+
+CLIP:
+    IMAGE_SIZE: 224
+    IMAGE_MEAN: [0.48145466, 0.4578275, 0.40821073]
+    IMAGE_STD: [0.26862954, 0.26130258, 0.27577711]
+
+BLIP:
+    IMAGE_SIZE: 224
+    IMAGE_MEAN: [0.48145466, 0.4578275, 0.40821073]
+    IMAGE_STD: [0.26862954, 0.26130258, 0.27577711]

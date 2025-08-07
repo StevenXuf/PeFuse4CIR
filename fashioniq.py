@@ -76,18 +76,15 @@ def extract_candidates_and_captions(json_path, split='test'):
             for caption in captions:
                 print(f"  - {caption}")
 
-def transform_image():
-    IMAGENET_MEAN = [0.485, 0.456, 0.406]
-    IMAGENET_STD = [0.229, 0.224, 0.225]
-
+def transform_image(image_size, IMAGENET_MEAN, IMAGENET_STD):
     img_transform = transforms.Compose([
-        transforms.CenterCrop(224),  # Standard size for most CNNs
+        transforms.CenterCrop(image_size),  # Standard size for most CNNs
         transforms.ToTensor(),
         transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD)
     ])
     return img_transform
 
-def get_fashioniq_dataset(output_dir,batch_size=32,transform=None):
+def get_fashioniq_loader(output_dir,batch_size=32,transform=None):
     """
     Load the FashionIQ dataset.
     """
@@ -105,7 +102,7 @@ def get_fashioniq_dataset(output_dir,batch_size=32,transform=None):
             reference = Image.open(os.path.join(output_dir, f'{item["candidate"]}.jpg')).convert('RGB')
             target_images.append(target)
             reference_images.append(reference)
-            captions.append(item['captions'])
+            captions.append(item['captions'][0])
         except Exception as e:
             cnt+=1
             print(f"Error processing {cnt}th item: {e}")
@@ -118,8 +115,8 @@ def get_fashioniq_dataset(output_dir,batch_size=32,transform=None):
     })
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, 
         collate_fn=lambda batch: {
-            'target': torch.stack([x['target'] if img_transform is None else img_transform(x['target']) for x in batch]),
-            'reference': torch.stack([x['reference'] if img_transform is None else img_transform(x['reference']) for x in batch]),
+            'target': torch.stack([x['target'] if transform is None else transform(x['target']) for x in batch]),
+            'reference': torch.stack([x['reference'] if transform is None else transform(x['reference']) for x in batch]),
             'caption': [x['caption'] for x in batch]}
             )
 
@@ -131,9 +128,11 @@ if __name__ == "__main__":
     output_dir = config['FashionIQ']['OUTPUT_DIR']
     url_folder = config['FashionIQ']['IMAGE_URL_FOLDER']
     resize_to = (config['FashionIQ']['IMAGE_SIZE'], config['FashionIQ']['IMAGE_SIZE'])
-    batch_size = config['FashionIQ']['BATCH_SIZE']
+    batch_size = config['General']['BATCH_SIZE']
+    mean = config['CLIP']['IMAGE_MEAN']
+    std = config['CLIP']['IMAGE_STD']  
 
-    img_transform = transform_image()
+    img_transform = transform_image(config['FashionIQ']['IMAGE_SIZE'], mean, std)
 
     if not os.path.exists(output_dir):
         download_and_resize_images(output_dir, url_folder, resize_to)
@@ -141,10 +140,10 @@ if __name__ == "__main__":
         print(f"Output directory already exists in: {output_dir}")
 
     # extract_candidates_and_captions(config['FashionIQ']['CAPTION_FOLDER'],split='test')
-    dataloader = get_fashioniq_dataset(output_dir,transform=img_transform, batch_size=batch_size)
+    dataloader = get_fashioniq_loader(output_dir,transform=img_transform, batch_size=batch_size)
     print(f"Loaded FashionIQ dataset with {len(dataloader.dataset)} items.")
     for batch in dataloader:
         print(f"Batch size: {len(batch['target'])}")
-        print(f"Target images shape: {batch['target'].shape}")
-        print(f"Reference images shape: {batch['reference'].shape}")
-        print(f"Captions: {batch['caption'][:1]}")
+        print(f"Target images shape: {batch['target'][0].shape}")
+        print(f"Reference images shape: {batch['reference'][0].shape}")
+        print(f"Captions: {batch['caption']}")
