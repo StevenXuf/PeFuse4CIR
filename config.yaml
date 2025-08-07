@@ -5,7 +5,7 @@ General:
     DEVICE: 1
 
 FashionIQ:
-    IMAGE_URL_FOLDER: '/home/fxu/MultimodalQuery/CIR/fashion-iq/image_url'
+    IMAGE_URL_FOLDER: '/data/data_fxu/FashionIQ/image_url'
     IMAGE_SIZE: 224
-    OUTPUT_DIR: '/home/fxu/MultimodalQuery/CIR/fashion-iq/downloaded_images'
-    CAPTION_FOLDER: '/home/fxu/MultimodalQuery/CIR/fashion-iq/captions'
+    OUTPUT_DIR: '/data/data_fxu/FashionIQ/downloaded_images'
+    CAPTION_FOLDER: '/data/data_fxu/FashionIQ/captions'

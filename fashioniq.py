@@ -52,9 +52,10 @@ def download_and_resize_images(output_dir, url_folder, resize_to=(224, 224)):
     print("All done!")
 
 
-def extract_candidates_and_captions(json_file,split='test'):
-    directory = Path(json_file).parent
+def extract_candidates_and_captions(json_path, split='test'):
+    directory = Path(json_path)
     matching_files = list(directory.rglob(f'*{split}*.json'))
+    print(matching_files)
     for json_file in matching_files:
         # Load the JSON data from a file
         with open(json_file, 'r') as file:
@@ -62,6 +63,7 @@ def extract_candidates_and_captions(json_file,split='test'):
 
         # Extract candidate and captions
         for item in data:
+            print(item)
             candidate = item.get("candidate")
             captions = item.get("captions", [])
             
@@ -76,5 +78,9 @@ if __name__ == "__main__":
     url_folder = config['FashionIQ']['IMAGE_URL_FOLDER']
     resize_to = (config['FashionIQ']['IMAGE_SIZE'], config['FashionIQ']['IMAGE_SIZE'])
 
-    download_and_resize_images(output_dir, url_folder, resize_to)
+    if not os.path.exists(output_dir):
+        download_and_resize_images(output_dir, url_folder, resize_to)
+    else:
+        print(f"Output directory already exists in: {output_dir}")
+
     extract_candidates_and_captions(config['FashionIQ']['CAPTION_FOLDER'],split='test')
