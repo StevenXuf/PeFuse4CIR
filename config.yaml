@@ -9,3 +9,4 @@ FashionIQ:
     IMAGE_SIZE: 224
     OUTPUT_DIR: '/data/data_fxu/FashionIQ/downloaded_images'
     CAPTION_FOLDER: '/data/data_fxu/FashionIQ/captions'
+    BATCH_SIZE: 32
