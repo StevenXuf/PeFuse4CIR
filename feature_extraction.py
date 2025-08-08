@@ -9,7 +9,7 @@ from transformers import AutoProcessor, AutoModel
 
 from configuration import get_default_config
 from fashioniq import get_fashioniq_loader,transform_image
-from attention import self_attention_batched, cross_attention_batched, co_attention_batched
+from attention import self_attention, cross_attention, co_attention
 
 def get_metrics(text_features,audio_features,k):     
     compute_recall=RetrievalRecall(top_k=k)
@@ -21,21 +21,22 @@ def get_metrics(text_features,audio_features,k):
 
     recall=compute_recall(sim.flatten(),targets.flatten(),indexes=indexes.flatten())
 
-    return recall
+    return recall*100
 
 
 
-def extract_features(model,processor,config_path='./config.yaml',TOP_K=None):
+def extract_features(model,processor,config_path='./config.yaml',cfg=None):
 
-    cfg=get_default_config(config_path)
-    if TOP_K is None:
-        TOP_K = cfg['General']['TOP_K']
+    if cfg is None:
+        cfg=get_default_config(config_path)
+    
     device=torch.device(f'cuda:{cfg["General"]["DEVICE"]}' if torch.cuda.is_available() else 'cpu')
     mean = cfg['CLIP']['IMAGE_MEAN']
     std = cfg['CLIP']['IMAGE_STD']
     img_transform = transform_image(cfg['CLIP']['IMAGE_SIZE'], mean, std)
     dataloader = get_fashioniq_loader(cfg['FashionIQ']['OUTPUT_DIR'], transform=img_transform, batch_size=cfg['General']['BATCH_SIZE'])
 
+    print(f'Using {cfg["CLIP"]["MODEL_NAME"].upper()} for feature extraction')
     model.to(device)
 
     ref_image_features = []
@@ -63,10 +64,16 @@ def extract_features(model,processor,config_path='./config.yaml',TOP_K=None):
     candidate_image_features = torch.cat(candidate_image_features, dim=0)
     text_features = torch.cat(text_features, dim=0)
 
-    recall_ref2can=get_metrics(ref_image_features,candidate_image_features,TOP_K)
-    recall_t2ref=get_metrics(text_features,candidate_image_features,TOP_K)
+    return ref_image_features, candidate_image_features, text_features
 
-    print(f'Recall@{TOP_K}: image-to-image {recall_ref2can:.2f}: text-to-image {recall_t2ref:.2f}')
+def perform_retrieval(ref_image_features, candidate_image_features, text_features, TOP_K):
+
+    ##################feature based retrival####################
+    print('\n' + '='*50 + '\nFeature-based Image Retrieval\n' + '='*50)
+    recall_ref2can=get_metrics(ref_image_features,candidate_image_features,TOP_K)
+    print(f'Recall@{TOP_K}: {recall_ref2can:.2f} when using image-to-image retrieval')
+    recall_t2ref=get_metrics(text_features,candidate_image_features,TOP_K)
+    print(f'Recall@{TOP_K}: {recall_t2ref:.2f} when using text-to-image retrieval')
 
     #image+text---->image
     print(f'Using image+text pairs to retrieve image')
@@ -80,15 +87,67 @@ def extract_features(model,processor,config_path='./config.yaml',TOP_K=None):
     recall_multiplied=get_metrics(multiplied_features,candidate_image_features,TOP_K)
     print(f'Recall@{TOP_K}: {recall_multiplied:.2f} when using multiply(image,text)---->image')
 
-    #attention-based retrieval
-    # print(f'Using attention-based retrieval')
-    # attention_features = F.normalize(self_attention(image_features, text_features), p=2, dim=1)
-    # recall_attention = get_metrics(attention_features, audio_features, TOP_K)
-    
-if __name__=='__main__':
-    torch.manual_seed(0)
+    ########################self-attention retrieval###########################
+    print('\n' + '='*50 + '\nSelf-Attention Retrieval\n' + '='*50)
+    print(f'Using self-attention on ref images')
+    self_attn_candidate_features, _ = self_attention(candidate_image_features)
+    self_attn_img_features, weights = self_attention(ref_image_features)
+    recall_img_attention = get_metrics(self_attn_img_features, self_attn_candidate_features, TOP_K)
+    print(f'Recall@{TOP_K}: {recall_img_attention:.2f} when using self-attention(ref_image)---->image')
 
-    MODEL_FILENAME = "openai/clip-vit-base-patch32"
+    print(f'Using self-attention on text features')
+    self_attn_text_features, weights = self_attention(text_features)
+    recall_text_attention = get_metrics(self_attn_text_features, self_attn_candidate_features, TOP_K)
+    print(f'Recall@{TOP_K}: {recall_text_attention:.2f} when using self-attention(text)---->image')
+
+    print(f'Using addition between self-attended features')
+    self_added_features = F.normalize(self_attn_img_features + self_attn_text_features, p=2, dim=1)
+    recall_added = get_metrics(self_added_features, self_attn_candidate_features, TOP_K)
+    print(f'Recall@{TOP_K}: {recall_added:.2f} when using add(self_attn(ref_image),self_attn(text))---->image')
+
+    print(f'Using multiplication between self-attended features')
+    self_multiplied_features = F.normalize(self_attn_img_features * self_attn_text_features, p=2, dim=1)
+    recall_multiplied = get_metrics(self_multiplied_features, self_attn_candidate_features, TOP_K)
+    print(f'Recall@{TOP_K}: {recall_multiplied:.2f} when using multiply(self_attn(ref_image),self_attn(text))---->image')
+
+    #####################cross-attention retrieval########################
+    print('\n' + '='*50 + '\nCross-Attention Retrieval\n' + '='*50)
+    print(f'Using cross-attention between text and ref images')
+    text_attn_image_features, img_attn_txt_features, text_weights, img_weights = co_attention(ref_image_features, text_features)
+    recall_cross_attention = get_metrics(text_attn_image_features, candidate_image_features, TOP_K)
+    print(f'Recall@{TOP_K}: {recall_cross_attention:.2f} when using cross_attn(text,ref_image)---->image')
+    recall_img_cross_attention = get_metrics(img_attn_txt_features, candidate_image_features, TOP_K)
+    print(f'Recall@{TOP_K}: {recall_img_cross_attention:.2f} when using cross_attn(ref_image,text)---->image')
+
+    print(f'Using addition between cross-attended features')
+    added_features = F.normalize(img_attn_txt_features + text_attn_image_features, p=2, dim=1)
+    recall_added = get_metrics(added_features, candidate_image_features, TOP_K)
+    print(f'Recall@{TOP_K}: {recall_added:.2f} when using add(cross_attn(ref_image,text),cross_attn(text,ref_image))---->image')
+
+    print(f'Using multiplication between cross-attended features')
+    multiplied_features = F.normalize(img_attn_txt_features * text_attn_image_features, p=2, dim=1)
+    recall_multiplied = get_metrics(multiplied_features, candidate_image_features, TOP_K)
+    print(f'Recall@{TOP_K}: {recall_multiplied:.2f} when using multiply(cross_attn(ref_image,text),cross_attn(text,ref_image))---->image')
+
+    ##################cross attention using ref_image_features as context####################
+    print('\n' + '='*50 + '\nCross-Attention Retrieval (ref_image_features as context)\n' + '='*50)
+    ref_img_attn_can_features, _ = cross_attention(ref_image_features, candidate_image_features)
+    recall_ref_img_cross_attention = get_metrics(ref_img_attn_can_features, candidate_image_features, TOP_K)
+    print(f'Recall@{TOP_K}: {recall_ref_img_cross_attention:.2f} when using cross_attn(ref_image,can_image)---->image')
+
+    txt_attn_can_features, _ = cross_attention(text_features, candidate_image_features)
+    recall_txt_cross_attention = get_metrics(txt_attn_can_features, candidate_image_features, TOP_K)
+    print(f'Recall@{TOP_K}: {recall_txt_cross_attention:.2f} when using cross_attn(text,can_image)---->image')
+
+def main(cfg):
+    MODEL_FILENAME = cfg['CLIP']['MODEL_NAME']
     model = AutoModel.from_pretrained(MODEL_FILENAME)
     processor = AutoProcessor.from_pretrained(MODEL_FILENAME)
-    extract_features(model, processor)
+    ref_image_features, candidate_image_features, text_features = extract_features(model, processor, cfg=cfg)
+    perform_retrieval(ref_image_features, candidate_image_features, text_features, cfg['General']['TOP_K'])
+
+if __name__=='__main__':
+    cfg= get_default_config("config.yaml")
+    torch.manual_seed(cfg['General']['SEED'])
+    main(cfg)
+
