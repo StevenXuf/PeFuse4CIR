@@ -111,7 +111,7 @@ def perform_retrieval(ref_image_features, candidate_image_features, text_feature
     print(f'Recall@{TOP_K}: {recall_multiplied:.2f} when using multiply(self_attn(ref_image),self_attn(text))---->image')
 
     #####################cross-attention retrieval########################
-    print('\n' + '='*50 + '\nCross-Attention Retrieval\n' + '='*50)
+    print('\n' + '='*50 + '\nCross-Attention based on ref_image_features and text_features\n' + '='*50)
     print(f'Using cross-attention between text and ref images')
     text_attn_image_features, img_attn_txt_features, text_weights, img_weights = co_attention(ref_image_features, text_features)
     recall_cross_attention = get_metrics(text_attn_image_features, candidate_image_features, TOP_K)
@@ -130,7 +130,7 @@ def perform_retrieval(ref_image_features, candidate_image_features, text_feature
     print(f'Recall@{TOP_K}: {recall_multiplied:.2f} when using multiply(cross_attn(ref_image,text),cross_attn(text,ref_image))---->image')
 
     ##################cross attention using ref_image_features as context####################
-    print('\n' + '='*50 + '\nCross-Attention Retrieval (ref_image_features as context)\n' + '='*50)
+    print('\n' + '='*50 + '\nCross-Attention using candidate_image_features as context)\n' + '='*50)
     ref_img_attn_can_features, _ = cross_attention(ref_image_features, candidate_image_features)
     recall_ref_img_cross_attention = get_metrics(ref_img_attn_can_features, candidate_image_features, TOP_K)
     print(f'Recall@{TOP_K}: {recall_ref_img_cross_attention:.2f} when using cross_attn(ref_image,can_image)---->image')
@@ -138,6 +138,9 @@ def perform_retrieval(ref_image_features, candidate_image_features, text_feature
     txt_attn_can_features, _ = cross_attention(text_features, candidate_image_features)
     recall_txt_cross_attention = get_metrics(txt_attn_can_features, candidate_image_features, TOP_K)
     print(f'Recall@{TOP_K}: {recall_txt_cross_attention:.2f} when using cross_attn(text,can_image)---->image')
+
+    recall_ref_and_txt_cross_attn_combined = get_metrics(ref_img_attn_can_features + txt_attn_can_features, candidate_image_features, TOP_K)
+    print(f'Recall@{TOP_K}: {recall_ref_and_txt_cross_attn_combined:.2f} when using add(cross_attn(ref_image,can_image),cross_attn(text,can_image))---->image')
 
 def main(cfg):
     MODEL_FILENAME = cfg['CLIP']['MODEL_NAME']
