@@ -5,7 +5,7 @@ import torchvision.transforms.functional as F
 
 from tqdm import tqdm
 from torchvision.transforms import transforms
-from diffusers import StableDiffusionXLInstructPix2PixPipeline, AutoPipelineForImage2Image, AutoPipelineForText2Image
+from diffusers import StableDiffusionXLInstructPix2PixPipeline
 from transformers import AutoModel
 
 from figures import show_tensor_images
@@ -41,14 +41,10 @@ if __name__ == "__main__":
 
     img_transform_for_extraction = transform_image(cfg['CLIP']['IMAGE_SIZE'], cfg['CLIP']['IMAGE_MEAN'], cfg['CLIP']['IMAGE_STD'])
 
-    # model_id = cfg['IMAGE-GENERATION']['INSTRUCT-PIX2PIX']['MODEL_NAME']
-    # model = StableDiffusionmodelPipeline.from_pretrained(model_id, torch_dtype=torch.float16, safety_checker=None)
-
     if not os.path.exists(store_path):
         os.makedirs(store_path)
-    # generation_model=StableDiffusionXLInstructPix2PixPipeline.from_pretrained(model_id, torch_dtype=torch.float16)
-    pipeline_text2image = AutoPipelineForText2Image.from_pretrained(model_id, torch_dtype=torch.float16, variant="fp16")
-    generation_model = AutoPipelineForImage2Image.from_pipe(pipeline_text2image).to(device)
+
+    generation_model=StableDiffusionXLInstructPix2PixPipeline.from_pretrained(model_id, torch_dtype=torch.float16)
 
     feature_extraction_model = AutoModel.from_pretrained(cfg['CLIP']['MODEL_NAME']).to(device)
 
@@ -65,21 +61,14 @@ if __name__ == "__main__":
             prompts=batch['caption']
             targets=batch['target']
 
-            # images = generation_model(
-            #     prompt=prompts,
-            #     image=input_images.to(device),
-            #     width=image_size,
-            #     height=image_size,
-            #     num_inference_steps=n_infer_step,
-            #     image_guidance_scale=image_guidance_scale,
-            #     guidance_scale=guidance_scale).images
             images = generation_model(
                 prompt=prompts,
                 image=input_images.to(device),
-                strength=.5,
-                guidance_scale=0.0,
-                num_inference_steps=100
-            ).images
+                width=image_size,
+                height=image_size,
+                num_inference_steps=n_infer_step,
+                image_guidance_scale=image_guidance_scale,
+                guidance_scale=guidance_scale).images
 
             generated_images = torch.stack(convert_pil_to_tensor(images))
             show_tensor_images(generated_images, num_images=generated_images.size(0), file_path=os.path.join(store_path,f"output_image_grid_{i}.png"))
@@ -97,5 +86,4 @@ if __name__ == "__main__":
     recall10 = get_metrics(generated_image_features, target_features, k=cfg['General']['TOP_K'])
     recall30 = get_metrics(generated_image_features, target_features, k=30)
     recall50 = get_metrics(generated_image_features, target_features, k=50)
-    print(f"""Recall@{cfg["General"]["TOP_K"]}, 30, 50: {recall10:.2f}%; {recall30:.2f}%; {recall50:.2f}%;
-          when using params: n_infer_step={n_infer_step}, image_guidance_scale={image_guidance_scale}, guidance_scale={guidance_scale}""")
+    print(f"""Recall@{cfg["General"]["TOP_K"]}, 30, 50: {recall10:.2f}%; {recall30:.2f}%; {recall50:.2f}%; \nwhen using params: n_infer_step={n_infer_step}, image_guidance_scale={image_guidance_scale}, guidance_scale={guidance_scale}""")
