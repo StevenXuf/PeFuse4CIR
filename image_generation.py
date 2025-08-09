@@ -1,11 +1,101 @@
 
 import torch
-from diffusers import StableDiffusionInstructPix2PixPipeline, EulerAncestralDiscreteScheduler
+import os
+import torchvision.transforms.functional as F
 
-model_id = "timbrooks/instruct-pix2pix"
-pipe = StableDiffusionInstructPix2PixPipeline.from_pretrained(model_id, torch_dtype=torch.float16, safety_checker=None)
-pipe.to("cuda:1")
-pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
-# `image` is an RGB PIL.Image
-images = pipe("turn him into cyborg", image=image).images
-images[0]
+from tqdm import tqdm
+from torchvision.transforms import transforms
+from diffusers import StableDiffusionXLInstructPix2PixPipeline, AutoPipelineForImage2Image, AutoPipelineForText2Image
+from transformers import AutoModel
+
+from figures import show_tensor_images
+from configuration import get_default_config
+from fashioniq import get_fashioniq_loader, transform_image
+from feature_extraction import get_metrics
+
+def convert_pil_to_tensor(list_of_pils, transform=None):
+    if transform is not None:
+        return [transform(image) for image in list_of_pils]
+    else:
+        return [transforms.ToTensor()(image) for image in list_of_pils]
+    
+def resize_crop_normalize(tensor_img, size=224, IMAGE_MEAN=None, IMAGE_STD=None):
+    # tensor_img: C×H×W in [0,1]
+    img = F.resize(tensor_img, [size, size], interpolation=transforms.InterpolationMode.BICUBIC)
+    img = F.center_crop(img, size)
+    img = F.normalize(img, mean=IMAGE_MEAN, std=IMAGE_STD)
+    return img
+
+if __name__ == "__main__":
+    cfg = get_default_config("config.yaml")
+    torch.manual_seed(cfg['General']['SEED'])
+
+    image_size = cfg['IMAGE-GENERATION']['SDXL-TURBO']['IMAGE_SIZE']
+    model_id = cfg['IMAGE-GENERATION']['SDXL-TURBO']['MODEL_NAME']
+    store_path = cfg['IMAGE-GENERATION']['SDXL-TURBO']['OUTPUT_DIR']
+
+    device = torch.device(f"cuda:{cfg['General']['DEVICE']}" if torch.cuda.is_available() else "cpu")
+
+    img_transform_for_generation = transform_image(image_size)
+    dataloader = get_fashioniq_loader(cfg['FashionIQ']['OUTPUT_DIR'], transform=img_transform_for_generation, batch_size=cfg['General']['BATCH_SIZE'])
+
+    img_transform_for_extraction = transform_image(cfg['CLIP']['IMAGE_SIZE'], cfg['CLIP']['IMAGE_MEAN'], cfg['CLIP']['IMAGE_STD'])
+
+    # model_id = cfg['IMAGE-GENERATION']['INSTRUCT-PIX2PIX']['MODEL_NAME']
+    # model = StableDiffusionmodelPipeline.from_pretrained(model_id, torch_dtype=torch.float16, safety_checker=None)
+
+    if not os.path.exists(store_path):
+        os.makedirs(store_path)
+    # generation_model=StableDiffusionXLInstructPix2PixPipeline.from_pretrained(model_id, torch_dtype=torch.float16)
+    pipeline_text2image = AutoPipelineForText2Image.from_pretrained(model_id, torch_dtype=torch.float16, variant="fp16")
+    generation_model = AutoPipelineForImage2Image.from_pipe(pipeline_text2image).to(device)
+
+    feature_extraction_model = AutoModel.from_pretrained(cfg['CLIP']['MODEL_NAME']).to(device)
+
+    n_infer_step = cfg['IMAGE-GENERATION']['GLOBAL']['NUM_INFERENCE_STEPS']
+    image_guidance_scale = cfg['IMAGE-GENERATION']['GLOBAL']['IMAGE_GUIDANCE_SCALE']
+    guidance_scale = cfg['IMAGE-GENERATION']['GLOBAL']['GUIDANCE_SCALE']
+
+    generated_image_features = []
+    target_features = []
+    with torch.no_grad():
+        for i,batch in tqdm(enumerate(dataloader)):
+            input_images=batch['reference']
+            show_tensor_images(input_images, num_images=input_images.size(0), file_path=os.path.join(store_path,f"input_image_grid_{i}.png"))
+            prompts=batch['caption']
+            targets=batch['target']
+
+            # images = generation_model(
+            #     prompt=prompts,
+            #     image=input_images.to(device),
+            #     width=image_size,
+            #     height=image_size,
+            #     num_inference_steps=n_infer_step,
+            #     image_guidance_scale=image_guidance_scale,
+            #     guidance_scale=guidance_scale).images
+            images = generation_model(
+                prompt=prompts,
+                image=input_images.to(device),
+                strength=.5,
+                guidance_scale=0.0,
+                num_inference_steps=100
+            ).images
+
+            generated_images = torch.stack(convert_pil_to_tensor(images))
+            show_tensor_images(generated_images, num_images=generated_images.size(0), file_path=os.path.join(store_path,f"output_image_grid_{i}.png"))
+
+            transformed_generated_images = torch.stack(convert_pil_to_tensor(images, transform=img_transform_for_extraction))
+            generated_image_features.append(feature_extraction_model.get_image_features(pixel_values=transformed_generated_images.to(device)))
+
+            targets = resize_crop_normalize(targets, size=cfg['CLIP']['IMAGE_SIZE'], IMAGE_MEAN=cfg['CLIP']['IMAGE_MEAN'], IMAGE_STD=cfg['CLIP']['IMAGE_STD'])
+            # targets = torch.stack(convert_pil_to_tensor(targets, transform=img_transform_for_extraction))
+            target_features.append(feature_extraction_model.get_image_features(pixel_values=targets.to(device)))
+            # if i==5:
+            #     break
+    generated_image_features = torch.cat(generated_image_features, dim=0)
+    target_features = torch.cat(target_features, dim=0)
+    recall10 = get_metrics(generated_image_features, target_features, k=cfg['General']['TOP_K'])
+    recall30 = get_metrics(generated_image_features, target_features, k=30)
+    recall50 = get_metrics(generated_image_features, target_features, k=50)
+    print(f"""Recall@{cfg["General"]["TOP_K"]}, 30, 50: {recall10:.2f}%; {recall30:.2f}%; {recall50:.2f}%;
+          when using params: n_infer_step={n_infer_step}, image_guidance_scale={image_guidance_scale}, guidance_scale={guidance_scale}""")

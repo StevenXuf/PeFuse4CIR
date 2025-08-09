@@ -73,14 +73,14 @@ def extract_candidates_and_captions(json_path, split='test'):
             captions = item.get("captions", [])
             
             print(f"Candidate: {candidate}")
-            for caption in captions:
-                print(f"  - {caption}")
+            print(f"Captions: {captions}")
 
-def transform_image(image_size, IMAGENET_MEAN, IMAGENET_STD):
+def transform_image(image_size, IMAGENET_MEAN=None, IMAGENET_STD=None):
     img_transform = transforms.Compose([
+        transforms.Resize(image_size,interpolation=transforms.InterpolationMode.BICUBIC),
         transforms.CenterCrop(image_size),  # Standard size for most CNNs
         transforms.ToTensor(),
-        transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD)
+        transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD) if IMAGENET_MEAN is not None and IMAGENET_STD is not None else transforms.Lambda(lambda x: x)
     ])
     return img_transform
 
@@ -117,8 +117,10 @@ def get_fashioniq_loader(output_dir,batch_size=32,transform=None):
         collate_fn=lambda batch: {
             'target': torch.stack([x['target'] if transform is None else transform(x['target']) for x in batch]),
             'reference': torch.stack([x['reference'] if transform is None else transform(x['reference']) for x in batch]),
-            'caption': [x['caption'] for x in batch]}
-            )
+            'caption': [x['caption'] for x in batch],
+            'target_pil': [x['target'] for x in batch],  # keep original PIL images for generation
+            'reference_pil': [x['reference'] for x in batch]  # keep original PIL images for generation
+        })
 
     return dataloader
 

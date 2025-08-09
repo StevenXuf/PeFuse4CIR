@@ -1,5 +1,5 @@
 General:
-    BATCH_SIZE: 64
+    BATCH_SIZE: 16
     TOP_K: 10
     NUM_WORKERS: 4
     DEVICE: 1
@@ -21,3 +21,23 @@ BLIP:
     IMAGE_SIZE: 224
     IMAGE_MEAN: [0.48145466, 0.4578275, 0.40821073]
     IMAGE_STD: [0.26862954, 0.26130258, 0.27577711]
+
+IMAGE-GENERATION:
+    GLOBAL:
+        NUM_INFERENCE_STEPS: 30
+        IMAGE_GUIDANCE_SCALE: 1.1
+        GUIDANCE_SCALE: 7.5
+    INSTRUCT-PIX2PIX: 
+        MODEL_NAME: "timbrooks/instruct-pix2pix"
+    SDXL-INSTRUCTPIX2PIX:
+        MODEL_NAME: "diffusers/sdxl-instructpix2pix-768"
+        IMAGE_SIZE: 768
+        OUTPUT_DIR: '/data/data_fxu/FashionIQ/sdxl_instructpix2pix_output'
+    SDXL-TURBO: # much faster than SDXL-INSTRUCTPIX2PIX
+        MODEL_NAME: "stabilityai/sdxl-turbo"
+        IMAGE_SIZE: 512
+        OUTPUT_DIR: '/data/data_fxu/FashionIQ/sdxl_turbo_output'
+
+TEXT-GENERATION:
+    MODEL_NAME: "togethercomputer/RedPajama-INCITE-7B-Chat"
+    OUTPUT_DIR: '/data/data_fxu/FashionIQ/redpajama_output'
