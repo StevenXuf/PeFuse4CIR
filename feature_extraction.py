@@ -30,7 +30,7 @@ def extract_features(model,processor,dataloader,config_path='./config.yaml',cfg=
     if cfg is None:
         cfg=get_default_config(config_path)
     
-    device=torch.device(f'cuda:{cfg["General"]["DEVICE"]}' if torch.cuda.is_available() else 'cpu')
+    device=torch.device(f'cuda:{cfg["GENERAL"]["DEVICE"]}' if torch.cuda.is_available() else 'cpu')
 
     print(f'Using {cfg["CLIP"]["MODEL_NAME"].upper()} for feature extraction')
     model.to(device)
@@ -145,12 +145,12 @@ def main(cfg):
     mean = cfg['CLIP']['IMAGE_MEAN']
     std = cfg['CLIP']['IMAGE_STD']
     img_transform = transform_image(cfg['CLIP']['IMAGE_SIZE'], mean, std)
-    dataloader = get_fashioniq_loader(cfg['FashionIQ']['OUTPUT_DIR'], transform=img_transform, batch_size=cfg['General']['BATCH_SIZE'])
+    dataloader = get_fashioniq_loader(cfg['FashionIQ']['OUTPUT_DIR'], transform=img_transform, batch_size=cfg['GENERAL']['BATCH_SIZE'])
     ref_image_features, candidate_image_features, text_features = extract_features(model, processor, dataloader=dataloader, cfg=cfg)
-    perform_retrieval(ref_image_features, candidate_image_features, text_features, cfg['General']['TOP_K'])
+    perform_retrieval(ref_image_features, candidate_image_features, text_features, cfg['GENERAL']['TOP_K'])
 
 if __name__=='__main__':
     cfg= get_default_config("config.yaml")
-    torch.manual_seed(cfg['General']['SEED'])
+    torch.manual_seed(cfg['GENERAL']['SEED'])
     main(cfg)
 

@@ -28,16 +28,16 @@ def resize_crop_normalize(tensor_img, size=224, IMAGE_MEAN=None, IMAGE_STD=None)
 
 if __name__ == "__main__":
     cfg = get_default_config("config.yaml")
-    torch.manual_seed(cfg['General']['SEED'])
+    torch.manual_seed(cfg['GENERAL']['SEED'])
 
-    image_size = cfg['IMAGE-GENERATION']['SDXL-TURBO']['IMAGE_SIZE']
-    model_id = cfg['IMAGE-GENERATION']['SDXL-TURBO']['MODEL_NAME']
-    store_path = cfg['IMAGE-GENERATION']['SDXL-TURBO']['OUTPUT_DIR']
+    image_size = cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['IMAGE_SIZE']
+    model_id = cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['MODEL_NAME']
+    store_path = cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['OUTPUT_DIR']
 
-    device = torch.device(f"cuda:{cfg['General']['DEVICE']}" if torch.cuda.is_available() else "cpu")
+    device = torch.device(f"cuda:{cfg['GENERAL']['DEVICE']}" if torch.cuda.is_available() else "cpu")
 
     img_transform_for_generation = transform_image(image_size)
-    dataloader = get_fashioniq_loader(cfg['FashionIQ']['OUTPUT_DIR'], transform=img_transform_for_generation, batch_size=cfg['General']['BATCH_SIZE'])
+    dataloader = get_fashioniq_loader(cfg['FashionIQ']['OUTPUT_DIR'], transform=img_transform_for_generation, batch_size=cfg['GENERAL']['BATCH_SIZE'])
 
     img_transform_for_extraction = transform_image(cfg['CLIP']['IMAGE_SIZE'], cfg['CLIP']['IMAGE_MEAN'], cfg['CLIP']['IMAGE_STD'])
 
@@ -83,7 +83,7 @@ if __name__ == "__main__":
             #     break
     generated_image_features = torch.cat(generated_image_features, dim=0)
     target_features = torch.cat(target_features, dim=0)
-    recall10 = get_metrics(generated_image_features, target_features, k=cfg['General']['TOP_K'])
+    recall10 = get_metrics(generated_image_features, target_features, k=cfg['GENERAL']['TOP_K'])
     recall30 = get_metrics(generated_image_features, target_features, k=30)
     recall50 = get_metrics(generated_image_features, target_features, k=50)
-    print(f"""Recall@{cfg["General"]["TOP_K"]}, 30, 50: {recall10:.2f}%; {recall30:.2f}%; {recall50:.2f}%; \nwhen using params: n_infer_step={n_infer_step}, image_guidance_scale={image_guidance_scale}, guidance_scale={guidance_scale}""")
+    print(f"""Recall@{cfg["GENERAL"]["TOP_K"]}, 30, 50: {recall10:.2f}%; {recall30:.2f}%; {recall50:.2f}%; \nwhen using params: n_infer_step={n_infer_step}, image_guidance_scale={image_guidance_scale}, guidance_scale={guidance_scale}""")

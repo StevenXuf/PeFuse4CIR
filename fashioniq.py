@@ -118,8 +118,8 @@ def get_fashioniq_loader(output_dir,batch_size=32,transform=None):
             'target': torch.stack([x['target'] if transform is None else transform(x['target']) for x in batch]),
             'reference': torch.stack([x['reference'] if transform is None else transform(x['reference']) for x in batch]),
             'caption': [x['caption'] for x in batch],
-            'target_pil': [x['target'] for x in batch],  # keep original PIL images for generation
-            'reference_pil': [x['reference'] for x in batch]  # keep original PIL images for generation
+            'target_pil': [x['target'] for x in batch],
+            'reference_pil': [x['reference'] for x in batch]
         })
 
     return dataloader
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     output_dir = config['FashionIQ']['OUTPUT_DIR']
     url_folder = config['FashionIQ']['IMAGE_URL_FOLDER']
     resize_to = (config['FashionIQ']['IMAGE_SIZE'], config['FashionIQ']['IMAGE_SIZE'])
-    batch_size = config['General']['BATCH_SIZE']
+    batch_size = config['GENERAL']['BATCH_SIZE']
     mean = config['CLIP']['IMAGE_MEAN']
     std = config['CLIP']['IMAGE_STD']  
 

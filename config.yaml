@@ -1,4 +1,4 @@
-General:
+GENERAL:
     BATCH_SIZE: 16
     TOP_K: 10
     NUM_WORKERS: 4
@@ -27,8 +27,6 @@ IMAGE-GENERATION:
         NUM_INFERENCE_STEPS: 30
         IMAGE_GUIDANCE_SCALE: 1.1
         GUIDANCE_SCALE: 7.5
-    INSTRUCT-PIX2PIX: 
-        MODEL_NAME: "timbrooks/instruct-pix2pix"
     SDXL-INSTRUCTPIX2PIX:
         MODEL_NAME: "diffusers/sdxl-instructpix2pix-768"
         IMAGE_SIZE: 768
@@ -39,5 +37,4 @@ IMAGE-GENERATION:
         OUTPUT_DIR: '/data/data_fxu/FashionIQ/sdxl_turbo_output'
 
 TEXT-GENERATION:
-    MODEL_NAME: "togethercomputer/RedPajama-INCITE-7B-Chat"
-    OUTPUT_DIR: '/data/data_fxu/FashionIQ/redpajama_output'
+    MODEL_NAME: "Qwen/Qwen2.5-VL-7B-Instruct"
