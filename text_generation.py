@@ -7,6 +7,8 @@ from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
 from qwen_vl_utils import process_vision_info
 from transformers import AutoModel, Blip2ForImageTextRetrieval
 from transformers import AutoProcessor as transformer_processor
+import torch.nn.functional as F
+from torchmetrics.retrieval import RetrievalRecall
 
 from configuration import get_default_config
 from fashioniq import get_fashioniq_loader, transform_image
@@ -90,8 +92,10 @@ if __name__ == "__main__":
     torch.manual_seed(cfg['GENERAL']['SEED'])
     device = torch.device(f"cuda:{cfg['GENERAL']['DEVICE']}" if torch.cuda.is_available() else "cpu")
     model_id = cfg['TEXT-GENERATION']['MODEL_NAME']
+
+    extractor = cfg['GENERAL']['EXTRACTOR']
+    print(f"Using {extractor} for feature extraction")
     
-    extractor = 'BLIP2'
     extractor_id = cfg[extractor]['MODEL_NAME']
     img_transform=transform_image(cfg[extractor]['IMAGE_SIZE'],
                                 cfg[extractor]['IMAGE_MEAN'],
@@ -100,7 +104,7 @@ if __name__ == "__main__":
         feature_extraction_model = Blip2ForImageTextRetrieval.from_pretrained(extractor_id, torch_dtype=torch.float16).to(device)
     else:
         feature_extraction_model = AutoModel.from_pretrained(extractor_id).to(device)
-    feature_processor = transformer_processor.from_pretrained(extractor_id)
+    feature_processor = transformer_processor.from_pretrained(extractor_id, use_fast=True)
 
     text_generation_model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
         model_id, torch_dtype="auto", device_map={"": device}
@@ -174,14 +178,20 @@ if __name__ == "__main__":
                                                     return_tensors="pt",
                                                     padding=True
                                                 ).to(device, torch.float16)
-                gen_text_feat = feature_extraction_model(**all_text_inputs, use_image_text_matching_head=False).text_embeds
-            steps = gen_text_feat.size(0)//3
-            caption_feat.append(gen_text_feat[:steps, :])
-            modification_feat.append(gen_text_feat[steps:steps*2, :])
-            description_feat.append(gen_text_feat[steps*2:, :])
-            if extractor.lower() != 'blip2':
+                gen_text_feat = feature_extraction_model(**all_text_inputs, use_image_text_matching_head=False)
+
+            if extractor.lower() == 'blip2':
+                steps = gen_text_feat.text_embeds.size(0)//3
+                caption_feat.append(F.normalize(gen_text_feat.text_embeds[:steps, :], p=2, dim=-1))
+                modification_feat.append(F.normalize(gen_text_feat.text_embeds[steps:steps*2, :], p=2, dim=-1))
+                description_feat.append(F.normalize(gen_text_feat.text_embeds[steps*2:, :], p=2, dim=-1))
+                tar_tensor_feat.append(F.normalize(gen_text_feat.image_embeds, p=2, dim=-1))
+            else:
+                steps = gen_text_feat.size(0)//3
+                caption_feat.append(gen_text_feat[:steps, :])
+                modification_feat.append(gen_text_feat[steps:steps*2, :])
+                description_feat.append(gen_text_feat[steps*2:, :])
                 tar_tensor_feat.append(feature_extraction_model(pixel_values=target_tensor.to(device)))
-            else: tar_tensor_feat.append(
 
     caption_feat = torch.cat(caption_feat, dim=0)
     modification_feat = torch.cat(modification_feat, dim=0)
@@ -189,12 +199,21 @@ if __name__ == "__main__":
     tar_tensor_feat = torch.cat(tar_tensor_feat, dim=0)
 
     #compute recall for generated modification ---> caption
-    recall10 = get_metrics(modification_feat, caption_feat, k=10)
-    recall30 = get_metrics(modification_feat, caption_feat, k=30)
-    recall50 = get_metrics(modification_feat, caption_feat, k=50)
-    print(f'Recall@10: {recall10:.2f}, Recall@30: {recall30:.2f}, Recall@50: {recall50:.2f} when using generated modification --->real modification')    
+    for k in [10, 30, 50]:
+        recall = get_metrics(modification_feat, caption_feat, k=k)
+        print(f'Recall@{k}: {recall:.2f} when using generated modification ---> real modification')
+
     #compute recall for generated description ---> target image
-    recall10 = get_metrics(description_feat, tar_tensor_feat, k=10)
-    recall30 = get_metrics(description_feat, tar_tensor_feat, k=30)
-    recall50 = get_metrics(description_feat, tar_tensor_feat, k=50)
-    print(f'Recall@10: {recall10:.2f}, Recall@30: {recall30:.2f}, Recall@50: {recall50:.2f} when using generated description ---> target images')
+    if extractor.lower() == 'blip2':
+        cos, _ = torch.matmul(description_feat.unsqueeze(0), tar_tensor_feat.transpose(1,2)).max(dim=-1)
+        cos = cos.T
+        for k in [10, 30, 50]:
+            compute_recall=RetrievalRecall(top_k=k)
+            targets=torch.diag(torch.ones(cos.size(0), dtype=torch.long)).to(cos.device)
+            indexes = torch.arange(cos.size(0), dtype=torch.long).unsqueeze(1).expand(*cos.size()).to(cos.device)
+            recall=compute_recall(cos.flatten(),targets.flatten(),indexes=indexes.flatten())
+            print(f'Recall@{k}: {recall:.2f} when using generated description ---> target images')
+    else:
+        for k in [10, 30, 50]:
+            recall = get_metrics(description_feat, tar_tensor_feat, k=k)
+            print(f'Recall@{k}: {recall:.2f} when using generated description ---> target images')

@@ -51,7 +51,7 @@ if __name__ == "__main__":
     n_infer_step = cfg['IMAGE-GENERATION']['GLOBAL']['NUM_INFERENCE_STEPS']
     image_guidance_scale = cfg['IMAGE-GENERATION']['GLOBAL']['IMAGE_GUIDANCE_SCALE']
     guidance_scale = cfg['IMAGE-GENERATION']['GLOBAL']['GUIDANCE_SCALE']
-
+    print(f"Using {generation_model.__class__.__name__} with params: n_infer_step={n_infer_step}, image_guidance_scale={image_guidance_scale}, guidance_scale={guidance_scale}")
     generated_image_features = []
     target_features = []
     with torch.no_grad():
@@ -83,7 +83,6 @@ if __name__ == "__main__":
             #     break
     generated_image_features = torch.cat(generated_image_features, dim=0)
     target_features = torch.cat(target_features, dim=0)
-    recall10 = get_metrics(generated_image_features, target_features, k=cfg['GENERAL']['TOP_K'])
-    recall30 = get_metrics(generated_image_features, target_features, k=30)
-    recall50 = get_metrics(generated_image_features, target_features, k=50)
-    print(f"""Recall@{cfg["GENERAL"]["TOP_K"]}, 30, 50: {recall10:.2f}%; {recall30:.2f}%; {recall50:.2f}%; \nwhen using params: n_infer_step={n_infer_step}, image_guidance_scale={image_guidance_scale}, guidance_scale={guidance_scale}""")
+    for k in [10, 30, 50, 100]:
+        recall = get_metrics(generated_image_features, target_features, k=k)
+        print(f'Recall@{k}: {recall:.2f} when using generated images ---> real images retrieval')

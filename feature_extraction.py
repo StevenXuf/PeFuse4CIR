@@ -23,8 +23,6 @@ def get_metrics(text_features,audio_features,k):
 
     return recall*100
 
-
-
 def extract_features(model,processor,dataloader,config_path='./config.yaml',cfg=None):
 
     if cfg is None:
