@@ -5,7 +5,7 @@ import io
 from tqdm import tqdm
 from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
 from qwen_vl_utils import process_vision_info
-from transformers import AutoModel
+from transformers import AutoModel, Blip2ForImageTextRetrieval
 from transformers import AutoProcessor as transformer_processor
 
 from configuration import get_default_config
@@ -75,7 +75,7 @@ def generate_messages(target_image, reference_image, caption):
                     "type": "text", 
                     "text": (
                         f"Here are the modification instructions: {caption}\n\n"
-                        "Now, describe how the final image looks."
+                        "Now, describe how the final image looks in natural language."
                     )
                 }
             ],
@@ -91,18 +91,22 @@ if __name__ == "__main__":
     device = torch.device(f"cuda:{cfg['GENERAL']['DEVICE']}" if torch.cuda.is_available() else "cpu")
     model_id = cfg['TEXT-GENERATION']['MODEL_NAME']
     
-    MODEL_FILENAME = cfg['CLIP']['MODEL_NAME']
-    feature_extraction_model = AutoModel.from_pretrained(MODEL_FILENAME).to(device)
-    text_processor = transformer_processor.from_pretrained(MODEL_FILENAME)
+    extractor = 'BLIP2'
+    extractor_id = cfg[extractor]['MODEL_NAME']
+    img_transform=transform_image(cfg[extractor]['IMAGE_SIZE'],
+                                cfg[extractor]['IMAGE_MEAN'],
+                                cfg[extractor]['IMAGE_STD'])
+    if extractor.lower() == 'blip2':
+        feature_extraction_model = Blip2ForImageTextRetrieval.from_pretrained(extractor_id, torch_dtype=torch.float16).to(device)
+    else:
+        feature_extraction_model = AutoModel.from_pretrained(extractor_id).to(device)
+    feature_processor = transformer_processor.from_pretrained(extractor_id)
 
     text_generation_model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
         model_id, torch_dtype="auto", device_map={"": device}
         )
     processor = AutoProcessor.from_pretrained(model_id, padding_side='left')
 
-    img_transform=transform_image(cfg['CLIP']['IMAGE_SIZE'],
-                                cfg['CLIP']['IMAGE_MEAN'],
-                                cfg['CLIP']['IMAGE_STD'])
     dataloader = get_fashioniq_loader(
         output_dir=cfg['FashionIQ']['OUTPUT_DIR'],
         batch_size=cfg['GENERAL']['BATCH_SIZE'],
@@ -149,18 +153,35 @@ if __name__ == "__main__":
                     generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
                 )
                 generated_text.extend(output_texts)
-                print(output_texts)
-            all_text_inputs = processor(text=caption+generated_text, return_tensors="pt", padding=True, truncation=True).to(device)
-
-            gen_text_feat = model.get_text_features(**all_text_inputs)
+            if extractor.lower() == 'siglip2':
+                all_text_inputs = feature_processor(text=caption+generated_text, 
+                                                    return_tensors="pt", 
+                                                    padding=True, 
+                                                    max_length=64,
+                                                    truncation=True
+                                                ).to(device)
+                gen_text_feat = feature_extraction_model.get_text_features(**all_text_inputs)
+            elif extractor.lower() == 'clip':
+                all_text_inputs = feature_processor(caption+generated_text, 
+                                                    return_tensors="pt", 
+                                                    padding=True, 
+                                                    truncation=True
+                                                ).to(device)
+                gen_text_feat = feature_extraction_model.get_text_features(**all_text_inputs)
+            elif extractor.lower() == 'blip2':
+                all_text_inputs = feature_processor(text=caption+generated_text, 
+                                                    images=target,
+                                                    return_tensors="pt",
+                                                    padding=True
+                                                ).to(device, torch.float16)
+                gen_text_feat = feature_extraction_model(**all_text_inputs, use_image_text_matching_head=False).text_embeds
             steps = gen_text_feat.size(0)//3
             caption_feat.append(gen_text_feat[:steps, :])
             modification_feat.append(gen_text_feat[steps:steps*2, :])
             description_feat.append(gen_text_feat[steps*2:, :])
-            tar_tensor_feat.append(model.get_image_features(pixel_values=target_tensor.to(device)))
-
-            if i==0:
-                break
+            if extractor.lower() != 'blip2':
+                tar_tensor_feat.append(feature_extraction_model(pixel_values=target_tensor.to(device)))
+            else: tar_tensor_feat.append(
 
     caption_feat = torch.cat(caption_feat, dim=0)
     modification_feat = torch.cat(modification_feat, dim=0)
