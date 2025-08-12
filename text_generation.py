@@ -121,17 +121,19 @@ if __name__ == "__main__":
             batch_size=cfg['GENERAL']['BATCH_SIZE'],
             transform=img_transform
         )
+    elif dataset_name.lower() == "fashioniq":
+        pass
     elif dataset_name.lower() == "circo":
         dataloader = get_circo_loader(
             batch_size=cfg['GENERAL']['BATCH_SIZE'],
-            split='val',
+            split='val', #use val or test split
             num_workers=cfg['GENERAL']['NUM_WORKERS'],
             transform=img_transform
         )
     elif dataset_name.lower() == "cirr":
         dataloader = get_cirr_loader(
             batch_size=cfg['GENERAL']['BATCH_SIZE'],
-            split='val',
+            split='val', # use val or test split
             num_workers=cfg['GENERAL']['NUM_WORKERS'],
             transform=img_transform
         )

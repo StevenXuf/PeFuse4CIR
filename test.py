@@ -1,30 +1,34 @@
 import torch
-from PIL import Image
-import requests
-from transformers import AutoProcessor, Blip2ForImageTextRetrieval, Blip2Model
-from torchmetrics.functional.pairwise import pairwise_cosine_similarity
 import torch.nn.functional as F
+from urllib.request import urlopen
+from PIL import Image
+from open_clip import create_model_from_pretrained, get_tokenizer
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
+# === Local model loading ===
+# Path to the local pretrained weights (.bin file) downloaded from HuggingFace or elsewhere
+# ckpt_path = "/Path/to/your/local/ckpt"
+# model, preprocess = create_model_from_pretrained(
+#     model_name="openvision-vit-large-patch14-224",
+#     pretrained=ckpt_path,  
+#     device="cuda" if torch.cuda.is_available() else "cpu"
+# )
 
-model = Blip2ForImageTextRetrieval.from_pretrained("Salesforce/blip2-itm-vit-g", torch_dtype=torch.float16)
-processor = AutoProcessor.from_pretrained("Salesforce/blip2-itm-vit-g", use_fast=True)
+model, preprocess = create_model_from_pretrained('hf-hub:UCSC-VLAA/openvision-vit-large-patch14-224')
+tokenizer = get_tokenizer('hf-hub:UCSC-VLAA/openvision-vit-large-patch14-224')
 
-model.to(device)
-url = "http://images.cocodataset.org/val2017/000000039769.jpg"
-image = Image.open(requests.get(url, stream=True).raw)
-texts = ["a photo of a cat", "a photo of a dog", "a photo of a person"]
+image = Image.open(urlopen(
+    'https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/beignets-task-guide.png'
+))
+image = preprocess(image).unsqueeze(0)
 
-inputs = processor(images=image, text=texts, return_tensors="pt").to(device, torch.float16)
-itc_out = model(**inputs, use_image_text_matching_head=False)
-print(itc_out.keys())
-print(itc_out.text_embeds.size())
-print(itc_out.image_embeds.size())
-text_feat = F.normalize(itc_out.text_embeds, p=2, dim=-1)
-image_feat = F.normalize(itc_out.image_embeds, p=2, dim=-1)
+text = tokenizer(["a diagram", "a dog", "a cat", "a beignet"], context_length=model.context_length)
 
-sim =torch.matmul(text_feat.unsqueeze(0), image_feat.transpose(1,2))
-print(sim.size())
-val, _ = sim.max(dim=-1)
-print(val.size())
-print(val)
+with torch.no_grad(), torch.amp.autocast('cuda:1'):
+    image_features = model.encode_image(image)
+    text_features = model.encode_text(text)
+    image_features = F.normalize(image_features, dim=-1)
+    text_features = F.normalize(text_features, dim=-1)
+
+    text_probs = (100.0 * image_features @ text_features.T).softmax(dim=-1)
+
+print("Label probs:", text_probs)  # prints: [[0., 0., 0., 1.0]]
