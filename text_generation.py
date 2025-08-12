@@ -88,10 +88,7 @@ def generate_messages(target_image, reference_image, caption):
 
     return text_modification, target_description
 
-if __name__ == "__main__":
-
-    cfg = get_default_config("config.yaml")
-    torch.manual_seed(cfg['GENERAL']['SEED'])
+def main(cfg):
     device = torch.device(f"cuda:{cfg['GENERAL']['DEVICE']}" if torch.cuda.is_available() else "cpu")
     model_id = cfg['TEXT-GENERATION']['MODEL_NAME']
 
@@ -252,3 +249,9 @@ if __name__ == "__main__":
         for k in top_k:
             metric_val = get_metrics(description_feat, tar_tensor_feat, k=k, target_length=target_length, metrics=metric)
             print(f'{metric.capitalize()}@{k}: {metric_val:.2f} when using generated description ---> target images')
+
+
+if __name__ == "__main__":
+    cfg = get_default_config("config.yaml")
+    torch.manual_seed(cfg['GENERAL']['SEED'])
+    main(cfg)

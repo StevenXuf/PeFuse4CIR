@@ -25,10 +25,7 @@ def resize_crop_normalize(tensor_img, size=224, IMAGE_MEAN=None, IMAGE_STD=None)
     img = F.normalize(img, mean=IMAGE_MEAN, std=IMAGE_STD)
     return img
 
-if __name__ == "__main__":
-    cfg = get_default_config("config.yaml")
-    torch.manual_seed(cfg['GENERAL']['SEED'])
-
+def main(cfg):
     image_size = cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['IMAGE_SIZE']
     model_id = cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['MODEL_NAME']
     store_path = cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['OUTPUT_DIR']
@@ -95,3 +92,9 @@ if __name__ == "__main__":
     for k in top_k:
         metric_val = get_metrics(generated_image_features, target_features, k=k, target_length=target_length, metric=metric)
         print(f'{metric}@{k}: {metric_val:.2f} when using generated images ---> real images retrieval')
+
+
+if __name__ == "__main__":
+    cfg = get_default_config("config.yaml")
+    torch.manual_seed(cfg['GENERAL']['SEED'])
+    main(cfg)
