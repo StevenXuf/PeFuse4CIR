@@ -91,7 +91,7 @@ def main(cfg):
 
     for k in top_k:
         metric_val = get_metrics(generated_image_features, target_features, k=k, target_length=target_length, metric=metric)
-        print(f'{metric}@{k}: {metric_val:.2f} when using generated images ---> real images retrieval')
+        print(f'{metric.capitalize()}@{k}: {metric_val:.2f} when using generated images ---> real images retrieval')
 
 
 if __name__ == "__main__":
