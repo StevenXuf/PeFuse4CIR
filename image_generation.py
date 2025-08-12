@@ -1,4 +1,3 @@
-
 import torch
 import os
 import torchvision.transforms.functional as F
@@ -10,7 +9,7 @@ from transformers import AutoModel
 
 from figures import show_tensor_images
 from configuration import get_default_config
-from fashioniq import get_fashioniq_loader, transform_image
+from refinedfashioniq import get_refined_fashioniq_loader, transform_image
 from feature_extraction import get_metrics
 
 def convert_pil_to_tensor(list_of_pils, transform=None):
@@ -34,10 +33,11 @@ if __name__ == "__main__":
     model_id = cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['MODEL_NAME']
     store_path = cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['OUTPUT_DIR']
 
+    top_k = cfg['GENERAL']['TOP_K']
     device = torch.device(f"cuda:{cfg['GENERAL']['DEVICE']}" if torch.cuda.is_available() else "cpu")
 
     img_transform_for_generation = transform_image(image_size)
-    dataloader = get_fashioniq_loader(cfg['FashionIQ']['OUTPUT_DIR'], transform=img_transform_for_generation, batch_size=cfg['GENERAL']['BATCH_SIZE'])
+    dataloader = get_refined_fashioniq_loader(cfg['RefinedFashionIQ']['OUTPUT_DIR'], transform=img_transform_for_generation, batch_size=cfg['GENERAL']['BATCH_SIZE'])
 
     img_transform_for_extraction = transform_image(cfg['CLIP']['IMAGE_SIZE'], cfg['CLIP']['IMAGE_MEAN'], cfg['CLIP']['IMAGE_STD'])
 
@@ -83,6 +83,6 @@ if __name__ == "__main__":
             #     break
     generated_image_features = torch.cat(generated_image_features, dim=0)
     target_features = torch.cat(target_features, dim=0)
-    for k in [10, 30, 50, 100]:
+    for k in top_k:
         recall = get_metrics(generated_image_features, target_features, k=k)
         print(f'Recall@{k}: {recall:.2f} when using generated images ---> real images retrieval')

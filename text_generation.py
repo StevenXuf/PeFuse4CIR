@@ -11,7 +11,7 @@ import torch.nn.functional as F
 from torchmetrics.retrieval import RetrievalRecall
 
 from configuration import get_default_config
-from fashioniq import get_fashioniq_loader, transform_image
+from refinedfashioniq import get_refined_fashioniq_loader, transform_image
 from circo import get_circo_loader
 from cirr import get_cirr_loader
 from feature_extraction import get_metrics
@@ -115,9 +115,9 @@ if __name__ == "__main__":
         )
     processor = AutoProcessor.from_pretrained(model_id, padding_side='left', use_fast=True)
 
-    if dataset_name.lower() == "fashioniq":
-        dataloader = get_fashioniq_loader(
-            output_dir=cfg['FashionIQ']['OUTPUT_DIR'],
+    if dataset_name.lower() == "refinedfashioniq":
+        dataloader = get_refined_fashioniq_loader(
+            output_dir=cfg['RefinedFashionIQ']['OUTPUT_DIR'],
             batch_size=cfg['GENERAL']['BATCH_SIZE'],
             transform=img_transform
         )

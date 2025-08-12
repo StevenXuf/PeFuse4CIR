@@ -84,9 +84,9 @@ def transform_image(image_size, IMAGENET_MEAN=None, IMAGENET_STD=None):
     ])
     return img_transform
 
-def get_fashioniq_loader(output_dir,batch_size=32,transform=None):
+def get_refined_fashioniq_loader(output_dir,batch_size=32,transform=None):
     """
-    Load the FashionIQ dataset.
+    Load the RefinedFashionIQ dataset.
     """
     dataset = load_dataset("chuonghm/Refined-FashionIQ", split='validation')
     dataset = dataset.filter(lambda x: x['is_refined'] == True)
@@ -130,23 +130,23 @@ def get_fashioniq_loader(output_dir,batch_size=32,transform=None):
 if __name__ == "__main__":
     config = get_default_config()
 
-    output_dir = config['FashionIQ']['OUTPUT_DIR']
-    url_folder = config['FashionIQ']['IMAGE_URL_FOLDER']
-    resize_to = (config['FashionIQ']['IMAGE_SIZE'], config['FashionIQ']['IMAGE_SIZE'])
+    output_dir = config['RefinedFashionIQ']['OUTPUT_DIR']
+    url_folder = config['RefinedFashionIQ']['IMAGE_URL_FOLDER']
+    resize_to = (config['RefinedFashionIQ']['IMAGE_SIZE'], config['RefinedFashionIQ']['IMAGE_SIZE'])
     batch_size = config['GENERAL']['BATCH_SIZE']
     mean = config['CLIP']['IMAGE_MEAN']
     std = config['CLIP']['IMAGE_STD']  
 
-    img_transform = transform_image(config['FashionIQ']['IMAGE_SIZE'], mean, std)
+    img_transform = transform_image(config['RefinedFashionIQ']['IMAGE_SIZE'], mean, std)
 
     if not os.path.exists(output_dir):
         download_and_resize_images(output_dir, url_folder, resize_to)
     else:
         print(f"Output directory already exists in: {output_dir}")
 
-    # extract_candidates_and_captions(config['FashionIQ']['CAPTION_FOLDER'],split='test')
-    dataloader = get_fashioniq_loader(output_dir,transform=img_transform, batch_size=batch_size)
-    print(f"Loaded FashionIQ dataset with {len(dataloader.dataset)} items.")
+    # extract_candidates_and_captions(config['RefinedFashionIQ']['CAPTION_FOLDER'],split='test')
+    dataloader = get_refined_fashioniq_loader(output_dir,transform=img_transform, batch_size=batch_size)
+    print(f"Loaded RefinedFashionIQ dataset with {len(dataloader.dataset)} items.")
     for batch in dataloader:
         print(f"Batch size: {len(batch['target_pil'])}")
         print(f"Target images shape: {batch['target_img'][0].shape}")

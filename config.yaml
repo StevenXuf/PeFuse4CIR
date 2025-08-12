@@ -4,14 +4,18 @@ GENERAL:
     DEVICE: 1
     SEED: 0
     EXTRACTOR: "CLIP"
-    DATASET: "FashionIQ"
+    DATASET: "RefinedFashionIQ"
     TOP_K: [1, 5, 10, 25, 50]
 
-FashionIQ:
-    IMAGE_URL_FOLDER: '/data/data_fxu/FashionIQ/image_url'
+RefinedFashionIQ:
+    IMAGE_URL_FOLDER: '/data/data_fxu/RefinedFashionIQ/image_url'
     IMAGE_SIZE: 224
-    OUTPUT_DIR: '/data/data_fxu/FashionIQ/downloaded_images'
-    CAPTION_FOLDER: '/data/data_fxu/FashionIQ/captions'
+    OUTPUT_DIR: '/data/data_fxu/RefinedFashionIQ/downloaded_images'
+    CAPTION_FOLDER: '/data/data_fxu/RefinedFashionIQ/captions'
+
+CIRCO:
+    IMAGE_FOLDER: '/data/data_fxu/CIRCO/image_url'
+    IMAGE_SIZE: 224
 
 CLIP:
     MODEL_NAME: "openai/clip-vit-base-patch32"

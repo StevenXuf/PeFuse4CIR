@@ -8,7 +8,7 @@ from torchmetrics.retrieval import RetrievalRecall, RetrievalMAP, RetrievalPreci
 from transformers import AutoProcessor, AutoModel
 
 from configuration import get_default_config
-from fashioniq import get_fashioniq_loader,transform_image
+from refinedfashioniq import get_refined_fashioniq_loader,transform_image
 from attention import self_attention, cross_attention, co_attention
 
 def get_metrics(text_features,audio_features,k, target_length, metrics='recall'):
@@ -154,7 +154,7 @@ def main(cfg):
     mean = cfg['CLIP']['IMAGE_MEAN']
     std = cfg['CLIP']['IMAGE_STD']
     img_transform = transform_image(cfg['CLIP']['IMAGE_SIZE'], mean, std)
-    dataloader = get_fashioniq_loader(cfg['FashionIQ']['OUTPUT_DIR'], transform=img_transform, batch_size=cfg['GENERAL']['BATCH_SIZE'])
+    dataloader = get_refined_fashioniq_loader(cfg['RefinedFashionIQ']['OUTPUT_DIR'], transform=img_transform, batch_size=cfg['GENERAL']['BATCH_SIZE'])
     ref_image_features, candidate_image_features, text_features = extract_features(model, processor, dataloader=dataloader, cfg=cfg)
     perform_retrieval(ref_image_features, candidate_image_features, text_features, cfg['GENERAL']['TOP_K'])
 
