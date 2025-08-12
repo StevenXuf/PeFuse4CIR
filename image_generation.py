@@ -62,8 +62,8 @@ def main(cfg):
         for i,batch in tqdm(enumerate(dataloader)):
             input_images=batch['reference_img']
             show_tensor_images(input_images, num_images=input_images.size(0), file_path=os.path.join(store_path,f"input_image_grid_{i}.png"))
-            prompts=batch['caption']
-            targets=batch['target_img']
+            prompts = batch['caption']
+            targets = batch['target_img']
             target_length.extend(batch['all_target_length'])
 
             images = generation_model(
@@ -91,7 +91,7 @@ def main(cfg):
 
     for k in top_k:
         metric_val = get_metrics(generated_image_features, target_features, k=k, target_length=target_length, metric=metric)
-        print(f'{metric.capitalize()}@{k}: {metric_val:.2f} when using generated images ---> real images retrieval')
+        print(f'{metric.capitalize()}@{k}: {metric_val:.2f}% when using generated images ---> real images retrieval')
 
 
 if __name__ == "__main__":

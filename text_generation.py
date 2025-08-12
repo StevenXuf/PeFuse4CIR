@@ -5,10 +5,8 @@ import io
 from tqdm import tqdm
 from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
 from qwen_vl_utils import process_vision_info
-from transformers import AutoModel, Blip2ForImageTextRetrieval
-from transformers import AutoProcessor as transformer_processor
-import torch.nn.functional as F
-from torchmetrics.retrieval import RetrievalRecall
+from transformers import AutoModel, AutoTokenizer
+from open_clip import create_model_from_pretrained, get_tokenizer
 
 from configuration import get_default_config
 from refinedfashioniq import get_refined_fashioniq_loader, transform_image
@@ -101,11 +99,13 @@ def main(cfg):
     img_transform=transform_image(cfg[extractor]['IMAGE_SIZE'],
                                 cfg[extractor]['IMAGE_MEAN'],
                                 cfg[extractor]['IMAGE_STD'])
-    if extractor.lower() == 'blip2':
-        feature_extraction_model = Blip2ForImageTextRetrieval.from_pretrained(extractor_id, torch_dtype=torch.float16).to(device)
+    if extractor.lower() == 'openvision':
+        feature_extraction_model, preprocess = create_model_from_pretrained(f'hf-hub:{extractor_id}')
+        feature_extraction_model = feature_extraction_model.to(device)
+        tokenizer = get_tokenizer(f'hf-hub:{extractor_id}')
     else:
         feature_extraction_model = AutoModel.from_pretrained(extractor_id).to(device)
-    feature_processor = transformer_processor.from_pretrained(extractor_id)
+        tokenizer = AutoTokenizer.from_pretrained(extractor_id)
 
     text_generation_model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
         model_id, torch_dtype="auto", device_map={"": device}
@@ -183,7 +183,7 @@ def main(cfg):
                 generated_text.extend(output_texts)
 
             if extractor.lower() == 'siglip2':
-                all_text_inputs = feature_processor(text=caption+generated_text, 
+                all_text_inputs = tokenizer(text=caption+generated_text, 
                                                     return_tensors="pt", 
                                                     padding=True, 
                                                     max_length=64,
@@ -191,32 +191,27 @@ def main(cfg):
                                                 ).to(device)
                 gen_feat = feature_extraction_model.get_text_features(**all_text_inputs)
             elif extractor.lower() == 'clip':
-                all_text_inputs = feature_processor(caption+generated_text, 
+                all_text_inputs = tokenizer(caption+generated_text, 
                                                     return_tensors="pt", 
                                                     padding=True, 
                                                     truncation=True
                                                 ).to(device)
                 gen_feat = feature_extraction_model.get_text_features(**all_text_inputs)
-            elif extractor.lower() == 'blip2':
-                all_inputs = feature_processor(text=caption+generated_text, 
-                                                    images=all_target_pil,
-                                                    return_tensors="pt",
-                                                    padding=True
-                                                ).to(device, torch.float16)
-                gen_feat = feature_extraction_model(**all_inputs, use_image_text_matching_head=False)
+            elif extractor.lower() == 'openvision':
+                all_inputs = tokenizer(caption+generated_text,
+                                       context_length=feature_extraction_model.context_length
+                                       ).to(device)
+                gen_feat = feature_extraction_model.encode_text(all_inputs)
 
-            if extractor.lower() == 'blip2':
-                steps = gen_feat.text_embeds.size(0)//3
-                caption_feat.append(F.normalize(gen_feat.text_embeds[:steps, :], p=2, dim=-1))
-                modification_feat.append(F.normalize(gen_feat.text_embeds[steps:steps*2, :], p=2, dim=-1))
-                description_feat.append(F.normalize(gen_feat.text_embeds[steps*2:, :], p=2, dim=-1))
-                tar_tensor_feat.append(F.normalize(gen_feat.image_embeds, p=2, dim=-1))
+            steps = gen_feat.size(0)//3
+            caption_feat.append(gen_feat[:steps, :])
+            modification_feat.append(gen_feat[steps:steps*2, :])
+            description_feat.append(gen_feat[steps*2:, :])
+            if extractor.lower() == 'openvision':
+                img_feat = feature_extraction_model.encode_image(torch.cat([preprocess(img).unsqueeze(0) for img in all_target_pil],dim=0).to(device))
             else:
-                steps = gen_feat.size(0)//3
-                caption_feat.append(gen_feat[:steps, :])
-                modification_feat.append(gen_feat[steps:steps*2, :])
-                description_feat.append(gen_feat[steps*2:, :])
-                tar_tensor_feat.append(feature_extraction_model.get_image_features(pixel_values=all_target_tensor.to(device)))
+                img_feat = feature_extraction_model.get_image_features(pixel_values=all_target_tensor.to(device))
+            tar_tensor_feat.append(img_feat)
 
     print(target_length)
     caption_feat = torch.cat(caption_feat, dim=0)
@@ -224,31 +219,18 @@ def main(cfg):
     description_feat = torch.cat(description_feat, dim=0)
     tar_tensor_feat = torch.cat(tar_tensor_feat, dim=0)
 
-    #compute recall for generated modification ---> caption
     if dataset_name.lower() == "circo":
         metric = 'map'
     else:
         metric = 'recall'
     for k in top_k:
+        #compute recall for generated modification ---> caption
         metric_val = get_metrics(modification_feat, caption_feat, k=k, target_length=target_length, metrics=metric)
-        print(f'{metric.capitalize()}@{k}: {metric_val:.2f} when using generated modification ---> real modification')
+        print(f'{metric.upper()}@{k}: {metric_val:.2f}% when using generated modification ---> real modification')
 
-    #compute recall for generated description ---> target image
-    if extractor.lower() == 'blip2':
-        cos, _ = torch.matmul(description_feat.unsqueeze(0), tar_tensor_feat.transpose(1,2)).max(dim=-1)
-        cos = cos.T
-        for k in top_k:
-            compute_recall=RetrievalRecall(top_k=k)
-            targets=torch.diag(torch.ones(cos.size(0), dtype=torch.long)).to(cos.device)
-            indexes = torch.arange(cos.size(0), dtype=torch.long).unsqueeze(1).expand(*cos.size()).to(cos.device)
-            recall=compute_recall(cos.flatten(),targets.flatten(),indexes=indexes.flatten())
-            print(f'Recall@{k}: {recall:.2f} when using generated description ---> target images')
-
-        ##### still need to implement mAP for circo dataset!!!!
-    else:
-        for k in top_k:
-            metric_val = get_metrics(description_feat, tar_tensor_feat, k=k, target_length=target_length, metrics=metric)
-            print(f'{metric.capitalize()}@{k}: {metric_val:.2f} when using generated description ---> target images')
+        #compute recall for generated description ---> target image
+        metric_val = get_metrics(description_feat, tar_tensor_feat, k=k, target_length=target_length, metrics=metric)
+        print(f'{metric.upper()}@{k}: {metric_val:.2f}% when using generated description ---> target images')
 
 
 if __name__ == "__main__":

@@ -3,8 +3,8 @@ GENERAL:
     NUM_WORKERS: 4
     DEVICE: 1
     SEED: 0
-    EXTRACTOR: "CLIP"
-    DATASET: "RefinedFashionIQ"
+    EXTRACTOR: "OPENVISION"
+    DATASET: "CIRCO"
     TOP_K: [1, 5, 10, 25, 50]
 
 RefinedFashionIQ:
@@ -40,6 +40,12 @@ SIGLIP2:
     IMAGE_SIZE: 224
     IMAGE_MEAN: [0.5, 0.5, 0.5]
     IMAGE_STD: [0.5, 0.5, 0.5]
+
+OPENVISION:
+    MODEL_NAME: "UCSC-VLAA/openvision-vit-large-patch14-224"
+    IMAGE_SIZE: 224
+    IMAGE_MEAN: [0.485, 0.456, 0.406]
+    IMAGE_STD: [0.229, 0.224, 0.225]
 
 IMAGE-GENERATION:
     GLOBAL:
