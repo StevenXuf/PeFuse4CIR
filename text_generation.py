@@ -28,7 +28,7 @@ def generate_messages(target_image, reference_image, caption):
             "role": "system", 
             "content": (
                 "You are an expert at comparing images and identifying visual differences. "
-                "Given two images (first: reference, second: target), "
+                "Given two images (first: _pil, second: target), "
                 "describe all the changes needed to transform the first image into the second. "
                 "Be complete and specific—mention differences in objects, colors, lighting, textures, positions, sizes, and background details. "
                 "Only describe every visible changes between the images. "
@@ -115,7 +115,6 @@ if __name__ == "__main__":
         )
     processor = AutoProcessor.from_pretrained(model_id, padding_side='left', use_fast=True)
 
-
     if dataset_name.lower() == "fashioniq":
         dataloader = get_fashioniq_loader(
             output_dir=cfg['FashionIQ']['OUTPUT_DIR'],
@@ -143,14 +142,18 @@ if __name__ == "__main__":
     modification_feat = []
     description_feat = []
     tar_tensor_feat = []
+    target_length = []
     with torch.no_grad():
         for i, batch in tqdm(enumerate(dataloader), desc="Gnerating descriptions", total=len(dataloader)):
-            target = batch['target_pil']
-            reference = batch['reference_pil']
+            target_pil = batch['target_pil']
+            reference_pil = batch['reference_pil']
             caption = batch['caption']
-            target_tensor = batch['target']
+            target_tensor = batch['target_img']
+            all_target_pil = batch['all_target_pil']
+            all_target_tensor = batch['all_target_img']
+            target_length.extend(batch['all_target_length'])
 
-            messages = list(map(lambda x: generate_messages(*x),zip(target, reference, caption)))
+            messages = list(map(lambda x: generate_messages(*x),zip(target_pil, reference_pil, caption)))
             text_modification = [msg[0] for msg in messages]
             target_description = [msg[1] for msg in messages]
 
@@ -179,6 +182,7 @@ if __name__ == "__main__":
                     generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
                 )
                 generated_text.extend(output_texts)
+
             if extractor.lower() == 'siglip2':
                 all_text_inputs = feature_processor(text=caption+generated_text, 
                                                     return_tensors="pt", 
@@ -186,35 +190,36 @@ if __name__ == "__main__":
                                                     max_length=64,
                                                     truncation=True
                                                 ).to(device)
-                gen_text_feat = feature_extraction_model.get_text_features(**all_text_inputs)
+                gen_feat = feature_extraction_model.get_text_features(**all_text_inputs)
             elif extractor.lower() == 'clip':
                 all_text_inputs = feature_processor(caption+generated_text, 
                                                     return_tensors="pt", 
                                                     padding=True, 
                                                     truncation=True
                                                 ).to(device)
-                gen_text_feat = feature_extraction_model.get_text_features(**all_text_inputs)
+                gen_feat = feature_extraction_model.get_text_features(**all_text_inputs)
             elif extractor.lower() == 'blip2':
-                all_text_inputs = feature_processor(text=caption+generated_text, 
-                                                    images=target,
+                all_inputs = feature_processor(text=caption+generated_text, 
+                                                    images=all_target_pil,
                                                     return_tensors="pt",
                                                     padding=True
                                                 ).to(device, torch.float16)
-                gen_text_feat = feature_extraction_model(**all_text_inputs, use_image_text_matching_head=False)
+                gen_feat = feature_extraction_model(**all_inputs, use_image_text_matching_head=False)
 
             if extractor.lower() == 'blip2':
-                steps = gen_text_feat.text_embeds.size(0)//3
-                caption_feat.append(F.normalize(gen_text_feat.text_embeds[:steps, :], p=2, dim=-1))
-                modification_feat.append(F.normalize(gen_text_feat.text_embeds[steps:steps*2, :], p=2, dim=-1))
-                description_feat.append(F.normalize(gen_text_feat.text_embeds[steps*2:, :], p=2, dim=-1))
-                tar_tensor_feat.append(F.normalize(gen_text_feat.image_embeds, p=2, dim=-1))
+                steps = gen_feat.text_embeds.size(0)//3
+                caption_feat.append(F.normalize(gen_feat.text_embeds[:steps, :], p=2, dim=-1))
+                modification_feat.append(F.normalize(gen_feat.text_embeds[steps:steps*2, :], p=2, dim=-1))
+                description_feat.append(F.normalize(gen_feat.text_embeds[steps*2:, :], p=2, dim=-1))
+                tar_tensor_feat.append(F.normalize(gen_feat.image_embeds, p=2, dim=-1))
             else:
-                steps = gen_text_feat.size(0)//3
-                caption_feat.append(gen_text_feat[:steps, :])
-                modification_feat.append(gen_text_feat[steps:steps*2, :])
-                description_feat.append(gen_text_feat[steps*2:, :])
-                tar_tensor_feat.append(feature_extraction_model.get_image_features(pixel_values=target_tensor.to(device)))
+                steps = gen_feat.size(0)//3
+                caption_feat.append(gen_feat[:steps, :])
+                modification_feat.append(gen_feat[steps:steps*2, :])
+                description_feat.append(gen_feat[steps*2:, :])
+                tar_tensor_feat.append(feature_extraction_model.get_image_features(pixel_values=all_target_tensor.to(device)))
 
+    print(target_length)
     caption_feat = torch.cat(caption_feat, dim=0)
     modification_feat = torch.cat(modification_feat, dim=0)
     description_feat = torch.cat(description_feat, dim=0)
@@ -226,7 +231,7 @@ if __name__ == "__main__":
     else:
         metric = 'recall'
     for k in top_k:
-        metric_val = get_metrics(modification_feat, caption_feat, k=k, metrics=metric)
+        metric_val = get_metrics(modification_feat, caption_feat, k=k, target_length=target_length, metrics=metric)
         print(f'{metric.capitalize()}@{k}: {metric_val:.2f} when using generated modification ---> real modification')
 
     #compute recall for generated description ---> target image
@@ -243,5 +248,5 @@ if __name__ == "__main__":
         ##### still need to implement mAP for circo dataset!!!!
     else:
         for k in top_k:
-            recall = get_metrics(description_feat, tar_tensor_feat, k=k, metrics=metric)
-            print(f'Recall@{k}: {recall:.2f} when using generated description ---> target images')
+            metric_val = get_metrics(description_feat, tar_tensor_feat, k=k, target_length=target_length, metrics=metric)
+            print(f'{metric.capitalize()}@{k}: {metric_val:.2f} when using generated description ---> target images')

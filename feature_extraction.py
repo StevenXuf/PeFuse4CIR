@@ -11,16 +11,22 @@ from configuration import get_default_config
 from fashioniq import get_fashioniq_loader,transform_image
 from attention import self_attention, cross_attention, co_attention
 
-def get_metrics(text_features,audio_features,k, metrics='recall'):
+def get_metrics(text_features,audio_features,k, target_length, metrics='recall'):
     if metrics == 'recall':
         compute = RetrievalRecall(top_k=k)
     elif metrics == 'precision':
         compute = RetrievalPrecision(top_k=k)
     elif metrics == 'map':
         compute = RetrievalMAP(top_k=k)
+
     sim=pairwise_cosine_similarity(text_features,audio_features)
 
-    targets=torch.diag(torch.ones(sim.size(0), dtype=torch.long)).to(sim.device)
+    targets = torch.zeros(sim.size(0), sim.size(1), dtype=torch.long).to(sim.device)
+    start = 0
+    for i, length in enumerate(target_length):
+        targets[i, start:start+length] = 1
+        start += length
+    print(targets)    
 
     indexes = torch.arange(sim.size(0), dtype=torch.long).unsqueeze(1).expand(*sim.size()).to(sim.device)
 

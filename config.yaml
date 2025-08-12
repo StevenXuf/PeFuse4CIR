@@ -4,8 +4,8 @@ GENERAL:
     DEVICE: 1
     SEED: 0
     EXTRACTOR: "CLIP"
-    DATASET: "CIRCO"
-    TOP_K: [5, 10, 25, 50]
+    DATASET: "FashionIQ"
+    TOP_K: [1, 5, 10, 25, 50]
 
 FashionIQ:
     IMAGE_URL_FOLDER: '/data/data_fxu/FashionIQ/image_url'

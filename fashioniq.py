@@ -115,11 +115,14 @@ def get_fashioniq_loader(output_dir,batch_size=32,transform=None):
     })
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, 
         collate_fn=lambda batch: {
-            'target': torch.stack([x['target'] if transform is None else transform(x['target']) for x in batch]),
-            'reference': torch.stack([x['reference'] if transform is None else transform(x['reference']) for x in batch]),
+            'target_img': torch.stack([x['target'] if transform is None else transform(x['target']) for x in batch]),
+            'reference_img': torch.stack([x['reference'] if transform is None else transform(x['reference']) for x in batch]),
             'caption': [x['caption'] for x in batch],
             'target_pil': [x['target'] for x in batch],
-            'reference_pil': [x['reference'] for x in batch]
+            'reference_pil': [x['reference'] for x in batch],
+            'all_target_pil': [x['target'] for x in batch],
+            'all_target_img': torch.stack([x['target'] if transform is None else transform(x['target']) for x in batch]),
+            'all_target_length': list(map(len, [[x['target']] for x in batch])),
         })
 
     return dataloader
@@ -145,7 +148,7 @@ if __name__ == "__main__":
     dataloader = get_fashioniq_loader(output_dir,transform=img_transform, batch_size=batch_size)
     print(f"Loaded FashionIQ dataset with {len(dataloader.dataset)} items.")
     for batch in dataloader:
-        print(f"Batch size: {len(batch['target'])}")
-        print(f"Target images shape: {batch['target'][0].shape}")
-        print(f"Reference images shape: {batch['reference'][0].shape}")
+        print(f"Batch size: {len(batch['target_pil'])}")
+        print(f"Target images shape: {batch['target_img'][0].shape}")
+        print(f"Reference images shape: {batch['reference_img'][0].shape}")
         print(f"Captions: {batch['caption']}")
