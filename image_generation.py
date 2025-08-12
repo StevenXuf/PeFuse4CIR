@@ -33,6 +33,11 @@ if __name__ == "__main__":
     model_id = cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['MODEL_NAME']
     store_path = cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['OUTPUT_DIR']
 
+    dataset_name = cfg['GENERAL']['DATASET']
+    if dataset_name.lower() == 'circo':
+        metric = 'map'
+    else:
+        metric = 'recall'
     top_k = cfg['GENERAL']['TOP_K']
     device = torch.device(f"cuda:{cfg['GENERAL']['DEVICE']}" if torch.cuda.is_available() else "cpu")
 
@@ -52,14 +57,17 @@ if __name__ == "__main__":
     image_guidance_scale = cfg['IMAGE-GENERATION']['GLOBAL']['IMAGE_GUIDANCE_SCALE']
     guidance_scale = cfg['IMAGE-GENERATION']['GLOBAL']['GUIDANCE_SCALE']
     print(f"Using {generation_model.__class__.__name__} with params: n_infer_step={n_infer_step}, image_guidance_scale={image_guidance_scale}, guidance_scale={guidance_scale}")
+
     generated_image_features = []
     target_features = []
+    target_length = []
     with torch.no_grad():
         for i,batch in tqdm(enumerate(dataloader)):
-            input_images=batch['reference']
+            input_images=batch['reference_img']
             show_tensor_images(input_images, num_images=input_images.size(0), file_path=os.path.join(store_path,f"input_image_grid_{i}.png"))
             prompts=batch['caption']
-            targets=batch['target']
+            targets=batch['target_img']
+            target_length.extend(batch['all_target_length'])
 
             images = generation_model(
                 prompt=prompts,
@@ -79,10 +87,11 @@ if __name__ == "__main__":
             targets = resize_crop_normalize(targets, size=cfg['CLIP']['IMAGE_SIZE'], IMAGE_MEAN=cfg['CLIP']['IMAGE_MEAN'], IMAGE_STD=cfg['CLIP']['IMAGE_STD'])
             # targets = torch.stack(convert_pil_to_tensor(targets, transform=img_transform_for_extraction))
             target_features.append(feature_extraction_model.get_image_features(pixel_values=targets.to(device)))
-            # if i==5:
-            #     break
+            if i==5:
+                break
     generated_image_features = torch.cat(generated_image_features, dim=0)
     target_features = torch.cat(target_features, dim=0)
+
     for k in top_k:
-        recall = get_metrics(generated_image_features, target_features, k=k)
-        print(f'Recall@{k}: {recall:.2f} when using generated images ---> real images retrieval')
+        metric_val = get_metrics(generated_image_features, target_features, k=k, target_length=target_length, metric=metric)
+        print(f'{metric}@{k}: {metric_val:.2f} when using generated images ---> real images retrieval')
