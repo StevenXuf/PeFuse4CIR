@@ -4,24 +4,29 @@ from tqdm import tqdm
 import torch.nn.functional as F
 
 from torchmetrics.functional.pairwise import pairwise_cosine_similarity
-from torchmetrics.retrieval import RetrievalRecall
+from torchmetrics.retrieval import RetrievalRecall, RetrievalMAP, RetrievalPrecision
 from transformers import AutoProcessor, AutoModel
 
 from configuration import get_default_config
 from fashioniq import get_fashioniq_loader,transform_image
 from attention import self_attention, cross_attention, co_attention
 
-def get_metrics(text_features,audio_features,k):     
-    compute_recall=RetrievalRecall(top_k=k)
+def get_metrics(text_features,audio_features,k, metrics='recall'):
+    if metrics == 'recall':
+        compute = RetrievalRecall(top_k=k)
+    elif metrics == 'precision':
+        compute = RetrievalPrecision(top_k=k)
+    elif metrics == 'map':
+        compute = RetrievalMAP(top_k=k)
     sim=pairwise_cosine_similarity(text_features,audio_features)
 
     targets=torch.diag(torch.ones(sim.size(0), dtype=torch.long)).to(sim.device)
 
     indexes = torch.arange(sim.size(0), dtype=torch.long).unsqueeze(1).expand(*sim.size()).to(sim.device)
 
-    recall=compute_recall(sim.flatten(),targets.flatten(),indexes=indexes.flatten())
+    res = compute(sim.flatten(),targets.flatten(),indexes=indexes.flatten())
 
-    return recall*100
+    return res*100
 
 def extract_features(model,processor,dataloader,config_path='./config.yaml',cfg=None):
 

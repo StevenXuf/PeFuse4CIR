@@ -12,6 +12,8 @@ from torchmetrics.retrieval import RetrievalRecall
 
 from configuration import get_default_config
 from fashioniq import get_fashioniq_loader, transform_image
+from circo import get_circo_loader
+from cirr import get_cirr_loader
 from feature_extraction import get_metrics
 
 def convert_pil_to_base64(pil_image):
@@ -94,8 +96,10 @@ if __name__ == "__main__":
     model_id = cfg['TEXT-GENERATION']['MODEL_NAME']
 
     extractor = cfg['GENERAL']['EXTRACTOR']
-    print(f"Using {extractor} for feature extraction")
-    
+    dataset_name = cfg['GENERAL']['DATASET']
+    top_k = cfg['GENERAL']['TOP_K']
+    print(f"Using {extractor} for feature extraction using {dataset_name}")
+
     extractor_id = cfg[extractor]['MODEL_NAME']
     img_transform=transform_image(cfg[extractor]['IMAGE_SIZE'],
                                 cfg[extractor]['IMAGE_MEAN'],
@@ -104,18 +108,36 @@ if __name__ == "__main__":
         feature_extraction_model = Blip2ForImageTextRetrieval.from_pretrained(extractor_id, torch_dtype=torch.float16).to(device)
     else:
         feature_extraction_model = AutoModel.from_pretrained(extractor_id).to(device)
-    feature_processor = transformer_processor.from_pretrained(extractor_id, use_fast=True)
+    feature_processor = transformer_processor.from_pretrained(extractor_id)
 
     text_generation_model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
         model_id, torch_dtype="auto", device_map={"": device}
         )
-    processor = AutoProcessor.from_pretrained(model_id, padding_side='left')
+    processor = AutoProcessor.from_pretrained(model_id, padding_side='left', use_fast=True)
 
-    dataloader = get_fashioniq_loader(
-        output_dir=cfg['FashionIQ']['OUTPUT_DIR'],
-        batch_size=cfg['GENERAL']['BATCH_SIZE'],
-        transform=img_transform
-    )
+
+    if dataset_name.lower() == "fashioniq":
+        dataloader = get_fashioniq_loader(
+            output_dir=cfg['FashionIQ']['OUTPUT_DIR'],
+            batch_size=cfg['GENERAL']['BATCH_SIZE'],
+            transform=img_transform
+        )
+    elif dataset_name.lower() == "circo":
+        dataloader = get_circo_loader(
+            batch_size=cfg['GENERAL']['BATCH_SIZE'],
+            split='val',
+            num_workers=cfg['GENERAL']['NUM_WORKERS'],
+            transform=img_transform
+        )
+    elif dataset_name.lower() == "cirr":
+        dataloader = get_cirr_loader(
+            batch_size=cfg['GENERAL']['BATCH_SIZE'],
+            split='val',
+            num_workers=cfg['GENERAL']['NUM_WORKERS'],
+            transform=img_transform
+        )
+    else:
+        raise ValueError(f"Unknown dataset: {dataset_name}")
 
     caption_feat = []
     modification_feat = []
@@ -191,7 +213,7 @@ if __name__ == "__main__":
                 caption_feat.append(gen_text_feat[:steps, :])
                 modification_feat.append(gen_text_feat[steps:steps*2, :])
                 description_feat.append(gen_text_feat[steps*2:, :])
-                tar_tensor_feat.append(feature_extraction_model(pixel_values=target_tensor.to(device)))
+                tar_tensor_feat.append(feature_extraction_model.get_image_features(pixel_values=target_tensor.to(device)))
 
     caption_feat = torch.cat(caption_feat, dim=0)
     modification_feat = torch.cat(modification_feat, dim=0)
@@ -199,21 +221,27 @@ if __name__ == "__main__":
     tar_tensor_feat = torch.cat(tar_tensor_feat, dim=0)
 
     #compute recall for generated modification ---> caption
-    for k in [10, 30, 50]:
-        recall = get_metrics(modification_feat, caption_feat, k=k)
-        print(f'Recall@{k}: {recall:.2f} when using generated modification ---> real modification')
+    if dataset_name.lower() == "circo":
+        metric = 'map'
+    else:
+        metric = 'recall'
+    for k in top_k:
+        metric_val = get_metrics(modification_feat, caption_feat, k=k, metrics=metric)
+        print(f'{metric.capitalize()}@{k}: {metric_val:.2f} when using generated modification ---> real modification')
 
     #compute recall for generated description ---> target image
     if extractor.lower() == 'blip2':
         cos, _ = torch.matmul(description_feat.unsqueeze(0), tar_tensor_feat.transpose(1,2)).max(dim=-1)
         cos = cos.T
-        for k in [10, 30, 50]:
+        for k in top_k:
             compute_recall=RetrievalRecall(top_k=k)
             targets=torch.diag(torch.ones(cos.size(0), dtype=torch.long)).to(cos.device)
             indexes = torch.arange(cos.size(0), dtype=torch.long).unsqueeze(1).expand(*cos.size()).to(cos.device)
             recall=compute_recall(cos.flatten(),targets.flatten(),indexes=indexes.flatten())
             print(f'Recall@{k}: {recall:.2f} when using generated description ---> target images')
+
+        ##### still need to implement mAP for circo dataset!!!!
     else:
-        for k in [10, 30, 50]:
-            recall = get_metrics(description_feat, tar_tensor_feat, k=k)
+        for k in top_k:
+            recall = get_metrics(description_feat, tar_tensor_feat, k=k, metrics=metric)
             print(f'Recall@{k}: {recall:.2f} when using generated description ---> target images')
