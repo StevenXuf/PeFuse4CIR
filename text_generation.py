@@ -5,14 +5,10 @@ import io
 from tqdm import tqdm
 from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
 from qwen_vl_utils import process_vision_info
-from transformers import AutoModel, AutoTokenizer
-from open_clip import create_model_from_pretrained, get_tokenizer
 
 from configuration import get_default_config
-from refinedfashioniq import get_refined_fashioniq_loader, transform_image
-from circo import get_circo_loader
-from cirr import get_cirr_loader
-from feature_extraction import get_metrics
+from feature_extraction import get_metrics, get_feature_extractor
+from dataloaders import get_dataloader
 
 def convert_pil_to_base64(pil_image):
     buffered = io.BytesIO()
@@ -95,47 +91,17 @@ def main(cfg):
     top_k = cfg['GENERAL']['TOP_K']
     print(f"Using {extractor} for feature extraction using {dataset_name}")
 
-    extractor_id = cfg[extractor]['MODEL_NAME']
-    img_transform=transform_image(cfg[extractor]['IMAGE_SIZE'],
-                                cfg[extractor]['IMAGE_MEAN'],
-                                cfg[extractor]['IMAGE_STD'])
     if extractor.lower() == 'openvision':
-        feature_extraction_model, preprocess = create_model_from_pretrained(f'hf-hub:{extractor_id}')
-        feature_extraction_model = feature_extraction_model.to(device)
-        tokenizer = get_tokenizer(f'hf-hub:{extractor_id}')
+        feature_extraction_model, img_preprocess, tokenizer = get_feature_extractor(cfg)
     else:
-        feature_extraction_model = AutoModel.from_pretrained(extractor_id).to(device)
-        tokenizer = AutoTokenizer.from_pretrained(extractor_id)
+        feature_extraction_model, tokenizer = get_feature_extractor(cfg)
 
     text_generation_model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
         model_id, torch_dtype="auto", device_map={"": device}
         )
     processor = AutoProcessor.from_pretrained(model_id, padding_side='left', use_fast=True)
 
-    if dataset_name.lower() == "refinedfashioniq":
-        dataloader = get_refined_fashioniq_loader(
-            output_dir=cfg['RefinedFashionIQ']['OUTPUT_DIR'],
-            batch_size=cfg['GENERAL']['BATCH_SIZE'],
-            transform=img_transform
-        )
-    elif dataset_name.lower() == "fashioniq":
-        pass
-    elif dataset_name.lower() == "circo":
-        dataloader = get_circo_loader(
-            batch_size=cfg['GENERAL']['BATCH_SIZE'],
-            split='val', #use val or test split
-            num_workers=cfg['GENERAL']['NUM_WORKERS'],
-            transform=img_transform
-        )
-    elif dataset_name.lower() == "cirr":
-        dataloader = get_cirr_loader(
-            batch_size=cfg['GENERAL']['BATCH_SIZE'],
-            split='val', # use val or test split
-            num_workers=cfg['GENERAL']['NUM_WORKERS'],
-            transform=img_transform
-        )
-    else:
-        raise ValueError(f"Unknown dataset: {dataset_name}")
+    dataloader = get_dataloader(cfg)
 
     caption_feat = []
     modification_feat = []
@@ -208,7 +174,7 @@ def main(cfg):
             modification_feat.append(gen_feat[steps:steps*2, :])
             description_feat.append(gen_feat[steps*2:, :])
             if extractor.lower() == 'openvision':
-                img_feat = feature_extraction_model.encode_image(torch.cat([preprocess(img).unsqueeze(0) for img in all_target_pil],dim=0).to(device))
+                img_feat = feature_extraction_model.encode_image(torch.cat([img_preprocess(img).unsqueeze(0) for img in all_target_pil],dim=0).to(device))
             else:
                 img_feat = feature_extraction_model.get_image_features(pixel_values=all_target_tensor.to(device))
             tar_tensor_feat.append(img_feat)
@@ -229,6 +195,7 @@ def main(cfg):
         print(f'{metric.upper()}@{k}: {metric_val:.2f}% when using generated modification ---> real modification')
 
         #compute recall for generated description ---> target image
+        
         metric_val = get_metrics(description_feat, tar_tensor_feat, k=k, target_length=target_length, metrics=metric)
         print(f'{metric.upper()}@{k}: {metric_val:.2f}% when using generated description ---> target images')
 

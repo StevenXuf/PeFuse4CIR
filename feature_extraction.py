@@ -1,15 +1,30 @@
 import torch
-from tqdm import tqdm
-
 import torch.nn.functional as F
 
+from tqdm import tqdm
 from torchmetrics.functional.pairwise import pairwise_cosine_similarity
 from torchmetrics.retrieval import RetrievalRecall, RetrievalMAP, RetrievalPrecision
-from transformers import AutoProcessor, AutoModel
+from transformers import AutoProcessor, AutoModel, AutoTokenizer
+from open_clip import create_model_from_pretrained, get_tokenizer
 
 from configuration import get_default_config
 from refinedfashioniq import get_refined_fashioniq_loader,transform_image
 from attention import self_attention, cross_attention, co_attention
+
+def get_feature_extractor(cfg):
+    extractor = cfg['GENERAL']['EXTRACTOR']
+    extractor_id = cfg[extractor]['MODEL_NAME']
+    device = torch.device(f'cuda:{cfg["GENERAL"]["DEVICE"]}' if torch.cuda.is_available() else 'cpu')
+
+    if extractor.lower() == 'openvision':
+        feature_extraction_model, img_preprocess = create_model_from_pretrained(f'hf-hub:{extractor_id}')
+        feature_extraction_model = feature_extraction_model.to(device)
+        tokenizer = get_tokenizer(f'hf-hub:{extractor_id}')
+        return feature_extraction_model, img_preprocess, tokenizer
+    else:
+        feature_extraction_model = AutoModel.from_pretrained(extractor_id).to(device)
+        tokenizer = AutoTokenizer.from_pretrained(extractor_id)
+        return feature_extraction_model, tokenizer
 
 def get_metrics(text_features,audio_features,k, target_length, metrics='recall'):
     if metrics == 'recall':

@@ -16,8 +16,8 @@ tokenizer = get_tokenizer('hf-hub:UCSC-VLAA/openvision-vit-large-patch14-224')
 image = Image.open(urlopen(
     'https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/beignets-task-guide.png'
 ))
-image = torch.stack([preprocess(img).unsqueeze(0) for img in [image]*3])
-# print(image.size())
+image = preprocess(image).unsqueeze(0)
+print(image.size())
 
 text = tokenizer(["a diagram", "a dog", "a cat", "a beignet"], context_length=model.context_length)
 

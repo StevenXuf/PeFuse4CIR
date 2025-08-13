@@ -55,11 +55,11 @@ IMAGE-GENERATION:
     SDXL-INSTRUCTPIX2PIX:
         MODEL_NAME: "diffusers/sdxl-instructpix2pix-768"
         IMAGE_SIZE: 768
-        OUTPUT_DIR: '/data/data_fxu/FashionIQ/sdxl_instructpix2pix_output'
+        OUTPUT_DIR: '/data/data_fxu/RefinedFashionIQ/sdxl_instructpix2pix_output'
     SDXL-TURBO: # much faster than SDXL-INSTRUCTPIX2PIX
         MODEL_NAME: "stabilityai/sdxl-turbo"
         IMAGE_SIZE: 512
-        OUTPUT_DIR: '/data/data_fxu/FashionIQ/sdxl_turbo_output'
+        OUTPUT_DIR: '/data/data_fxu/RefinedFashionIQ/sdxl_turbo_output'
 
 TEXT-GENERATION:
     MODEL_NAME: "Qwen/Qwen2.5-VL-7B-Instruct"
