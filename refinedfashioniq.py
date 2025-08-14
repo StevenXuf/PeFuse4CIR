@@ -118,7 +118,6 @@ def get_refined_fashioniq_loader(output_dir,batch_size=32,transform=None):
             'target_img': torch.stack([x['target'] if transform is None else transform(x['target']) for x in batch]),
             'reference_img': torch.stack([x['reference'] if transform is None else transform(x['reference']) for x in batch]),
             'caption': [x['caption'] for x in batch],
-            'target_pil': [x['target'] for x in batch],
             'reference_pil': [x['reference'] for x in batch],
             'all_target_pil': [x['target'] for x in batch],
             'all_target_img': torch.stack([x['target'] if transform is None else transform(x['target']) for x in batch]),

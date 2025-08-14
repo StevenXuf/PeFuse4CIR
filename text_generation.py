@@ -112,6 +112,7 @@ def main(cfg):
         for i, batch in tqdm(enumerate(dataloader), desc="Gnerating descriptions", total=len(dataloader)):
             target_pil = batch['target_pil']
             reference_pil = batch['reference_pil']
+            reference_tensor = batch['reference_img']
             caption = batch['caption']
             target_tensor = batch['target_img']
             all_target_pil = batch['all_target_pil']
@@ -195,7 +196,6 @@ def main(cfg):
         print(f'{metric.upper()}@{k}: {metric_val:.2f}% when using generated modification ---> real modification')
 
         #compute recall for generated description ---> target image
-        
         metric_val = get_metrics(description_feat, tar_tensor_feat, k=k, target_length=target_length, metrics=metric)
         print(f'{metric.upper()}@{k}: {metric_val:.2f}% when using generated description ---> target images')
 
