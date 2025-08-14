@@ -8,11 +8,6 @@ from torch.utils.data import Dataset, DataLoader
 from configuration import get_default_config
 from fashioniq import transform_image
 
-import os
-import json
-from PIL import Image
-from torch.utils.data import Dataset
-
 class CIRRDataset(Dataset):
     def __init__(self, root_dir, split="val", captions_folder="captions", transform=None):
         """
