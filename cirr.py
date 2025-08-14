@@ -1,11 +1,144 @@
 import torch
-import sys
+import os
+import json
 
-sys.path.append("/data/data_fxu/CIRR")
+from PIL import Image
+from torch.utils.data import Dataset, DataLoader
 
-def get_cirr_loader(batch_size=16, split='val', num_workers=0, transform=None):
-    pass
+from configuration import get_default_config
+from fashioniq import transform_image
+
+import os
+import json
+from PIL import Image
+from torch.utils.data import Dataset
+
+class CIRRDataset(Dataset):
+    def __init__(self, root_dir, split="val", captions_folder="captions", transform=None):
+        """
+        Args:
+            root_dir (str): Path to `data/cirr`.
+            split (str): 'train', 'val', or 'test1'.
+            captions_folder (str): 'captions' or 'captions_ext'.
+            transform (callable, optional): Optional transform to be applied
+                on a sample (applied to both reference and target images).
+        """
+        self.root_dir = root_dir
+        self.split = split
+        self.captions_folder = captions_folder
+        self.transform = transform
+
+        captions_path = os.path.join(
+            root_dir,
+            captions_folder,
+            f"cap.rc2.{split}.json"
+        )
+        if not os.path.exists(captions_path):
+            raise FileNotFoundError(f"Captions file not found: {captions_path}")
+        
+        with open(captions_path, 'r') as f:
+            captions = json.load(f)
+
+        self.img_root = os.path.join(root_dir, "img_raw")
+
+        # Pre-filter to keep only samples with both images existing
+        self.caption_data = []
+        for entry in captions:
+            ref_img_path = self._find_image_path(entry["reference"])
+            tgt_img_path = self._find_image_path(entry["target_hard"])
+            if ref_img_path is not None and tgt_img_path is not None:
+                self.caption_data.append(entry)
+            else:
+                print(f"Skipping missing image for pairid={entry.get('pairid')}")
+
+    def __len__(self):
+        return len(self.caption_data)
+
+    def __getitem__(self, idx):
+        entry = self.caption_data[idx]
+        
+        reference_id = entry["reference"]
+        target_id = entry["target_hard"]
+        caption = entry["caption"]
+
+        ref_img_path = self._find_image_path(reference_id)
+        tgt_img_path = self._find_image_path(target_id)
+
+        ref_img = Image.open(ref_img_path).convert("RGB")
+        tgt_img = Image.open(tgt_img_path).convert("RGB")
+
+        if self.transform:
+            ref_img = self.transform(ref_img)
+            tgt_img = self.transform(tgt_img)
+
+        return {
+            "reference_image": ref_img,
+            "target_image": tgt_img,
+            "caption": caption,
+            "reference_id": reference_id,
+            "target_id": target_id
+        }
+
+    def _find_image_path(self, img_id):
+        """
+        Locate an image path in the CIRR img_raw folder given its ID.
+        """
+        split_folder = img_id.split("-")[0]  # train/dev/test1
+        img_filename = img_id + ".png"
+
+        if split_folder == "train":
+            train_dir = os.path.join(self.img_root, split_folder)
+            if not os.path.exists(train_dir):
+                return None
+            for subfolder in os.listdir(train_dir):
+                candidate = os.path.join(train_dir, subfolder, img_filename)
+                if os.path.exists(candidate):
+                    return candidate
+        else:
+            candidate = os.path.join(self.img_root, split_folder, img_filename)
+            if os.path.exists(candidate):
+                return candidate
+        
+        return None
+    
+def get_cirr_loader(data_path, batch_size=16, split='val', num_workers=0, transform=None):
+    dataset = CIRRDataset(
+        root_dir=data_path,
+        split=split,
+        captions_folder="captions"
+    )
+    print(len(dataset))
+    loader = DataLoader(dataset, 
+                        batch_size=batch_size, 
+                        shuffle=True, 
+                        num_workers=num_workers,
+                        collate_fn=lambda batch: {
+                            "reference_img": torch.stack([transform(item["reference_image"]) if transform is not None else item['reference_image'] for item in batch]),
+                            "reference_pil": [item["reference_image"] for item in batch], 
+                            "target_img": torch.stack([transform(item["target_image"]) if transform is not None else item['target_image'] for item in batch]),
+                            "target_pil": [item["target_image"] for item in batch],
+                            "all_target_img": torch.stack([transform(item["target_image"]) if transform is not None else item['target_image'] for item in batch]),
+                            "all_target_pil": [item["target_image"] for item in batch],
+                            "all_target_length": list(map(len,[[item["target_image"]] for item in batch])),
+                            "caption": [item["caption"] for item in batch],
+                            "reference_id": [item["reference_id"] for item in batch],
+                            "target_id": [item["target_id"] for item in batch]
+                            }
+                        )
+    return loader
 
 
 if __name__ == "__main__":
-    pass
+    cfg = get_default_config('config.yaml')
+
+    img_transform = transform_image(
+        cfg['CLIP']['IMAGE_SIZE'],
+        cfg['CLIP']['IMAGE_MEAN'],
+        cfg['CLIP']['IMAGE_STD']
+    )
+
+    loader = get_cirr_loader(cfg['CIRR']['IMAGE_FOLDER'], transform=img_transform)
+    for batch in loader:
+        print(batch["caption"])
+        print(batch["reference_img"].shape, batch["target_img"].shape)
+        break

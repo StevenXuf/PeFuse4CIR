@@ -1,8 +1,7 @@
 import torch
 import json
 import os
-import PIL
-import PIL.Image
+from PIL import Image
 
 from pathlib import Path
 from typing import Union, List, Dict, Literal
@@ -99,19 +98,19 @@ class CIRCODataset(Dataset):
             # Get the reference image
             reference_img_id = str(self.annotations[index]['reference_img_id'])
             reference_img_path = self.img_paths[self.img_ids_indexes_map[reference_img_id]]
-            reference_img = self.preprocess(PIL.Image.open(reference_img_path).convert('RGB')) if self.preprocess is not None else PIL.Image.open(reference_img_path).convert('RGB')
+            reference_img = self.preprocess(Image.open(reference_img_path).convert('RGB')) if self.preprocess is not None else Image.open(reference_img_path).convert('RGB')
 
             if self.split == 'val':
                 # Get the target image and ground truth images
                 target_img_id = str(self.annotations[index]['target_img_id'])
                 gt_img_ids = [str(x) for x in self.annotations[index]['gt_img_ids']]
                 target_img_path = self.img_paths[self.img_ids_indexes_map[target_img_id]]
-                target_img = self.preprocess(PIL.Image.open(target_img_path).convert('RGB')) if self.preprocess is not None else PIL.Image.open(reference_img_path).convert('RGB')
+                target_img = self.preprocess(Image.open(target_img_path).convert('RGB')) if self.preprocess is not None else Image.open(reference_img_path).convert('RGB')
                 # Pad ground truth image IDs with zeros for collate_fn
                 gt_img_ids += [''] * (self.max_num_gts - len(gt_img_ids))
                 gt_img_ids = [ gt_img_id for gt_img_id in gt_img_ids if len(gt_img_id) > 0]  
                 gt_img_paths = [os.path.join(self.data_path,'COCO2017_unlabeled/unlabeled2017', tar_id.zfill(12) + '.jpg') for tar_id in gt_img_ids]
-                gt_img = [self.preprocess(PIL.Image.open(gt_path).convert('RGB')) if self.preprocess is not None else PIL.Image.open(gt_path).convert('RGB') for gt_path in gt_img_paths]
+                gt_img = [self.preprocess(Image.open(gt_path).convert('RGB')) if self.preprocess is not None else Image.open(gt_path).convert('RGB') for gt_path in gt_img_paths]
 
                 return {
                     'reference_img': reference_img,
@@ -140,7 +139,7 @@ class CIRCODataset(Dataset):
             img_path = self.img_paths[index]
 
             # Preprocess image and return
-            img = self.preprocess(PIL.Image.open(img_path).convert('RGB'))if self.preprocess is not None else PIL.Image.open(img_path).convert('RGB')
+            img = self.preprocess(Image.open(img_path).convert('RGB'))if self.preprocess is not None else Image.open(img_path).convert('RGB')
             return {
                 'img': img,
                 'img_id': img_id
@@ -158,11 +157,11 @@ class CIRCODataset(Dataset):
             raise ValueError("mode should be in ['relative', 'classic']")
 
 
-def get_circo_loader(batch_size=16, split='val', num_workers=0, transform=None):
+def get_circo_loader(data_path, batch_size=16, split='val', num_workers=0, transform=None):
     """
     Get DataLoader for CIRCO dataset.
     """
-    dataset = CIRCODataset(data_path='/data/data_fxu/CIRCO', split=split, mode='relative')
+    dataset = CIRCODataset(data_path=data_path, split=split, mode='relative')
     loader = DataLoader(dataset, 
                         batch_size=batch_size, 
                         shuffle=False, 
@@ -194,7 +193,7 @@ if __name__ == "__main__":
         cfg['CLIP']['IMAGE_MEAN'],
         cfg['CLIP']['IMAGE_STD']
     )
-    circo_loader = get_circo_loader(batch_size=cfg['GENERAL']['BATCH_SIZE'], split='val', num_workers=cfg['GENERAL']['NUM_WORKERS'], transform=img_transform)
+    circo_loader = get_circo_loader(cfg['CIRCO']['IMAGE_FOLDER'], batch_size=cfg['GENERAL']['BATCH_SIZE'], split='val', num_workers=cfg['GENERAL']['NUM_WORKERS'], transform=img_transform)
 
     for batch in circo_loader:
         tar_pil = batch['all_target_length']

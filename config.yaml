@@ -1,10 +1,10 @@
 GENERAL:
     BATCH_SIZE: 16
     NUM_WORKERS: 4
-    DEVICE: 1
+    DEVICE: 0
     SEED: 0
     EXTRACTOR: "OPENVISION"
-    DATASET: "RefinedFashionIQ"
+    DATASET: "CIRR"
     TOP_K: [1, 5, 10, 25, 50]
 
 RefinedFashionIQ:
@@ -12,10 +12,17 @@ RefinedFashionIQ:
     IMAGE_SIZE: 224
     OUTPUT_DIR: '/data/data_fxu/RefinedFashionIQ/downloaded_images'
     CAPTION_FOLDER: '/data/data_fxu/RefinedFashionIQ/captions'
+    SPLIT: 'val'
 
 CIRCO:
-    IMAGE_FOLDER: '/data/data_fxu/CIRCO/image_url'
+    IMAGE_FOLDER: '/data/data_fxu/CIRCO'
     IMAGE_SIZE: 224
+    SPLIT: 'val'
+
+CIRR:
+    IMAGE_FOLDER: '/data/data_fxu/CIRR'
+    IMAGE_SIZE: 224
+    SPLIT: 'val'
 
 CLIP:
     MODEL_NAME: "openai/clip-vit-base-patch32"

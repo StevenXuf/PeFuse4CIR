@@ -6,8 +6,9 @@ from fashioniq import get_fashioniq_loader
 
 def get_dataloader(cfg, split='val', transform=None):
 
-    dataset_name = cfg['GENERAL']['DATASET'].lower()
+    dataset_name = cfg['GENERAL']['DATASET']
     extractor_name = cfg['GENERAL']['EXTRACTOR']
+
     if transform == None:
         transform=transform_image(cfg[extractor_name]['IMAGE_SIZE'],
                                 cfg[extractor_name]['IMAGE_MEAN'],
@@ -28,6 +29,7 @@ def get_dataloader(cfg, split='val', transform=None):
         )
     elif dataset_name.lower() == "circo":
         dataloader = get_circo_loader(
+            data_path=cfg['CIRCO']['IMAGE_FOLDER'],
             batch_size=cfg['GENERAL']['BATCH_SIZE'],
             split=split, #use val or test split
             num_workers=cfg['GENERAL']['NUM_WORKERS'],
@@ -35,6 +37,7 @@ def get_dataloader(cfg, split='val', transform=None):
         )
     elif dataset_name.lower() == "cirr": #####fix here
         dataloader = get_cirr_loader(
+            data_path=cfg['CIRR']['IMAGE_FOLDER'],
             batch_size=cfg['GENERAL']['BATCH_SIZE'],
             split=split, # use val or test split
             num_workers=cfg['GENERAL']['NUM_WORKERS'],
@@ -42,6 +45,7 @@ def get_dataloader(cfg, split='val', transform=None):
         )
     else:
         raise ValueError(f"Unknown dataset: {dataset_name}")
+    print(f'{dataset_name.upper()} LOADED SUCCESSFULLY.')
 
     return dataloader
 
