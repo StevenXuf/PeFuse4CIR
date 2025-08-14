@@ -28,15 +28,16 @@ def resize_crop_normalize(tensor_img, size=224, IMAGE_MEAN=None, IMAGE_STD=None)
 def main(cfg):
     image_size = cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['IMAGE_SIZE']
     model_id = cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['MODEL_NAME']
-    store_path = cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['OUTPUT_DIR']
-
     top_k = cfg['GENERAL']['TOP_K']
-    
     device = torch.device(f"cuda:{cfg['GENERAL']['DEVICE']}" if torch.cuda.is_available() else "cpu")
     extractor_name = cfg['GENERAL']['EXTRACTOR']
     extractor_id = cfg[extractor_name]['MODEL_NAME']
     dataset_name = cfg['GENERAL']['DATASET']
     print(f"Using {extractor_name} with id: {extractor_id} for feature extraction on {dataset_name} dataset.")
+
+    store_path = os.path.join(cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['OUTPUT_DIR'], dataset_name)
+    if not os.path.exists(store_path):
+        os.makedirs(store_path)
 
     n_infer_step = cfg['IMAGE-GENERATION']['GLOBAL']['NUM_INFERENCE_STEPS']
     image_guidance_scale = cfg['IMAGE-GENERATION']['GLOBAL']['IMAGE_GUIDANCE_SCALE']
@@ -51,9 +52,6 @@ def main(cfg):
                                                    cfg[extractor_name]['IMAGE_MEAN'], 
                                                    cfg[extractor_name]['IMAGE_STD']
                                                    )
-
-    if not os.path.exists(store_path):
-        os.makedirs(store_path)
 
     if extractor_name.lower() == 'openvision':
         feature_extraction_model, img_preprocess, tokenizer = get_feature_extractor(cfg)
@@ -71,13 +69,14 @@ def main(cfg):
             reference_pil = batch['reference_pil']
             target_prompts = batch['caption']
             targets = batch['target_img']
-            target_pil = batch['target_pil']
             all_target_pil = batch['all_target_pil']
             all_target_img = batch['all_target_img']
             target_length.extend(batch['all_target_length'])
 
-            show_tensor_images(input_images, num_images=input_images.size(0), file_path=os.path.join(store_path,f"input_image_grid_{i}.png"))
+            show_tensor_images(input_images, num_images=input_images.size(0), file_path=os.path.join(store_path,f"reference_image_grid_{i}.png"))
+            show_tensor_images(targets, num_images=targets.size(0), file_path=os.path.join(store_path,f"target_image_grid_{i}.png"))
 
+            print(f"Generating target images for batch {i+1}")
             generated_target_images = generation_model(
                 prompt=target_prompts,
                 image=input_images.to(device),
@@ -87,10 +86,11 @@ def main(cfg):
                 image_guidance_scale=image_guidance_scale,
                 guidance_scale=guidance_scale).images
             generated_target_image_tensor = torch.stack(convert_pil_to_tensor(generated_target_images))
-            show_tensor_images(generated_target_image_tensor, num_images=generated_target_image_tensor.size(0), file_path=os.path.join(store_path,f"output_image_grid_{i}.png"))
+            show_tensor_images(generated_target_image_tensor, num_images=generated_target_image_tensor.size(0), file_path=os.path.join(store_path,f"generated_target_image_grid_{i}.png"))
 
             ####modify the captions!
             reference_prompts = ['Remove the following modifications: ' + caption for caption in batch['caption']]
+            print(f"Generating reference images for batch {i+1}")
             generated_reference_images = generation_model(
                 prompt=reference_prompts,
                 image=targets.to(device),
@@ -100,7 +100,7 @@ def main(cfg):
                 image_guidance_scale=image_guidance_scale,
                 guidance_scale=guidance_scale).images
             generated_reference_image_tensor = torch.stack(convert_pil_to_tensor(generated_reference_images))
-            show_tensor_images(generated_reference_image_tensor, num_images=generated_reference_image_tensor.size(0), file_path=os.path.join(store_path,f"output_reference_image_grid_{i}.png"))
+            show_tensor_images(generated_reference_image_tensor, num_images=generated_reference_image_tensor.size(0), file_path=os.path.join(store_path,f"generated_reference_image_grid_{i}.png"))
 
             if extractor_name.lower() == 'openvision':
                 generated_target_features.append(feature_extraction_model.encode_image(torch.cat([img_preprocess(img).unsqueeze(0) for img in generated_target_images],dim=0).to(device)))
@@ -129,7 +129,7 @@ def main(cfg):
                                                       )
                 reference_features.append(feature_extraction_model.get_image_features(pixel_values=input_images.to(device)))
 
-            print(f'Batch {i+1} finished, generated {len(images)} images.')
+            print(f'Batch {i+1} finished.')
             # if i==5:
             #     break
 
