@@ -96,10 +96,15 @@ def main(cfg):
     else:
         feature_extraction_model, tokenizer = get_feature_extractor(cfg)
 
-    text_generation_model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
-        model_id, torch_dtype="auto", device_map={"": device}
-        )
-    processor = AutoProcessor.from_pretrained(model_id, padding_side='left', use_fast=True)
+    text_generation_model = Qwen2_5_VLForConditionalGeneration.from_pretrained(model_id, 
+                                                                               torch_dtype=torch.bfloat16, 
+                                                                               device_map={"": device}, 
+                                                                               attn_implementation='flash_attention_2'
+                                                                               )
+    processor = AutoProcessor.from_pretrained(model_id, 
+                                              padding_side='left', 
+                                              use_fast=True
+                                              )
 
     dataloader = get_dataloader(cfg)
 
@@ -112,9 +117,9 @@ def main(cfg):
         for i, batch in tqdm(enumerate(dataloader), desc="Gnerating descriptions", total=len(dataloader)):
             target_pil = batch['target_pil']
             reference_pil = batch['reference_pil']
-            reference_tensor = batch['reference_img']
+            # reference_tensor = batch['reference_img']
             caption = batch['caption']
-            target_tensor = batch['target_img']
+            # target_tensor = batch['target_img']
             all_target_pil = batch['all_target_pil']
             all_target_tensor = batch['all_target_img']
             target_length.extend(batch['all_target_length'])

@@ -56,25 +56,6 @@ def download_and_resize_images(output_dir, url_folder, resize_to=(224, 224)):
         print(f"Finished processing {input_file}")
     print("All done!")
 
-
-def extract_candidates_and_captions(json_path, split='test'):
-    directory = Path(json_path)
-    matching_files = list(directory.rglob(f'*{split}*.json'))
-    print(matching_files)
-    for json_file in matching_files:
-        # Load the JSON data from a file
-        with open(json_file, 'r') as file:
-            data = json.load(file)
-
-        # Extract candidate and captions
-        for item in data:
-            print(item)
-            candidate = item.get("candidate")
-            captions = item.get("captions", [])
-            
-            print(f"Candidate: {candidate}")
-            print(f"Captions: {captions}")
-
 def transform_image(image_size, IMAGENET_MEAN=None, IMAGENET_STD=None):
     img_transform = transforms.Compose([
         transforms.Resize(image_size,interpolation=transforms.InterpolationMode.BICUBIC),
