@@ -1,6 +1,87 @@
 Using OPENVISION for feature extraction using CIRR
-Loading checkpoint shards:   0%|          | 0/5 [00:00<?, ?it/s]Loading checkpoint shards:  20%|██        | 1/5 [00:00<00:02,  1.83it/s]Loading checkpoint shards:  40%|████      | 2/5 [00:01<00:01,  2.00it/s]Loading checkpoint shards:  60%|██████    | 3/5 [00:01<00:00,  2.04it/s]Loading checkpoint shards:  80%|████████  | 4/5 [00:01<00:00,  2.07it/s]Loading checkpoint shards: 100%|██████████| 5/5 [00:02<00:00,  2.82it/s]Loading checkpoint shards: 100%|██████████| 5/5 [00:02<00:00,  2.39it/s]
+Loading checkpoint shards:   0%|          | 0/5 [00:00<?, ?it/s]Loading checkpoint shards:  20%|██        | 1/5 [00:00<00:02,  1.81it/s]Loading checkpoint shards:  40%|████      | 2/5 [00:01<00:01,  1.99it/s]Loading checkpoint shards:  60%|██████    | 3/5 [00:01<00:00,  2.04it/s]Loading checkpoint shards:  80%|████████  | 4/5 [00:01<00:00,  2.04it/s]Loading checkpoint shards: 100%|██████████| 5/5 [00:02<00:00,  2.78it/s]Loading checkpoint shards: 100%|██████████| 5/5 [00:02<00:00,  2.37it/s]
 You have video processor config saved in `preprocessor.json` file which is deprecated. Video processor configs should be saved in their own `video_preprocessor.json` file. You can rename the file or load and save the processor back which renames it automatically. Loading from `preprocessor.json` will be removed in v5.0.
-200
+100
 CIRR LOADED SUCCESSFULLY.
-Gnerating descriptions:   0%|          | 0/34 [00:00<?, ?it/s]Gnerating descriptions:   3%|▎         | 1/34 [00:26<14:45, 26.83s/it]Gnerating descriptions:   6%|▌         | 2/34 [00:43<11:08, 20.91s/it]
+Gnerating descriptions:   0%|          | 0/17 [00:00<?, ?it/s]Gnerating descriptions:   6%|▌         | 1/17 [00:06<01:43,  6.49s/it]Gnerating descriptions:  12%|█▏        | 2/17 [00:12<01:30,  6.00s/it]Gnerating descriptions:  18%|█▊        | 3/17 [00:17<01:21,  5.84s/it]Gnerating descriptions:  24%|██▎       | 4/17 [00:23<01:15,  5.77s/it]Gnerating descriptions:  29%|██▉       | 5/17 [00:29<01:08,  5.72s/it]Gnerating descriptions:  35%|███▌      | 6/17 [00:34<01:02,  5.70s/it]Gnerating descriptions:  41%|████      | 7/17 [00:40<00:56,  5.68s/it]Gnerating descriptions:  47%|████▋     | 8/17 [00:46<00:51,  5.67s/it]Gnerating descriptions:  53%|█████▎    | 9/17 [00:51<00:44,  5.57s/it]Gnerating descriptions:  59%|█████▉    | 10/17 [00:57<00:39,  5.59s/it]Gnerating descriptions:  65%|██████▍   | 11/17 [01:02<00:33,  5.61s/it]Gnerating descriptions:  71%|███████   | 12/17 [01:08<00:28,  5.62s/it]Gnerating descriptions:  76%|███████▋  | 13/17 [01:13<00:22,  5.63s/it]Gnerating descriptions:  82%|████████▏ | 14/17 [01:19<00:16,  5.64s/it]Gnerating descriptions:  88%|████████▊ | 15/17 [01:25<00:11,  5.64s/it]Gnerating descriptions:  94%|█████████▍| 16/17 [01:30<00:05,  5.65s/it]Gnerating descriptions: 100%|██████████| 17/17 [01:36<00:00,  5.58s/it]Gnerating descriptions: 100%|██████████| 17/17 [01:36<00:00,  5.67s/it]
+[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+tensor([[1, 0, 0,  ..., 0, 0, 0],
+        [0, 1, 0,  ..., 0, 0, 0],
+        [0, 0, 1,  ..., 0, 0, 0],
+        ...,
+        [0, 0, 0,  ..., 1, 0, 0],
+        [0, 0, 0,  ..., 0, 1, 0],
+        [0, 0, 0,  ..., 0, 0, 1]], device='cuda:1')
+RECALL@1: 2.00% when using generated modification ---> real modification
+tensor([[1, 0, 0,  ..., 0, 0, 0],
+        [0, 1, 0,  ..., 0, 0, 0],
+        [0, 0, 1,  ..., 0, 0, 0],
+        ...,
+        [0, 0, 0,  ..., 1, 0, 0],
+        [0, 0, 0,  ..., 0, 1, 0],
+        [0, 0, 0,  ..., 0, 0, 1]], device='cuda:1')
+RECALL@1: 8.00% when using generated description ---> target images
+tensor([[1, 0, 0,  ..., 0, 0, 0],
+        [0, 1, 0,  ..., 0, 0, 0],
+        [0, 0, 1,  ..., 0, 0, 0],
+        ...,
+        [0, 0, 0,  ..., 1, 0, 0],
+        [0, 0, 0,  ..., 0, 1, 0],
+        [0, 0, 0,  ..., 0, 0, 1]], device='cuda:1')
+RECALL@5: 8.00% when using generated modification ---> real modification
+tensor([[1, 0, 0,  ..., 0, 0, 0],
+        [0, 1, 0,  ..., 0, 0, 0],
+        [0, 0, 1,  ..., 0, 0, 0],
+        ...,
+        [0, 0, 0,  ..., 1, 0, 0],
+        [0, 0, 0,  ..., 0, 1, 0],
+        [0, 0, 0,  ..., 0, 0, 1]], device='cuda:1')
+RECALL@5: 20.00% when using generated description ---> target images
+tensor([[1, 0, 0,  ..., 0, 0, 0],
+        [0, 1, 0,  ..., 0, 0, 0],
+        [0, 0, 1,  ..., 0, 0, 0],
+        ...,
+        [0, 0, 0,  ..., 1, 0, 0],
+        [0, 0, 0,  ..., 0, 1, 0],
+        [0, 0, 0,  ..., 0, 0, 1]], device='cuda:1')
+RECALL@10: 15.00% when using generated modification ---> real modification
+tensor([[1, 0, 0,  ..., 0, 0, 0],
+        [0, 1, 0,  ..., 0, 0, 0],
+        [0, 0, 1,  ..., 0, 0, 0],
+        ...,
+        [0, 0, 0,  ..., 1, 0, 0],
+        [0, 0, 0,  ..., 0, 1, 0],
+        [0, 0, 0,  ..., 0, 0, 1]], device='cuda:1')
+RECALL@10: 31.00% when using generated description ---> target images
+tensor([[1, 0, 0,  ..., 0, 0, 0],
+        [0, 1, 0,  ..., 0, 0, 0],
+        [0, 0, 1,  ..., 0, 0, 0],
+        ...,
+        [0, 0, 0,  ..., 1, 0, 0],
+        [0, 0, 0,  ..., 0, 1, 0],
+        [0, 0, 0,  ..., 0, 0, 1]], device='cuda:1')
+RECALL@25: 32.00% when using generated modification ---> real modification
+tensor([[1, 0, 0,  ..., 0, 0, 0],
+        [0, 1, 0,  ..., 0, 0, 0],
+        [0, 0, 1,  ..., 0, 0, 0],
+        ...,
+        [0, 0, 0,  ..., 1, 0, 0],
+        [0, 0, 0,  ..., 0, 1, 0],
+        [0, 0, 0,  ..., 0, 0, 1]], device='cuda:1')
+RECALL@25: 41.00% when using generated description ---> target images
+tensor([[1, 0, 0,  ..., 0, 0, 0],
+        [0, 1, 0,  ..., 0, 0, 0],
+        [0, 0, 1,  ..., 0, 0, 0],
+        ...,
+        [0, 0, 0,  ..., 1, 0, 0],
+        [0, 0, 0,  ..., 0, 1, 0],
+        [0, 0, 0,  ..., 0, 0, 1]], device='cuda:1')
+RECALL@50: 57.00% when using generated modification ---> real modification
+tensor([[1, 0, 0,  ..., 0, 0, 0],
+        [0, 1, 0,  ..., 0, 0, 0],
+        [0, 0, 1,  ..., 0, 0, 0],
+        ...,
+        [0, 0, 0,  ..., 1, 0, 0],
+        [0, 0, 0,  ..., 0, 1, 0],
+        [0, 0, 0,  ..., 0, 0, 1]], device='cuda:1')
+RECALL@50: 62.00% when using generated description ---> target images

@@ -46,8 +46,6 @@ class CIRRDataset(Dataset):
             else:
                 print(f"Skipping missing image for pairid={entry.get('pairid')}")
 
-        self.caption_data = self.caption_data[:200]
-
 
     def __len__(self):
         return len(self.caption_data)
