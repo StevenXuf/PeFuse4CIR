@@ -16,6 +16,11 @@ RefinedFashionIQ:
     CAPTION_FOLDER: '/data/data_fxu/RefinedFashionIQ/captions'
     SPLIT: 'val'
 
+FashionIQ:
+    IMAGE_FOLDER: '/data/data_fxu/RefinedFashionIQ'
+    IMAGE_SIZE: 224
+    SPLIT: 'val'
+
 CIRCO:
     IMAGE_FOLDER: '/data/data_fxu/CIRCO'
     IMAGE_SIZE: 224

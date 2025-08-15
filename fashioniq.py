@@ -7,24 +7,43 @@ from refinedfashioniq import transform_image
 from configuration import get_default_config
 
 class FashionIQDataset(Dataset):
-    def __init__(self, data_path, split='val', transform=None):
+    def __init__(self, data_path, split='val', caption_folder='captions', transform=None):
         self.data_path = data_path
+        self.image_path = os.path.join(data_path, "downloaded_images")
         self.split = split
+        self.caption_folder = os.path.join(data_path, caption_folder)
         self.transform = transform
-        self.data = self.load_data()
+        self.caption = self.load_captions()
+        self.length = list(map(len, self.caption))
 
-    def load_data(self):
+    def load_captions(self):
         # Load your dataset here
-        return []
+        captions = []
+        for cloth in ['dress', 'shirt', 'toptee']:
+            with open(os.path.join(self.caption_folder, f"cap.{cloth}.{self.split}.json"), 'r') as f:
+                data = json.load(f)
+                captions.append(data)
+        return captions
 
     def __len__(self):
-        return len(self.data)
+        return len(self.caption)
 
     def __getitem__(self, idx):
-        item = self.data[idx]
+        item = self.caption[idx]
+        target_image = Image.open(os.path.join(self.image_path, item['target'] + '.jpg')).convert('RGB')
+        reference_image = Image.open(os.path.join(self.image_path, item['candidate'] + '.jpg')).convert('RGB')
+
         if self.transform:
-            item = self.transform(item)
-        return item
+            target_image = self.transform(target_image)
+            reference_image = self.transform(reference_image)
+
+        return {
+            "caption": item["caption"],
+            "reference_image": reference_image,
+            "target_image": target_image,
+            "reference_id": item["candidate"],
+            "target_id": item["target"]
+        }
 
 def get_fashioniq_loader(data_path, batch_size=16, split='val', num_workers=0, transform=None):
     dataset = FashionIQDataset(data_path, 
@@ -36,8 +55,16 @@ def get_fashioniq_loader(data_path, batch_size=16, split='val', num_workers=0, t
                         shuffle=True,
                         collate_fn=lambda batch: {
                             "caption": [item["caption"] for item in batch],
-                            "reference_img": [item["reference_img"] for item in batch],
-                            "target_img": [item["target_img"] for item in batch]
+                            "reference_img": torch.stack([transform(item["reference_image"]) for item in batch]),
+                            "reference_pil": [item["reference_image"] for item in batch],
+                            "reference_id": [item["reference_id"] for item in batch],
+                            "target_img": torch.stack([transform(item["target_image"]) for item in batch]),
+                            "target_pil": [item["target_image"] for item in batch],
+                            "target_id": [item["target_id"] for item in batch],
+                            "all_target_img": torch.stack([transform(item["target_image"]) for item in batch]),
+                            "all_target_pil": [item["target_image"] for item in batch],
+                            "all_target_id": [item["target_id"] for item in batch],
+                            "all_target_length": list(map(len, [item["target_image"] for item in batch]))
                         }
     )
     return loader
