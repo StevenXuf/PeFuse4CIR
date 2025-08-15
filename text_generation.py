@@ -209,3 +209,5 @@ if __name__ == "__main__":
     cfg = get_default_config("config.yaml")
     torch.manual_seed(cfg['GENERAL']['SEED'])
     main(cfg)
+
+    #### TO DO: MODIFY BACKWARD COMPUTATION FOR text and image gen ####

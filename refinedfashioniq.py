@@ -30,7 +30,7 @@ def download_and_resize_images(output_dir, url_folder, resize_to=(224, 224)):
 
         # Read and process each line
         with open(input_file, 'r') as f:
-            for line in f:
+            for line in tqdm(f, desc=f"Processing {input_file}"):
                 line = line.strip()
                 if not line:
                     continue  # skip empty lines
@@ -45,12 +45,12 @@ def download_and_resize_images(output_dir, url_folder, resize_to=(224, 224)):
                     image = Image.open(BytesIO(response.content)).convert('RGB')
 
                     # Resize image
-                    image = image.resize(resize_to, Image.Resampling.LANCZOS)
+                    # image = image.resize(resize_to, Image.Resampling.LANCZOS)
 
                     # Save image
                     output_path = os.path.join(output_dir, f"{image_id}.jpg")
                     image.save(output_path)
-                    print(f"Downloaded and resized: {image_id}")
+                    print(f"Downloaded: {image_id}")
                 except Exception as e:
                     print(f"Failed to process line: {line}\nError: {e}")
         print(f"Finished processing {input_file}")
@@ -79,8 +79,8 @@ def get_refined_fashioniq_loader(output_dir,batch_size=32,transform=None):
 
     for item in tqdm(dataset):
         try:
-            target = Image.open(os.path.join(output_dir, f'{item["target"]}.jpg')).convert('RGB')
-            reference = Image.open(os.path.join(output_dir, f'{item["candidate"]}.jpg')).convert('RGB')
+            target = Image.open(os.path.join(output_dir, f'{item["target"]}.jpg')) #.convert('RGB').resize((224, 224), Image.Resampling.BICUBIC)
+            reference = Image.open(os.path.join(output_dir, f'{item["candidate"]}.jpg')) #.convert('RGB').resize((224, 224), Image.Resampling.BICUBIC)
             target_images.append(target)
             reference_images.append(reference)
             captions.append(item['captions'][0])
@@ -125,7 +125,6 @@ if __name__ == "__main__":
     else:
         print(f"Output directory already exists in: {output_dir}")
 
-    # extract_candidates_and_captions(config['RefinedFashionIQ']['CAPTION_FOLDER'],split='test')
     dataloader = get_refined_fashioniq_loader(output_dir,transform=img_transform, batch_size=batch_size)
     print(f"Loaded RefinedFashionIQ dataset with {len(dataloader.dataset)} items.")
     for batch in dataloader:
