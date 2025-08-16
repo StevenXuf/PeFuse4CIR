@@ -1,10 +1,8 @@
 import os
 import requests
-import json
 import torch
 
 from tqdm import tqdm
-from pathlib import Path
 from PIL import Image
 from io import BytesIO
 from datasets import load_dataset, Dataset
@@ -119,7 +117,7 @@ def get_refined_fashioniq_loader(output_dir,batch_size=32,transform=None):
 if __name__ == "__main__":
     config = get_default_config()
 
-    output_dir = config['RefinedFashionIQ']['OUTPUT_DIR']
+    output_dir = config['RefinedFashionIQ']['IMAGE_FOLDER']
     url_folder = config['RefinedFashionIQ']['IMAGE_URL_FOLDER']
     resize_to = (config['RefinedFashionIQ']['IMAGE_SIZE'], config['RefinedFashionIQ']['IMAGE_SIZE'])
     batch_size = config['GENERAL']['BATCH_SIZE']

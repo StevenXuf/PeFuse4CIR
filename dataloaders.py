@@ -16,12 +16,13 @@ def get_dataloader(cfg, split='val', transform=None):
     
     if dataset_name.lower() == "refinedfashioniq":
         dataloader = get_refined_fashioniq_loader(
-            output_dir=cfg['RefinedFashionIQ']['OUTPUT_DIR'],
+            output_dir=cfg['RefinedFashionIQ']['IMAGE_FOLDER'],
             batch_size=cfg['GENERAL']['BATCH_SIZE'],
             transform=transform
         )
-    elif dataset_name.lower() == "fashioniq": #### fix here
+    elif dataset_name.lower() == "fashioniq":
         dataloader = get_fashioniq_loader(
+            data_path=cfg['FashionIQ']['IMAGE_FOLDER'],
             batch_size=cfg['GENERAL']['BATCH_SIZE'],
             split=split, #use val or test split
             num_workers=cfg['GENERAL']['NUM_WORKERS'],
@@ -35,7 +36,7 @@ def get_dataloader(cfg, split='val', transform=None):
             num_workers=cfg['GENERAL']['NUM_WORKERS'],
             transform=transform
         )
-    elif dataset_name.lower() == "cirr": #####fix here
+    elif dataset_name.lower() == "cirr":
         dataloader = get_cirr_loader(
             data_path=cfg['CIRR']['IMAGE_FOLDER'],
             batch_size=cfg['GENERAL']['BATCH_SIZE'],

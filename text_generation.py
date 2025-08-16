@@ -16,7 +16,7 @@ def convert_pil_to_base64(pil_image):
     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
     return img_str
 
-def generate_messages(target_image, reference_image, caption):
+def generate_text_modification(target_image, reference_image):
     text_modification = [
         {
             "role": "system", 
@@ -50,8 +50,9 @@ def generate_messages(target_image, reference_image, caption):
             ],
         }
     ]
+    return text_modification
 
-
+def generate_target_description(reference_image, caption):
     target_description = [
         {
             "role": "system", 
@@ -80,7 +81,7 @@ def generate_messages(target_image, reference_image, caption):
         }
     ]
 
-    return text_modification, target_description
+    return target_description
 
 def main(cfg):
     device = torch.device(f"cuda:{cfg['GENERAL']['DEVICE']}" if torch.cuda.is_available() else "cpu")
@@ -124,9 +125,8 @@ def main(cfg):
             all_target_tensor = batch['all_target_img']
             target_length.extend(batch['all_target_length'])
 
-            messages = list(map(lambda x: generate_messages(*x),zip(target_pil, reference_pil, caption)))
-            text_modification = [msg[0] for msg in messages]
-            target_description = [msg[1] for msg in messages]
+            text_modification = list(map(lambda x: generate_text_modification(*x),zip(target_pil, reference_pil)))
+            target_description = list(map(lambda x: generate_target_description(*x),zip(reference_pil, caption)))
 
             generated_text = []
             for text_info in [text_modification, target_description]:
@@ -211,3 +211,5 @@ if __name__ == "__main__":
     main(cfg)
 
     #### TO DO: MODIFY BACKWARD COMPUTATION FOR text and image gen ####
+    ### Fix the test set for each dataset
+    ### Adjust the text generation prompts

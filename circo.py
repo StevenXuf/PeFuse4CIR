@@ -161,28 +161,37 @@ def get_circo_loader(data_path, batch_size=16, split='val', num_workers=0, trans
     """
     Get DataLoader for CIRCO dataset.
     """
+    val_collate_fn = lambda batch:{
+        'reference_img': torch.stack([transform(item['reference_img']) if transform is not None else item['reference_img'] for item in batch]),
+        'reference_pil': [item['reference_img'] for item in batch],
+        'reference_id': [item['reference_img_id'] for item in batch],
+        'target_img': torch.stack([transform(item['target_img']) if transform is not None else item['target_img'] for item in batch]),
+        'target_pil': [item['target_img'] for item in batch],
+        'target_id': [item['target_img_id'] for item in batch],
+        'caption': [item['relative_caption'] for item in batch],
+        'concept': [item['shared_concept'] for item in batch],
+        'all_target_ids': [item['gt_img_ids'] for item in batch],
+        'all_target_pil': [item for sublist in batch for item in sublist['gt_img']],
+        'all_target_img': torch.stack([transform(item) if transform is not None else item for sublist in batch for item in sublist['gt_img']]),
+        'all_target_length': list(map(len, [item['gt_img'] for item in batch])),
+        'query_id': [item['query_id'] for item in batch]
+    }
+    test_collate_fn = lambda batch:{
+        'reference_img': torch.stack([transform(item['reference_img']) if transform is not None else item['reference_img'] for item in batch]),
+        'reference_pil': [item['reference_img'] for item in batch],
+        'reference_id': [item['reference_img_id'] for item in batch],
+        'caption': [item['relative_caption'] for item in batch],
+        'concept': [item['shared_concept'] for item in batch],
+        'query_id': [item['query_id'] for item in batch]
+    }
+
     dataset = CIRCODataset(data_path=data_path, split=split, mode='relative')
     loader = DataLoader(dataset, 
                         batch_size=batch_size, 
                         shuffle=False, 
                         num_workers=num_workers,
-                        collate_fn=lambda batch: {
-                            'reference_img': torch.stack([transform(item['reference_img']) if transform is not None else item['reference_img'] for item in batch]),
-                            'reference_pil': [item['reference_img'] for item in batch],
-                            'reference_id': [item['reference_img_id'] for item in batch],
-                            'target_img': torch.stack([transform(item['target_img']) if transform is not None else item['target_img'] for item in batch]),
-                            'target_pil': [item['target_img'] for item in batch],
-                            'target_id': [item['target_img_id'] for item in batch],
-                            'caption': [item['relative_caption'] for item in batch],
-                            'concept': [item['shared_concept'] for item in batch],
-                            'all_target_ids': [item['gt_img_ids'] for item in batch],
-                            'all_target_pil': [item for sublist in batch for item in sublist['gt_img']],
-                            'all_target_img': torch.stack([transform(item) if transform is not None else item for sublist in batch for item in sublist['gt_img']]),
-                            'all_target_length': list(map(len, [item['gt_img'] for item in batch])),
-                            'query_id': [item['query_id'] for item in batch]
-                        }
+                        collate_fn=test_collate_fn if split == 'test' else val_collate_fn
     )
-    #[list(map(transform,item['gt_img']) if transform is not None else item['gt_img'] for item in batch)]
 
     return loader
 
@@ -193,8 +202,8 @@ if __name__ == "__main__":
         cfg['CLIP']['IMAGE_MEAN'],
         cfg['CLIP']['IMAGE_STD']
     )
-    circo_loader = get_circo_loader(cfg['CIRCO']['IMAGE_FOLDER'], batch_size=cfg['GENERAL']['BATCH_SIZE'], split='val', num_workers=cfg['GENERAL']['NUM_WORKERS'], transform=img_transform)
+    circo_loader = get_circo_loader(cfg['CIRCO']['IMAGE_FOLDER'], batch_size=cfg['GENERAL']['BATCH_SIZE'], split='test', num_workers=cfg['GENERAL']['NUM_WORKERS'], transform=img_transform)
 
     for batch in circo_loader:
-        tar_pil = batch['all_target_length']
-        print(tar_pil)
+        tar_pil = batch['reference_img']
+        print(tar_pil.size())

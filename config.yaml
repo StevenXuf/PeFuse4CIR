@@ -5,19 +5,19 @@ GENERAL:
     DEVICE: 1
     SEED: 0
     EXTRACTOR: "SIGLIP2"
-    DATASET: "RefinedFashionIQ"
+    DATASET: "FashionIQ"
     TOP_K: [1, 5, 10, 25, 50]
 
 ## datset information ##
 RefinedFashionIQ:
     IMAGE_URL_FOLDER: '/data/data_fxu/RefinedFashionIQ/image_url'
     IMAGE_SIZE: 224
-    OUTPUT_DIR: '/data/data_fxu/RefinedFashionIQ/downloaded_images'
+    IMAGE_FOLDER: '/data/data_fxu/RefinedFashionIQ/downloaded_images'
     CAPTION_FOLDER: '/data/data_fxu/RefinedFashionIQ/captions'
     SPLIT: 'val'
 
 FashionIQ:
-    IMAGE_FOLDER: '/data/data_fxu/RefinedFashionIQ'
+    IMAGE_FOLDER: '/data/data_fxu/RefinedFashionIQ' #shared same images with refined-fashioniq
     IMAGE_SIZE: 224
     SPLIT: 'val'
 
@@ -29,7 +29,7 @@ CIRCO:
 CIRR:
     IMAGE_FOLDER: '/data/data_fxu/CIRR'
     IMAGE_SIZE: 224
-    SPLIT: 'val'
+    SPLIT: 'val' # alternative test1
 
 ## feature extractor config ##
 CLIP:
