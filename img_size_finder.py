@@ -2,6 +2,8 @@ import os
 from PIL import Image
 import humanize
 
+from tqdm import tqdm
+
 
 def find_largest_images(directory):
     """Find the largest images in a directory by pixel dimensions after RGB conversion"""
@@ -18,7 +20,7 @@ def find_largest_images(directory):
     image_exts = ('.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff', '.gif')
     
     for root, _, files in os.walk(directory):
-        for file in files:
+        for file in tqdm(files):
             if file.lower().endswith(image_exts):
                 file_path = os.path.join(root, file)
                 
@@ -112,5 +114,5 @@ def print_results(stats):
               f"Width: {humanize.intcomma(img['width'])}px")
 
 if __name__ == "__main__":
-    stats = find_largest_images(directory='/data/data_fxu/CIRCO/COCO2017_unlabeled/unlabeled2017')
+    stats = find_largest_images(directory='/data/data_fxu/RefinedFashionIQ/downloaded_images')
     print_results(stats)
