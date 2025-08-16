@@ -1,5 +1,6 @@
 import os
 import json
+import torch
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 
@@ -15,14 +16,20 @@ class FashionIQDataset(Dataset):
         self.transform = transform
         self.caption = self.load_captions()
         self.length = list(map(len, self.caption))
+        self.caption = [item for sublist in self.load_captions() for item in sublist]
+        print(f"Loaded {len(self.caption)} items from {self.split} split.")
 
     def load_captions(self):
         # Load your dataset here
         captions = []
         for cloth in ['dress', 'shirt', 'toptee']:
+            existing_item=[]
             with open(os.path.join(self.caption_folder, f"cap.{cloth}.{self.split}.json"), 'r') as f:
                 data = json.load(f)
-                captions.append(data)
+                for item in data:
+                    if os.path.exists(os.path.join(self.image_path, item['target'] + '.jpg')) and os.path.exists(os.path.join(self.image_path, item['candidate'] + '.jpg')):
+                        existing_item.append(item)
+            captions.append(existing_item)
         return captions
 
     def __len__(self):
@@ -38,7 +45,7 @@ class FashionIQDataset(Dataset):
             reference_image = self.transform(reference_image)
 
         return {
-            "caption": item["caption"],
+            "caption": item["captions"][0],
             "reference_image": reference_image,
             "target_image": target_image,
             "reference_id": item["candidate"],
@@ -62,9 +69,10 @@ def get_fashioniq_loader(data_path, batch_size=16, split='val', num_workers=0, t
                             "target_pil": [item["target_image"] for item in batch],
                             "target_id": [item["target_id"] for item in batch],
                             "all_target_img": torch.stack([transform(item["target_image"]) for item in batch]),
+                            "all_target_id": [item["target_id"] for item in batch],
                             "all_target_pil": [item["target_image"] for item in batch],
                             "all_target_id": [item["target_id"] for item in batch],
-                            "all_target_length": list(map(len, [item["target_image"] for item in batch]))
+                            "all_target_length": list(map(len, [[item["target_image"]] for item in batch]))
                         }
     )
     return loader
@@ -79,6 +87,7 @@ if __name__ == "__main__":
         cfg['CLIP']['IMAGE_STD']
     )
     loader = get_fashioniq_loader(cfg['FashionIQ']['IMAGE_FOLDER'], transform=img_transform)
+    print(loader.dataset.length)
     for batch in loader:
         print(batch["caption"])
         print(batch["reference_img"].shape, batch["target_img"].shape)

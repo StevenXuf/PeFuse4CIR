@@ -175,7 +175,7 @@ def get_circo_loader(data_path, batch_size=16, split='val', num_workers=0, trans
                             'target_id': [item['target_img_id'] for item in batch],
                             'caption': [item['relative_caption'] for item in batch],
                             'concept': [item['shared_concept'] for item in batch],
-                            'all_target_img_ids': [item['gt_img_ids'] for item in batch],
+                            'all_target_ids': [item['gt_img_ids'] for item in batch],
                             'all_target_pil': [item for sublist in batch for item in sublist['gt_img']],
                             'all_target_img': torch.stack([transform(item) if transform is not None else item for sublist in batch for item in sublist['gt_img']]),
                             'all_target_length': list(map(len, [item['gt_img'] for item in batch])),

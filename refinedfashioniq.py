@@ -72,10 +72,12 @@ def get_refined_fashioniq_loader(output_dir,batch_size=32,transform=None):
     dataset = load_dataset("chuonghm/Refined-FashionIQ", split='validation')
     dataset = dataset.filter(lambda x: x['is_refined'] == True)
 
-    target_images=[]
-    reference_images=[]
-    captions=[]
-    cnt=0
+    target_images = []
+    target_ids = []
+    reference_images = []
+    reference_ids = []
+    captions = []
+    cnt = 0
 
     for item in tqdm(dataset):
         try:
@@ -84,20 +86,26 @@ def get_refined_fashioniq_loader(output_dir,batch_size=32,transform=None):
             target_images.append(target)
             reference_images.append(reference)
             captions.append(item['captions'][0])
+            target_ids.append(item['target'])
+            reference_ids.append(item['candidate'])
         except Exception as e:
-            cnt+=1
+            cnt += 1
             print(f"Error processing {cnt}th item: {e}")
             continue
 
     dataset = Dataset.from_dict({
         'target': target_images,
+        'target_id': target_ids,
         'reference': reference_images,
+        'reference_id': reference_ids,
         'caption': captions
     })
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, 
         collate_fn=lambda batch: {
             'target_img': torch.stack([x['target'] if transform is None else transform(x['target']) for x in batch]),
+            'target_id': [x['target_id'] for x in batch],
             'reference_img': torch.stack([x['reference'] if transform is None else transform(x['reference']) for x in batch]),
+            'reference_id': [x['reference_id'] for x in batch],
             'caption': [x['caption'] for x in batch],
             'target_pil': [x['target'] for x in batch],
             'reference_pil': [x['reference'] for x in batch],
