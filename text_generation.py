@@ -29,6 +29,19 @@ def generate_text_modification(target_image, reference_image):
                 "Write in clear, full, and complete sentences in English."
             )
         },
+        # {
+        #     "role": "system", 
+        #     "content": (
+        #         "You are an expert at comparing images and identifying visual differences. "
+        #         "Given two images (first: reference, second: target), "
+        #         "you must write a detailed description of all the changes required to transform the first image into the second. "
+        #         "Always write in proper English sentences with correct grammar and punctuation. "
+        #         "Your answer must be a single coherent paragraph. "
+        #         "Do not use bullet points, lists, fragments, or special symbols. "
+        #         "Do not output any control tokens (such as /addCriterion, /imagine, etc.). "
+        #         "Focus only on visible differences in objects, colors, lighting, textures, positions, sizes, and background details."
+        #     )
+        # },
         {
             "role": "user",
             "content": [
