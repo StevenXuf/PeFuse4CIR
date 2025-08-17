@@ -1,11 +1,11 @@
 ## global config ##
 GENERAL:
-    BATCH_SIZE: 16
+    BATCH_SIZE: 16 ## batch size should be lower for CIRR images as they are larger
     NUM_WORKERS: 4
     DEVICE: 1
     SEED: 0
-    EXTRACTOR: "SIGLIP2"
-    DATASET: "FashionIQ"
+    EXTRACTOR: "OPENCLIP"
+    DATASET: "CIRCO"
     TOP_K: [1, 5, 10, 25, 50]
 
 ## datset information ##
@@ -14,7 +14,7 @@ RefinedFashionIQ:
     IMAGE_SIZE: 224
     IMAGE_FOLDER: '/data/data_fxu/RefinedFashionIQ/downloaded_images'
     CAPTION_FOLDER: '/data/data_fxu/RefinedFashionIQ/captions'
-    SPLIT: 'val'
+    SPLIT: 'val' # test set is not available
 
 FashionIQ:
     IMAGE_FOLDER: '/data/data_fxu/RefinedFashionIQ' #shared same images with refined-fashioniq
@@ -29,11 +29,17 @@ CIRCO:
 CIRR:
     IMAGE_FOLDER: '/data/data_fxu/CIRR'
     IMAGE_SIZE: 224
-    SPLIT: 'val' # alternative test1
+    SPLIT: 'val' # alternative train, test1
 
 ## feature extractor config ##
 CLIP:
     MODEL_NAME: "openai/clip-vit-base-patch32"
+    IMAGE_SIZE: 224
+    IMAGE_MEAN: [0.48145466, 0.4578275, 0.40821073]
+    IMAGE_STD: [0.26862954, 0.26130258, 0.27577711]
+
+OPENCLIP:
+    MODEL_NAME: "ViT-B-32"
     IMAGE_SIZE: 224
     IMAGE_MEAN: [0.48145466, 0.4578275, 0.40821073]
     IMAGE_STD: [0.26862954, 0.26130258, 0.27577711]

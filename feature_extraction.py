@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as F
+import open_clip
 
 from tqdm import tqdm
 from torchmetrics.functional.pairwise import pairwise_cosine_similarity
@@ -20,6 +21,10 @@ def get_feature_extractor(cfg):
         feature_extraction_model, img_preprocess = create_model_from_pretrained(f'hf-hub:{extractor_id}')
         feature_extraction_model = feature_extraction_model.to(device)
         tokenizer = get_tokenizer(f'hf-hub:{extractor_id}')
+        return feature_extraction_model, img_preprocess, tokenizer
+    elif extractor.lower() == 'openclip':
+        feature_extraction_model, _, img_preprocess = open_clip.create_model_and_transforms(extractor_id, pretrained='laion2b_s34b_b79k')
+        tokenizer = open_clip.get_tokenizer(extractor_id)
         return feature_extraction_model, img_preprocess, tokenizer
     else:
         feature_extraction_model = AutoModel.from_pretrained(extractor_id).to(device)

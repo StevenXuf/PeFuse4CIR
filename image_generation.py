@@ -53,17 +53,19 @@ def main(cfg):
                                                    cfg[extractor_name]['IMAGE_STD']
                                                    )
 
-    if extractor_name.lower() == 'openvision':
+    if extractor_name.lower() == 'openvision' or extractor_name.lower() == 'openclip':
         feature_extraction_model, img_preprocess, tokenizer = get_feature_extractor(cfg)
     else:
         feature_extraction_model, tokenizer = get_feature_extractor(cfg)
+    feature_extraction_model.eval()
+    feature_extraction_model.to(device)
 
     generated_target_features = []
-    generated_reference_features = []
+    # generated_reference_features = []
     target_features = []
-    reference_features = []
+    # reference_features = []
     target_length = []
-    with torch.no_grad():
+    with torch.no_grad(), torch.autocast("cuda"):
         for i,batch in tqdm(enumerate(dataloader)):
             input_images = batch['reference_img']
             reference_pil = batch['reference_pil']
@@ -89,25 +91,25 @@ def main(cfg):
             show_tensor_images(generated_target_image_tensor, num_images=generated_target_image_tensor.size(0), file_path=os.path.join(store_path,f"generated_target_image_grid_{i}.png"))
 
             ####modify the captions!
-            reference_prompts = ['Remove the following modifications: ' + caption for caption in batch['caption']]
-            print(f"Generating reference images for batch {i+1}")
-            generated_reference_images = generation_model(
-                prompt=reference_prompts,
-                image=targets.to(device),
-                width=image_size,
-                height=image_size,
-                num_inference_steps=n_infer_step,
-                image_guidance_scale=image_guidance_scale,
-                guidance_scale=guidance_scale).images
-            generated_reference_image_tensor = torch.stack(convert_pil_to_tensor(generated_reference_images))
-            show_tensor_images(generated_reference_image_tensor, num_images=generated_reference_image_tensor.size(0), file_path=os.path.join(store_path,f"generated_reference_image_grid_{i}.png"))
+            # reference_prompts = ['Remove the following modifications: ' + caption for caption in batch['caption']]
+            # print(f"Generating reference images for batch {i+1}")
+            # generated_reference_images = generation_model(
+            #     prompt=reference_prompts,
+            #     image=targets.to(device),
+            #     width=image_size,
+            #     height=image_size,
+            #     num_inference_steps=n_infer_step,
+            #     image_guidance_scale=image_guidance_scale,
+            #     guidance_scale=guidance_scale).images
+            # generated_reference_image_tensor = torch.stack(convert_pil_to_tensor(generated_reference_images))
+            # show_tensor_images(generated_reference_image_tensor, num_images=generated_reference_image_tensor.size(0), file_path=os.path.join(store_path,f"generated_reference_image_grid_{i}.png"))
 
-            if extractor_name.lower() == 'openvision':
+            if extractor_name.lower() == 'openvision' or extractor_name.lower() == 'openclip':
                 generated_target_features.append(feature_extraction_model.encode_image(torch.cat([img_preprocess(img).unsqueeze(0) for img in generated_target_images],dim=0).to(device)))
                 target_features.append(feature_extraction_model.encode_image(torch.cat([img_preprocess(img).unsqueeze(0) for img in all_target_pil],dim=0).to(device))) #multiple targets for circo
 
-                generated_reference_features.append(feature_extraction_model.encode_image(torch.cat([img_preprocess(img).unsqueeze(0) for img in generated_reference_images],dim=0).to(device)))
-                reference_features.append(feature_extraction_model.encode_image(torch.cat([img_preprocess(img).unsqueeze(0) for img in reference_pil],dim=0).to(device)))
+                # generated_reference_features.append(feature_extraction_model.encode_image(torch.cat([img_preprocess(img).unsqueeze(0) for img in generated_reference_images],dim=0).to(device)))
+                # reference_features.append(feature_extraction_model.encode_image(torch.cat([img_preprocess(img).unsqueeze(0) for img in reference_pil],dim=0).to(device)))
             else:
                 transformed_generated_images = torch.stack(convert_pil_to_tensor(generated_target_images, transform=img_transform_for_extraction))
                 all_target_img = resize_crop_normalize(all_target_img, 
@@ -120,14 +122,14 @@ def main(cfg):
                 generated_target_features.append(feature_extraction_model.get_image_features(pixel_values=transformed_generated_images.to(device)))
                 target_features.append(feature_extraction_model.get_image_features(pixel_values=all_target_img.to(device)))
 
-                transformed_generated_reference_images = torch.stack(convert_pil_to_tensor(generated_reference_images, transform=img_transform_for_extraction))
-                generated_reference_features.append(feature_extraction_model.get_image_features(pixel_values=transformed_generated_reference_images.to(device)))
-                input_images = resize_crop_normalize(input_images, 
-                                                      size=cfg[extractor_name]['IMAGE_SIZE'], 
-                                                      IMAGE_MEAN=cfg[extractor_name]['IMAGE_MEAN'], 
-                                                      IMAGE_STD=cfg[extractor_name]['IMAGE_STD']
-                                                      )
-                reference_features.append(feature_extraction_model.get_image_features(pixel_values=input_images.to(device)))
+                # transformed_generated_reference_images = torch.stack(convert_pil_to_tensor(generated_reference_images, transform=img_transform_for_extraction))
+                # generated_reference_features.append(feature_extraction_model.get_image_features(pixel_values=transformed_generated_reference_images.to(device)))
+                # input_images = resize_crop_normalize(input_images, 
+                #                                       size=cfg[extractor_name]['IMAGE_SIZE'], 
+                #                                       IMAGE_MEAN=cfg[extractor_name]['IMAGE_MEAN'], 
+                #                                       IMAGE_STD=cfg[extractor_name]['IMAGE_STD']
+                #                                       )
+                # reference_features.append(feature_extraction_model.get_image_features(pixel_values=input_images.to(device)))
 
             print(f'Batch {i+1} finished.')
             # if i==5:
@@ -136,15 +138,15 @@ def main(cfg):
     print(target_length)
     generated_target_features = torch.cat(generated_target_features, dim=0)
     target_features = torch.cat(target_features, dim=0)
-    generated_reference_features = torch.cat(generated_reference_features, dim=0)
-    reference_features = torch.cat(reference_features, dim=0)
+    # generated_reference_features = torch.cat(generated_reference_features, dim=0)
+    # reference_features = torch.cat(reference_features, dim=0)
 
     for k in top_k:
         tar_metric_val = get_metrics(generated_target_features, target_features, k=k, target_length=target_length, metrics='map' if dataset_name.lower() == "circo" else 'recall')
         print(f'{"mAP" if dataset_name.lower() == "circo" else "Recall"}@{k}: {tar_metric_val:.2f}% when using generated images ---> real images retrieval')
 
-        ref_metric_val = get_metrics(generated_reference_features, reference_features, k=k, target_length=[1]*reference_features.size(0), metrics='recall')
-        print(f'RECALL@{k}: {ref_metric_val:.2f}% when using generated reference images ---> real reference retrieval')
+        # ref_metric_val = get_metrics(generated_reference_features, reference_features, k=k, target_length=[1]*reference_features.size(0), metrics='recall')
+        # print(f'RECALL@{k}: {ref_metric_val:.2f}% when using generated reference images ---> real reference retrieval')
 
 
 if __name__ == "__main__":

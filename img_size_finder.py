@@ -114,5 +114,5 @@ def print_results(stats):
               f"Width: {humanize.intcomma(img['width'])}px")
 
 if __name__ == "__main__":
-    stats = find_largest_images(directory='/data/data_fxu/RefinedFashionIQ/downloaded_images')
+    stats = find_largest_images(directory='/data/data_fxu/CIRR/img_raw/dev')
     print_results(stats)
