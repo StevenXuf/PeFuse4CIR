@@ -85,7 +85,7 @@ def generate_target_description(reference_image, caption):
                     "type": "text", 
                     "text": (
                         f"Here are the modification instructions: {caption}\n\n"
-                        "Now, describe how the final image looks in natural language."
+                        "Now, describe how the final image looks in coherent and complete English using at least ten tokens."
                     )
                 }
             ],

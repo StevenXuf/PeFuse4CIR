@@ -41,7 +41,7 @@ def generate_image_description(target_image):
                 "Given an image, you must produce a single, continuous, natural-language description. "
                 "Always use complete, well-formed English sentences, not fragments or bullet points. "
                 "Describe the image thoroughly, including objects, people, colors, lighting, textures, positions, and atmosphere. "
-                "Your response must be a coherent multi-sentence paragraph, not a list."
+                "Your response must be a coherent multi-sentence paragraph."
             )
         },
         {
@@ -50,7 +50,7 @@ def generate_image_description(target_image):
                 {"type": "image", "image": "data:image;base64," + convert_pil_to_base64(target_image)},
                 {
                     "type": "text", 
-                    "text": "Please describe this image in full English sentences."
+                    "text": "Please describe the image in full English sentences."
                 }
             ],
         }
@@ -88,11 +88,13 @@ def main(cfg):
 
     caption_feat = []
     description_feat = []
+    target_length = []
     with torch.no_grad(), torch.autocast("cuda"):
         for i, batch in tqdm(enumerate(dataloader), desc="Gnerating descriptions", total=len(dataloader)):
             target_pil = batch['target_pil']
             reference_pil = batch['reference_pil']
             caption = batch['caption']
+            target_length.extend(batch['all_target_length'])
 
             target_description = list(map(lambda x: generate_target_description(*x),zip(reference_pil, caption)))
             image_description = list(map(generate_image_description, target_pil))
@@ -148,6 +150,7 @@ def main(cfg):
             caption_feat.append(gen_feat[:steps, :])
             description_feat.append(gen_feat[steps:, :])
 
+    print(target_length)
     caption_feat = torch.cat(caption_feat, dim=0)
     description_feat = torch.cat(description_feat, dim=0)
 
@@ -157,7 +160,7 @@ def main(cfg):
         metric = 'recall'
     for k in top_k:
         #compute recall for generated description ---> target image
-        metric_val = get_metrics(caption_feat, description_feat, k=k, target_length=[1]*description_feat.size(0), metrics=metric)
+        metric_val = get_metrics(caption_feat, description_feat, k=k, target_length=target_length, metrics=metric)
         print(f'{metric.upper()}@{k}: {metric_val:.2f}% when using generated description ---> target images')
 
 
