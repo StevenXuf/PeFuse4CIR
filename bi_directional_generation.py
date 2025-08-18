@@ -92,12 +92,13 @@ def main(cfg):
     with torch.no_grad(), torch.autocast("cuda"):
         for i, batch in tqdm(enumerate(dataloader), desc="Gnerating descriptions", total=len(dataloader)):
             target_pil = batch['target_pil']
+            all_target_pil = batch['all_target_pil']
             reference_pil = batch['reference_pil']
             caption = batch['caption']
             target_length.extend(batch['all_target_length'])
 
             target_description = list(map(lambda x: generate_target_description(*x),zip(reference_pil, caption)))
-            image_description = list(map(generate_image_description, target_pil))
+            image_description = list(map(generate_image_description, all_target_pil))
 
             texts = [
                 processor.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
@@ -146,7 +147,7 @@ def main(cfg):
             else:
                 raise ValueError(f"Unsupported extractor: {extractor}")
 
-            steps = gen_feat.size(0)//2
+            steps = len(target_description)
             caption_feat.append(gen_feat[:steps, :])
             description_feat.append(gen_feat[steps:, :])
 

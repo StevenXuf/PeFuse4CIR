@@ -12,8 +12,9 @@ from configuration import get_default_config
 from refinedfashioniq import get_refined_fashioniq_loader,transform_image
 from attention import self_attention, cross_attention, co_attention
 
-def get_feature_extractor(cfg):
-    extractor = cfg['GENERAL']['EXTRACTOR']
+def get_feature_extractor(cfg, extractor=None):
+    if extractor is None:
+        extractor = cfg['GENERAL']['EXTRACTOR']
     extractor_id = cfg[extractor]['MODEL_NAME']
     device = torch.device(f'cuda:{cfg["GENERAL"]["DEVICE"]}' if torch.cuda.is_available() else 'cpu')
 

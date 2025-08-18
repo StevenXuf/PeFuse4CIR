@@ -22,7 +22,7 @@ def generate_text_modification(target_image, reference_image):
             "role": "system", 
             "content": (
                 "You are an expert at comparing images and identifying visual differences. "
-                "Given two images (first: _pil, second: target), "
+                "Given two images (first: reference, second: target), "
                 "describe all the changes needed to transform the first image into the second. "
                 "Be complete and specific—mention differences in objects, colors, lighting, textures, positions, sizes, and background details. "
                 "Only describe every visible changes between the images. "
@@ -121,7 +121,7 @@ def main(cfg):
 
     dataloader = get_dataloader(cfg)
 
-    caption_feat = []
+    # caption_feat = []
     # modification_feat = []
     description_feat = []
     tar_tensor_feat = []
@@ -191,7 +191,7 @@ def main(cfg):
                 raise ValueError(f"Unsupported extractor: {extractor}")
 
             steps = gen_feat.size(0)//2
-            caption_feat.append(gen_feat[:steps, :])
+            # caption_feat.append(gen_feat[:steps, :])
             # modification_feat.append(gen_feat[steps:steps*2, :])
             description_feat.append(gen_feat[steps:, :])
             if extractor.lower() == 'openvision' or extractor.lower() == 'openclip':
@@ -201,7 +201,7 @@ def main(cfg):
             tar_tensor_feat.append(img_feat)
 
     print(target_length)
-    caption_feat = torch.cat(caption_feat, dim=0)
+    # caption_feat = torch.cat(caption_feat, dim=0)
     # modification_feat = torch.cat(modification_feat, dim=0)
     description_feat = torch.cat(description_feat, dim=0)
     tar_tensor_feat = torch.cat(tar_tensor_feat, dim=0)
