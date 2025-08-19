@@ -47,7 +47,6 @@ def get_metrics(text_features,audio_features,k, target_length, metrics='recall')
     for i, length in enumerate(target_length):
         targets[i, start:start+length] = 1
         start += length
-    print(targets)    
 
     indexes = torch.arange(sim.size(0), dtype=torch.long).unsqueeze(1).expand(*sim.size()).to(sim.device)
 

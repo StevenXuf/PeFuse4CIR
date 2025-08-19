@@ -3,7 +3,7 @@ import base64
 import io
 
 from tqdm import tqdm
-from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
+from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor, GenerationConfig
 from qwen_vl_utils import process_vision_info
 
 from configuration import get_default_config
@@ -109,6 +109,12 @@ def main(cfg):
     feature_extraction_model.eval()
     feature_extraction_model.to(device)
 
+    gen_config = GenerationConfig(do_sample=True,
+                                  temperature=0.1,
+                                  top_p=0.8,
+                                  top_k=50,
+                                  max_new_tokens=128
+                                  )
     text_generation_model = Qwen2_5_VLForConditionalGeneration.from_pretrained(model_id, 
                                                                                torch_dtype=torch.bfloat16, 
                                                                                device_map={"": device}, 
@@ -157,7 +163,9 @@ def main(cfg):
                 inputs = inputs.to(device)
 
                 # Batch Inference
-                generated_ids = text_generation_model.generate(**inputs, max_new_tokens=76)
+                generated_ids = text_generation_model.generate(**inputs,
+                                                               generation_config=gen_config
+                                                               )
                 generated_ids_trimmed = [
                     out_ids[len(in_ids):] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
                 ]
@@ -200,7 +208,7 @@ def main(cfg):
                 img_feat = feature_extraction_model.get_image_features(pixel_values=all_target_tensor.to(device))
             tar_tensor_feat.append(img_feat)
 
-    print(target_length)
+    # print(target_length)
     # caption_feat = torch.cat(caption_feat, dim=0)
     # modification_feat = torch.cat(modification_feat, dim=0)
     description_feat = torch.cat(description_feat, dim=0)
@@ -217,7 +225,8 @@ def main(cfg):
 
         #compute recall for generated description ---> target image
         metric_val = get_metrics(description_feat, tar_tensor_feat, k=k, target_length=target_length, metrics=metric)
-        print(f'{metric.upper()}@{k}: {metric_val:.2f}% when using generated description ---> target images')
+        print(f'{metric.upper()}@{k}: {metric_val:.2f}% when using generated description ---> target images\n')
+    print(f"{'*'*20}Text generation completed{'*'*20}")
 
 
 if __name__ == "__main__":
@@ -226,5 +235,7 @@ if __name__ == "__main__":
     main(cfg)
 
     #### TO DO: MODIFY BACKWARD COMPUTATION FOR text and image gen ####
-    ### Fix the test set for each dataset
-    ### Adjust the text generation prompts
+    ### Fix the test set for each dataset DONE!!!!
+    ### Adjust the text generation prompts DONE!!!!!
+    ### Adjust the image generation prompts
+    ### Use image-only, text-only, or combined as baselines

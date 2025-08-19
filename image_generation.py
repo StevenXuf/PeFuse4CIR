@@ -35,15 +35,15 @@ def main(cfg):
     dataset_name = cfg['GENERAL']['DATASET']
     print(f"Using {extractor_name} with id: {extractor_id} for feature extraction on {dataset_name} dataset.")
 
-    store_path = os.path.join(cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['OUTPUT_DIR'], dataset_name)
-    if not os.path.exists(store_path):
-        os.makedirs(store_path)
-
     n_infer_step = cfg['IMAGE-GENERATION']['GLOBAL']['NUM_INFERENCE_STEPS']
     image_guidance_scale = cfg['IMAGE-GENERATION']['GLOBAL']['IMAGE_GUIDANCE_SCALE']
     guidance_scale = cfg['IMAGE-GENERATION']['GLOBAL']['GUIDANCE_SCALE']
     generation_model=StableDiffusionXLInstructPix2PixPipeline.from_pretrained(model_id, torch_dtype=torch.float16).to(device)
     print(f"Using {generation_model.__class__.__name__} with params: n_infer_step={n_infer_step}, image_guidance_scale={image_guidance_scale}, guidance_scale={guidance_scale}")
+
+    store_path = os.path.join(cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['OUTPUT_DIR'], f'{dataset_name}_{n_infer_step}_{image_guidance_scale}_{guidance_scale}')
+    if not os.path.exists(store_path):
+        os.makedirs(store_path)
 
     img_transform_for_generation = transform_image(image_size)
     dataloader = get_dataloader(cfg, transform=img_transform_for_generation)

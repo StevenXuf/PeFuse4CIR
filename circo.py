@@ -56,25 +56,6 @@ class CIRCODataset(Dataset):
 
         print(f"CIRCODataset {split} dataset in {mode} mode initialized")
 
-    def get_target_img_ids(self, index) -> Dict[str, int]:
-        """
-        Returns the id of the target image and ground truth images for a given query
-
-        Args:
-            index (int): id of the query
-
-        Returns:
-             Dict[str, int]: dictionary containing target image id and a list of ground truth image ids
-        """
-
-        return {
-            'target_img_id': self.annotations[index]['target_img_id'],
-            'gt_img_ids': self.annotations[index]['gt_img_ids']
-        }
-
-    def get_semantic_aspects(self, index):
-        """ Returns the semantic aspects for a given query"""
-        return self.annotations[index].get('semantic_aspects', [])
 
     def __getitem__(self, index) -> dict:
         """
@@ -105,7 +86,7 @@ class CIRCODataset(Dataset):
                 target_img_id = str(self.annotations[index]['target_img_id'])
                 gt_img_ids = [str(x) for x in self.annotations[index]['gt_img_ids']]
                 target_img_path = self.img_paths[self.img_ids_indexes_map[target_img_id]]
-                target_img = self.preprocess(Image.open(target_img_path).convert('RGB')) if self.preprocess is not None else Image.open(reference_img_path).convert('RGB')
+                target_img = self.preprocess(Image.open(target_img_path).convert('RGB')) if self.preprocess is not None else Image.open(target_img_path).convert('RGB')
                 # Pad ground truth image IDs with zeros for collate_fn
                 gt_img_ids += [''] * (self.max_num_gts - len(gt_img_ids))
                 gt_img_ids = [ gt_img_id for gt_img_id in gt_img_ids if len(gt_img_id) > 0]  
@@ -202,8 +183,10 @@ if __name__ == "__main__":
         cfg['CLIP']['IMAGE_MEAN'],
         cfg['CLIP']['IMAGE_STD']
     )
-    circo_loader = get_circo_loader(cfg['CIRCO']['IMAGE_FOLDER'], batch_size=cfg['GENERAL']['BATCH_SIZE'], split='test', num_workers=cfg['GENERAL']['NUM_WORKERS'], transform=img_transform)
+    circo_loader = get_circo_loader(cfg['CIRCO']['IMAGE_FOLDER'], batch_size=cfg['GENERAL']['BATCH_SIZE'], split='val', num_workers=cfg['GENERAL']['NUM_WORKERS'], transform=img_transform)
 
     for batch in circo_loader:
-        tar_pil = batch['reference_img']
-        print(tar_pil.size())
+        ref_pil = batch['reference_img']
+        tar_pil = batch['target_img']
+        print(torch.all(ref_pil[0]==tar_pil[0]))
+        # Just to test the loader
