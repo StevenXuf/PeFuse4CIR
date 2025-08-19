@@ -7,6 +7,7 @@ GENERAL:
     EXTRACTOR: "OPENCLIP" # options: CLIP, OPENCLIP, SIGLIP2, OPENVISION
     DATASET: "CIRCO"
     TOP_K: [1, 5, 10, 25, 50]
+    DIRECTION: "FORWARD" # options: FORWARD, BACKWARD
 
 ## datset information ##
 RefinedFashionIQ:
@@ -71,8 +72,8 @@ OPENVISION:
 ## image generation config ##
 IMAGE-GENERATION:
     GLOBAL:
-        NUM_INFERENCE_STEPS: 40
-        IMAGE_GUIDANCE_SCALE: 1.1
+        NUM_INFERENCE_STEPS: 50
+        IMAGE_GUIDANCE_SCALE: 1.3
         GUIDANCE_SCALE: 7.5
     SDXL-INSTRUCTPIX2PIX:
         MODEL_NAME: "diffusers/sdxl-instructpix2pix-768"
