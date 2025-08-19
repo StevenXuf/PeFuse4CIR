@@ -106,7 +106,7 @@ def main(cfg, **kwargs):
     else:
         top_p = cfg['TEXT-GENERATION']['GLOBAL']['TOP_P']
     if kwargs.get('TOP_K'):
-        top_k = kwargs['TOP_K']
+        llm_top_k = kwargs['TOP_K']
     else:
         llm_top_k = cfg['TEXT-GENERATION']['GLOBAL']['TOP_K']
     if kwargs.get('MAX_NEW_TOKENS'):
