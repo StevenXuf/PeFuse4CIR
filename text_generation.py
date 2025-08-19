@@ -96,6 +96,11 @@ def generate_target_description(reference_image, caption):
 def main(cfg):
     device = torch.device(f"cuda:{cfg['GENERAL']['DEVICE']}" if torch.cuda.is_available() else "cpu")
     model_id = cfg['TEXT-GENERATION']['MODEL_NAME']
+    temperature = cfg['TEXT-GENERATION']['GLOBAL']['TEMPERATURE']
+    top_p = cfg['TEXT-GENERATION']['GLOBAL']['TOP_P']
+    top_k = cfg['TEXT-GENERATION']['GLOBAL']['TOP_K']
+    max_new_tokens = cfg['TEXT-GENERATION']['GLOBAL']['MAX_NEW_TOKENS']
+    print(f"Using {model_id} for text generation with temperature={temperature}, top_p={top_p}, top_k={top_k}, max_new_tokens={max_new_tokens}")
 
     extractor = cfg['GENERAL']['EXTRACTOR']
     dataset_name = cfg['GENERAL']['DATASET']
@@ -110,10 +115,10 @@ def main(cfg):
     feature_extraction_model.to(device)
 
     gen_config = GenerationConfig(do_sample=True,
-                                  temperature=0.1,
-                                  top_p=0.8,
-                                  top_k=50,
-                                  max_new_tokens=128
+                                  temperature=temperature,
+                                  top_p=top_p,
+                                  top_k=top_k,
+                                  max_new_tokens=max_new_tokens
                                   )
     text_generation_model = Qwen2_5_VLForConditionalGeneration.from_pretrained(model_id, 
                                                                                torch_dtype=torch.bfloat16, 

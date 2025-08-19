@@ -71,7 +71,7 @@ OPENVISION:
 ## image generation config ##
 IMAGE-GENERATION:
     GLOBAL:
-        NUM_INFERENCE_STEPS: 50
+        NUM_INFERENCE_STEPS: 40
         IMAGE_GUIDANCE_SCALE: 1.1
         GUIDANCE_SCALE: 7.5
     SDXL-INSTRUCTPIX2PIX:
@@ -85,4 +85,9 @@ IMAGE-GENERATION:
 
 ## text generation config ##
 TEXT-GENERATION:
+    GLOBAL:
+        MAX_NEW_TOKENS: 128
+        TEMPERATURE: 0.1
+        TOP_P: 0.8
+        TOP_K: 50
     MODEL_NAME: "Qwen/Qwen2.5-VL-7B-Instruct"
