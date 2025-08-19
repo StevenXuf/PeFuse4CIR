@@ -1,5 +1,6 @@
 import torch
 import os
+import fire
 import torchvision.transforms.functional as F
 
 from tqdm import tqdm
@@ -25,7 +26,7 @@ def resize_crop_normalize(tensor_img, size=224, IMAGE_MEAN=None, IMAGE_STD=None)
     img = F.normalize(img, mean=IMAGE_MEAN, std=IMAGE_STD)
     return img
 
-def main(cfg):
+def main(cfg, **kwargs):
     image_size = cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['IMAGE_SIZE']
     model_id = cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['MODEL_NAME']
     top_k = cfg['GENERAL']['TOP_K']
@@ -35,9 +36,19 @@ def main(cfg):
     dataset_name = cfg['GENERAL']['DATASET']
     print(f"Using {extractor_name} with id: {extractor_id} for feature extraction on {dataset_name} dataset.")
 
-    n_infer_step = cfg['IMAGE-GENERATION']['GLOBAL']['NUM_INFERENCE_STEPS']
-    image_guidance_scale = cfg['IMAGE-GENERATION']['GLOBAL']['IMAGE_GUIDANCE_SCALE']
-    guidance_scale = cfg['IMAGE-GENERATION']['GLOBAL']['GUIDANCE_SCALE']
+    if kwargs.get('NUM_INFERENCE_STEPS'):
+        n_infer_step = kwargs['NUM_INFERENCE_STEPS']
+    else:
+        n_infer_step = cfg['IMAGE-GENERATION']['GLOBAL']['NUM_INFERENCE_STEPS']
+    if kwargs.get('IMAGE_GUIDANCE_SCALE'):
+        image_guidance_scale = kwargs['IMAGE_GUIDANCE_SCALE']
+    else:
+        image_guidance_scale = cfg['IMAGE-GENERATION']['GLOBAL']['IMAGE_GUIDANCE_SCALE']
+    if kwargs.get('GUIDANCE_SCALE'):
+        guidance_scale = kwargs['GUIDANCE_SCALE']
+    else:
+        guidance_scale = cfg['IMAGE-GENERATION']['GLOBAL']['GUIDANCE_SCALE']
+
     generation_model=StableDiffusionXLInstructPix2PixPipeline.from_pretrained(model_id, torch_dtype=torch.float16).to(device)
     print(f"Using {generation_model.__class__.__name__} with params: n_infer_step={n_infer_step}, image_guidance_scale={image_guidance_scale}, guidance_scale={guidance_scale}")
 
@@ -148,8 +159,10 @@ def main(cfg):
         # ref_metric_val = get_metrics(generated_reference_features, reference_features, k=k, target_length=[1]*reference_features.size(0), metrics='recall')
         # print(f'RECALL@{k}: {ref_metric_val:.2f}% when using generated reference images ---> real reference retrieval')
 
-
-if __name__ == "__main__":
+def launch(**kwargs):
     cfg = get_default_config("config.yaml")
     torch.manual_seed(cfg['GENERAL']['SEED'])
-    main(cfg)
+    main(cfg, **kwargs)
+
+if __name__ == "__main__":
+    fire.Fire(launch)

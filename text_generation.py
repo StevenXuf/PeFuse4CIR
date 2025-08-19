@@ -1,6 +1,7 @@
 import torch
 import base64
 import io
+import fire
 
 from tqdm import tqdm
 from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor, GenerationConfig
@@ -93,13 +94,25 @@ def generate_target_description(reference_image, caption):
     ]
     return target_description
 
-def main(cfg):
+def main(cfg, **kwargs):
     device = torch.device(f"cuda:{cfg['GENERAL']['DEVICE']}" if torch.cuda.is_available() else "cpu")
     model_id = cfg['TEXT-GENERATION']['MODEL_NAME']
-    temperature = cfg['TEXT-GENERATION']['GLOBAL']['TEMPERATURE']
-    top_p = cfg['TEXT-GENERATION']['GLOBAL']['TOP_P']
-    top_k = cfg['TEXT-GENERATION']['GLOBAL']['TOP_K']
-    max_new_tokens = cfg['TEXT-GENERATION']['GLOBAL']['MAX_NEW_TOKENS']
+    if kwargs.get('TEMPERATURE'):
+        temperature = kwargs['TEMPERATURE']
+    else:
+        temperature = cfg['TEXT-GENERATION']['GLOBAL']['TEMPERATURE']
+    if kwargs.get('TOP_P'):
+        top_p = kwargs['TOP_P']
+    else:
+        top_p = cfg['TEXT-GENERATION']['GLOBAL']['TOP_P']
+    if kwargs.get('TOP_K'):
+        top_k = kwargs['TOP_K']
+    else:
+        top_k = cfg['TEXT-GENERATION']['GLOBAL']['TOP_K']
+    if kwargs.get('MAX_NEW_TOKENS'):
+        max_new_tokens = kwargs['MAX_NEW_TOKENS']
+    else:
+        max_new_tokens = cfg['TEXT-GENERATION']['GLOBAL']['MAX_NEW_TOKENS']
     print(f"Using {model_id} for text generation with temperature={temperature}, top_p={top_p}, top_k={top_k}, max_new_tokens={max_new_tokens}")
 
     extractor = cfg['GENERAL']['EXTRACTOR']
@@ -233,11 +246,13 @@ def main(cfg):
         print(f'{metric.upper()}@{k}: {metric_val:.2f}% when using generated description ---> target images\n')
     print(f"{'*'*20}Text generation completed{'*'*20}")
 
-
-if __name__ == "__main__":
+def launch(**kwargs):
     cfg = get_default_config("config.yaml")
     torch.manual_seed(cfg['GENERAL']['SEED'])
-    main(cfg)
+    main(cfg, **kwargs)
+
+if __name__ == "__main__":
+    fire.Fire(launch)
 
     #### TO DO: MODIFY BACKWARD COMPUTATION FOR text and image gen ####
     ### Fix the test set for each dataset DONE!!!!
