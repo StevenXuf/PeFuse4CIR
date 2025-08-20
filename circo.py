@@ -176,6 +176,7 @@ def get_circo_loader(data_path, batch_size=16, split='val', num_workers=0, trans
 
     return loader
 
+
 if __name__ == "__main__":
     cfg = get_default_config("config.yaml")
     img_transform = transform_image(

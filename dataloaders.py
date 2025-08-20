@@ -3,11 +3,14 @@ from refinedfashioniq import get_refined_fashioniq_loader, transform_image
 from circo import get_circo_loader
 from cirr import get_cirr_loader
 from fashioniq import get_fashioniq_loader
+from unlabledcoco import get_unlabeledcoco_loader
 
-def get_dataloader(cfg, split='val', transform=None):
+def get_dataloader(cfg, split='val', transform=None, dataset_name=None, extractor_name=None):
 
-    dataset_name = cfg['GENERAL']['DATASET']
-    extractor_name = cfg['GENERAL']['EXTRACTOR']
+    if dataset_name is None:
+        dataset_name = cfg['GENERAL']['DATASET']
+    if extractor_name is None:
+        extractor_name = cfg['GENERAL']['EXTRACTOR']
 
     if transform == None:
         transform=transform_image(cfg[extractor_name]['IMAGE_SIZE'],
@@ -44,6 +47,13 @@ def get_dataloader(cfg, split='val', transform=None):
             num_workers=cfg['GENERAL']['NUM_WORKERS'],
             transform=transform
         )
+    elif dataset_name.lower() == "unlabeledcoco":
+        dataloader = get_unlabeledcoco_loader(
+            image_path=cfg['CIRCO']['IMAGE_FOLDER'],
+            batch_size=cfg['GENERAL']['BATCH_SIZE'],
+            num_workers=cfg['GENERAL']['NUM_WORKERS'],
+            transform=transform
+        )
     else:
         raise ValueError(f"Unknown dataset: {dataset_name}")
     print(f'{dataset_name.upper()} LOADED SUCCESSFULLY.')
@@ -52,4 +62,4 @@ def get_dataloader(cfg, split='val', transform=None):
 
 if __name__ == "__main__":
     cfg = get_default_config("config.yaml")
-    dataloader = get_dataloader(cfg)
+    dataloader = get_dataloader(cfg, dataset_name='unlabeledcoco')

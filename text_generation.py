@@ -143,7 +143,12 @@ def main(cfg, **kwargs):
                                               use_fast=True
                                               )
 
-    dataloader = get_dataloader(cfg)
+    if kwargs.get('SPLIT'):
+        split = kwargs['SPLIT']
+    else:
+        split = cfg['GENERAL']['SPLIT']
+    print(f"Using {split} split for the dataset")
+    dataloader = get_dataloader(cfg, split=split)
 
     # caption_feat = []
     # modification_feat = []

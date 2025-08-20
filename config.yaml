@@ -20,7 +20,7 @@ RefinedFashionIQ:
 FashionIQ:
     IMAGE_FOLDER: '/data/data_fxu/RefinedFashionIQ' #shared same images with refined-fashioniq
     IMAGE_SIZE: 224
-    SPLIT: 'val'
+    SPLIT: 'val' # test set is not usable!
 
 CIRCO:
     IMAGE_FOLDER: '/data/data_fxu/CIRCO'
