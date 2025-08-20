@@ -9,7 +9,7 @@ from qwen_vl_utils import process_vision_info
 from torchmetrics.functional.pairwise import pairwise_cosine_similarity
 
 from configuration import get_default_config
-from feature_extraction import get_metrics, get_feature_extractor
+from feature_extraction import get_feature_extractor
 from dataloaders import get_dataloader
 
 from text_generation_val import generate_text_modification, generate_target_description
@@ -173,7 +173,7 @@ def main(cfg, **kwargs):
         res={str(item[0]): item[1].tolist() for item in zip(query_ids, predicted)}
         res['version'] = 'rc2'
         res['metric'] = 'recall' if cutoff == 50 else 'recall_subset'
-    json.dump(res, open(f"predicted_results_{dataset_name}_test_{extractor}.json", "w"))
+    json.dump(res, open(f"predicted_results_txt_gen_{dataset_name}_{extractor}.json", "w"))
 
 def launch(**kwargs):
     cfg = get_default_config("config.yaml")
