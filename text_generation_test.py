@@ -61,7 +61,7 @@ def main(cfg, **kwargs):
                                               padding_side='left', 
                                               use_fast=True
                                               )
-    split = 'test'
+    split = 'test1' if dataset_name.lower() == 'cirr' else 'test'
     print(f"Using {split.upper()} split for the dataset")
     dataloader = get_dataloader(cfg, split=split)
 
@@ -164,13 +164,15 @@ def main(cfg, **kwargs):
 
     target_ids = np.array(target_ids)
     sim = pairwise_cosine_similarity(description_feat, tar_tensor_feat)
-    _, indices = sim.topk(k=50, dim=1)
+    cutoff = 50
+    _, indices = sim.topk(k=cutoff, dim=1)
     predicted = [target_ids[row] for row in indices.tolist()]
     if dataset_name.lower() == 'circo':
-        res=[{item[0]: item[1].astype(int).tolist()} for item in zip(query_ids, predicted)]
+        res={item[0]: item[1].astype(int).tolist() for item in zip(query_ids, predicted)}
     elif dataset_name.lower() == 'cirr':
-        res=[{item[0]: item[1].tolist()} for item in zip(query_ids, predicted)]
-
+        res={str(item[0]): item[1].tolist() for item in zip(query_ids, predicted)}
+        res['version'] = 'rc2'
+        res['metric'] = 'recall' if cutoff == 50 else 'recall_subset'
     json.dump(res, open(f"predicted_results_{dataset_name}_test_{extractor}.json", "w"))
 
 def launch(**kwargs):
