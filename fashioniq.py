@@ -24,11 +24,20 @@ class FashionIQDataset(Dataset):
         captions = []
         for cloth in ['dress', 'shirt', 'toptee']:
             existing_item=[]
-            with open(os.path.join(self.caption_folder, f"cap.{cloth}.{self.split}.json"), 'r') as f:
-                data = json.load(f)
-                for item in data:
-                    if os.path.exists(os.path.join(self.image_path, item['target'] + '.jpg')) and os.path.exists(os.path.join(self.image_path, item['candidate'] + '.jpg')):
-                        existing_item.append(item)
+            if self.split.lower() =='test':
+                with open(os.path.join(self.caption_folder, f"cap.{cloth}.test.json"), 'r') as f:
+                    data = json.load(f)
+                    for item in data:
+                        if os.path.exists(os.path.join(self.image_path, item['candidate'] + '.jpg')):
+                            existing_item.append(item)
+            elif self.split.lower() =='train' or self.split.lower() == 'val':
+                with open(os.path.join(self.caption_folder, f"cap.{cloth}.{self.split}.json"), 'r') as f:
+                    data = json.load(f)
+                    for item in data:
+                        if os.path.exists(os.path.join(self.image_path, item['target'] + '.jpg')) and os.path.exists(os.path.join(self.image_path, item['candidate'] + '.jpg')):
+                            existing_item.append(item)
+            else:
+                raise ValueError(f"{self.image_path} does not exist")
             captions.append(existing_item)
         return captions
 
@@ -37,30 +46,32 @@ class FashionIQDataset(Dataset):
 
     def __getitem__(self, idx):
         item = self.caption[idx]
-        target_image = Image.open(os.path.join(self.image_path, item['target'] + '.jpg')).convert('RGB')
-        reference_image = Image.open(os.path.join(self.image_path, item['candidate'] + '.jpg')).convert('RGB')
+        if self.split.lower() == 'train' or self.split.lower() == 'val':
+            target_image = Image.open(os.path.join(self.image_path, item['target'] + '.jpg')).convert('RGB')
+            reference_image = Image.open(os.path.join(self.image_path, item['candidate'] + '.jpg')).convert('RGB')
 
-        if self.transform:
-            target_image = self.transform(target_image)
-            reference_image = self.transform(reference_image)
-
-        return {
-            "caption": item["captions"][0],
-            "reference_image": reference_image,
-            "target_image": target_image,
-            "reference_id": item["candidate"],
-            "target_id": item["target"]
-        }
+            if self.transform:
+                target_image = self.transform(target_image)
+                reference_image = self.transform(reference_image)
+            return {
+                "caption": item["captions"][0],
+                "reference_image": reference_image,
+                "target_image": target_image,
+                "reference_id": item["candidate"],
+                "target_id": item["target"]
+            }
+        else:
+            reference_image = Image.open(os.path.join(self.image_path, item['candidate'] + '.jpg')).convert('RGB')
+            if self.transform:
+                reference_image = self.transform(reference_image)
+            return {
+                "caption": item["captions"][0],
+                "reference_image": reference_image,
+                "reference_id": item["candidate"],
+            }
 
 def get_fashioniq_loader(data_path, batch_size=16, split='val', num_workers=0, transform=None):
-    dataset = FashionIQDataset(data_path, 
-                               split=split
-                               )
-    loader = DataLoader(dataset, 
-                        batch_size=batch_size, 
-                        num_workers=num_workers,
-                        shuffle=True,
-                        collate_fn=lambda batch: {
+    collate_fn_val_train=lambda batch: {
                             "caption": [item["caption"] for item in batch],
                             "reference_img": torch.stack([transform(item["reference_image"]) for item in batch]),
                             "reference_pil": [item["reference_image"] for item in batch],
@@ -74,6 +85,20 @@ def get_fashioniq_loader(data_path, batch_size=16, split='val', num_workers=0, t
                             "all_target_id": [item["target_id"] for item in batch],
                             "all_target_length": list(map(len, [[item["target_image"]] for item in batch]))
                         }
+    collate_fn_test=lambda batch: {
+                            "caption": [item["caption"] for item in batch],
+                            "reference_img": torch.stack([transform(item["reference_image"]) for item in batch]),
+                            "reference_pil": [item["reference_image"] for item in batch],
+                            "reference_id": [item["reference_id"] for item in batch],
+                        }
+    dataset = FashionIQDataset(data_path, 
+                               split=split
+                               )
+    loader = DataLoader(dataset, 
+                        batch_size=batch_size, 
+                        num_workers=num_workers,
+                        shuffle=True,
+                        collate_fn=collate_fn_val_train if split in ['train', 'val'] else collate_fn_test
     )
     return loader
 
@@ -86,9 +111,9 @@ if __name__ == "__main__":
         cfg['CLIP']['IMAGE_MEAN'],
         cfg['CLIP']['IMAGE_STD']
     )
-    loader = get_fashioniq_loader(cfg['FashionIQ']['IMAGE_FOLDER'], transform=img_transform)
+    loader = get_fashioniq_loader(cfg['FashionIQ']['IMAGE_FOLDER'], transform=img_transform, split='val')
     print(loader.dataset.length)
     for batch in loader:
         print(batch["caption"])
-        print(batch["reference_img"].shape, batch["target_img"].shape)
+        print(batch["reference_img"].shape)
         break
