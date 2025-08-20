@@ -75,7 +75,7 @@ class CIRRDataset(Dataset):
                 "reference_image": ref_img,
                 "reference_id": reference_id,
                 "caption": caption,
-                "pairid": pairid
+                "query_id": pairid
             }
 
         else:
@@ -102,7 +102,7 @@ class CIRRDataset(Dataset):
                 "caption": caption,
                 "reference_id": reference_id,
                 "target_id": target_id,
-                "pairid": pairid
+                "query_id": pairid
             }
 
     def _find_image_path(self, img_id):
@@ -139,14 +139,14 @@ def get_cirr_loader(data_path, batch_size=16, split='val', num_workers=0, transf
                             "caption": [item["caption"] for item in batch],
                             "reference_id": [item["reference_id"] for item in batch],
                             "target_id": [item["target_id"] for item in batch],
-                            "pairid": [item["pairid"] for item in batch]
+                            "query_id": [item["query_id"] for item in batch]
                             }
     test_collate_fn = lambda batch: {
         "reference_img": torch.stack([transform(item["reference_image"]) if transform is not None else item['reference_image'] for item in batch]),
         "reference_pil": [item["reference_image"] for item in batch],
         "caption": [item["caption"] for item in batch],
         "reference_id": [item["reference_id"] for item in batch],
-        "pairid": [item["pairid"] for item in batch]
+        "query_id": [item["query_id"] for item in batch]
     }
     dataset = CIRRDataset(
         root_dir=data_path,

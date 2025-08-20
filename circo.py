@@ -189,5 +189,6 @@ if __name__ == "__main__":
     for batch in circo_loader:
         ref_pil = batch['reference_img']
         tar_pil = batch['target_img']
-        print(torch.all(ref_pil[0]==tar_pil[0]))
+        print(batch['all_target_ids'])
+        break
         # Just to test the loader

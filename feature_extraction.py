@@ -32,7 +32,7 @@ def get_feature_extractor(cfg, extractor=None):
         tokenizer = AutoTokenizer.from_pretrained(extractor_id)
         return feature_extraction_model, tokenizer
 
-def get_metrics(text_features,audio_features,k, target_length, metrics='recall'):
+def get_metrics(feat1, feat2, k, target_length, metrics='recall'):
     if metrics == 'recall':
         compute = RetrievalRecall(top_k=k)
     elif metrics == 'precision':
@@ -40,7 +40,7 @@ def get_metrics(text_features,audio_features,k, target_length, metrics='recall')
     elif metrics == 'map':
         compute = RetrievalMAP(top_k=k)
 
-    sim=pairwise_cosine_similarity(text_features,audio_features)
+    sim=pairwise_cosine_similarity(feat1, feat2)
 
     targets = torch.zeros(sim.size(0), sim.size(1), dtype=torch.long).to(sim.device)
     start = 0
@@ -50,8 +50,7 @@ def get_metrics(text_features,audio_features,k, target_length, metrics='recall')
 
     indexes = torch.arange(sim.size(0), dtype=torch.long).unsqueeze(1).expand(*sim.size()).to(sim.device)
 
-    res = compute(sim.flatten(),targets.flatten(),indexes=indexes.flatten())
-
+    res = compute(sim,targets,indexes=indexes)
     return res*100
 
 def extract_features(model,processor,dataloader,config_path='./config.yaml',cfg=None):
@@ -179,7 +178,12 @@ def main(cfg):
     perform_retrieval(ref_image_features, candidate_image_features, text_features, cfg['GENERAL']['TOP_K'])
 
 if __name__=='__main__':
-    cfg= get_default_config("config.yaml")
-    torch.manual_seed(cfg['GENERAL']['SEED'])
-    main(cfg)
-
+    # cfg= get_default_config("config.yaml")
+    # torch.manual_seed(cfg['GENERAL']['SEED'])
+    # main(cfg)
+    torch.manual_seed(42)
+    feat1 = torch.randn(5, 512)
+    feat2 = torch.randn(10, 512)
+    length = [1,2,2,3,2]
+    res = get_metrics(feat1, feat2, 5, length)
+    print(res)
