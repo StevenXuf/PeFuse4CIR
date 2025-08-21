@@ -2,6 +2,7 @@ import torch
 import fire
 import numpy as np
 import json
+import gc
 
 from tqdm import tqdm
 from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor, GenerationConfig
@@ -35,14 +36,24 @@ def main(cfg, **kwargs):
         max_new_tokens = cfg['TEXT-GENERATION']['GLOBAL']['MAX_NEW_TOKENS']
     print(f"Using {model_id} for text generation with temperature={temperature}, top_p={top_p}, top_k={llm_top_k}, max_new_tokens={max_new_tokens}")
 
-    extractor = cfg['GENERAL']['EXTRACTOR']
-    dataset_name = cfg['GENERAL']['DATASET']
+    if kwargs.get('BATCH_SIZE'):
+        batch_size = kwargs['BATCH_SIZE']
+    else:
+        batch_size = cfg['GENERAL']['BATCH_SIZE']
+    if kwargs.get('EXTRACTOR'):
+        extractor = kwargs['EXTRACTOR']
+    else:
+        extractor = cfg['GENERAL']['EXTRACTOR']
+    if kwargs.get('DATASET'):
+        dataset_name = kwargs['DATASET']
+    else:
+        dataset_name = cfg['GENERAL']['DATASET']
     print(f"Using {extractor} for feature extraction using {dataset_name}")
 
     if extractor.lower() == 'openvision' or extractor.lower() == 'openclip':
-        feature_extraction_model, img_preprocess, tokenizer = get_feature_extractor(cfg)
+        feature_extraction_model, img_preprocess, tokenizer = get_feature_extractor(cfg, extractor=extractor)
     else:
-        feature_extraction_model, tokenizer = get_feature_extractor(cfg)
+        feature_extraction_model, tokenizer = get_feature_extractor(cfg, extractor=extractor)
     feature_extraction_model.eval()
     feature_extraction_model.to(device)
 
@@ -56,14 +67,13 @@ def main(cfg, **kwargs):
                                                                                torch_dtype=torch.bfloat16, 
                                                                                device_map={"": device}, 
                                                                                attn_implementation='flash_attention_2'
-                                                                               ).to(device)
+                                                                               ).eval().to(device)
     processor = AutoProcessor.from_pretrained(model_id, 
                                               padding_side='left', 
                                               use_fast=True
                                               )
     split = 'test1' if dataset_name.lower() == 'cirr' else 'test'
-    print(f"Using {split.upper()} split for the dataset")
-    dataloader = get_dataloader(cfg, split=split)
+    dataloader = get_dataloader(cfg, split=split, dataset_name=dataset_name, extractor_name=extractor, batch_size=batch_size)
 
     # caption_feat = []
     # modification_feat = []
@@ -97,7 +107,7 @@ def main(cfg, **kwargs):
                 # Batch Inference
                 generated_ids = text_generation_model.generate(**inputs,
                                                                generation_config=gen_config
-                                                               )
+                                                               ).detach()
                 generated_ids_trimmed = [
                     out_ids[len(in_ids):] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
                 ]
@@ -134,13 +144,18 @@ def main(cfg, **kwargs):
             # modification_feat.append(gen_feat[steps:steps*2, :])
             description_feat.append(gen_feat[steps:, :])
 
-            if i == 1:
-                break
+            # if i == 1:
+            #     break
+
+    #clean generative models to save gpu memory
+    del text_generation_model
+    gc.collect()
+    torch.cuda.empty_cache()
 
     if dataset_name.lower() == 'circo':
-        test_loader = get_dataloader(cfg, dataset_name='circo_target_image', batch_size=256)
+        test_loader = get_dataloader(cfg, dataset_name='circo_target_image', batch_size=512, extractor_name=extractor)
     elif dataset_name.lower() == 'cirr':
-        test_loader = get_dataloader(cfg, dataset_name='cirr_target_image', batch_size=256)
+        test_loader = get_dataloader(cfg, dataset_name='cirr_target_image', batch_size=512, extractor_name=extractor)
 
     tar_tensor_feat = []
     target_ids=[]
@@ -155,8 +170,8 @@ def main(cfg, **kwargs):
                 img_feat = feature_extraction_model.get_image_features(pixel_values=image.to(device))
             tar_tensor_feat.append(img_feat)
 
-            if j == 1:
-                break
+            # if j == 1:
+            #     break
 
     # caption_feat = torch.cat(caption_feat, dim=0)
     # modification_feat = torch.cat(modification_feat, dim=0)

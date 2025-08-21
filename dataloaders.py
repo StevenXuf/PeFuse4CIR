@@ -45,7 +45,7 @@ def get_dataloader(cfg, split='val', transform=None, dataset_name=None, extracto
         dataloader = get_cirr_loader(
             data_path=cfg['CIRR']['IMAGE_FOLDER'],
             batch_size=batch_size,
-            split=split, # use val or test split
+            split=split, # use val or test1 split
             num_workers=cfg['GENERAL']['NUM_WORKERS'],
             transform=transform
         )

@@ -16,11 +16,10 @@ def get_feature_extractor(cfg, extractor=None):
     if extractor is None:
         extractor = cfg['GENERAL']['EXTRACTOR']
     extractor_id = cfg[extractor]['MODEL_NAME']
-    device = torch.device(f'cuda:{cfg["GENERAL"]["DEVICE"]}' if torch.cuda.is_available() else 'cpu')
 
     if extractor.lower() == 'openvision':
         feature_extraction_model, img_preprocess = create_model_from_pretrained(f'hf-hub:{extractor_id}')
-        feature_extraction_model = feature_extraction_model.to(device)
+        feature_extraction_model = feature_extraction_model
         tokenizer = get_tokenizer(f'hf-hub:{extractor_id}')
         return feature_extraction_model, img_preprocess, tokenizer
     elif extractor.lower() == 'openclip':
@@ -28,7 +27,7 @@ def get_feature_extractor(cfg, extractor=None):
         tokenizer = open_clip.get_tokenizer(extractor_id)
         return feature_extraction_model, img_preprocess, tokenizer
     else:
-        feature_extraction_model = AutoModel.from_pretrained(extractor_id).to(device)
+        feature_extraction_model = AutoModel.from_pretrained(extractor_id)
         tokenizer = AutoTokenizer.from_pretrained(extractor_id)
         return feature_extraction_model, tokenizer
 
