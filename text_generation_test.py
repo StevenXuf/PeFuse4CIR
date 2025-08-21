@@ -12,7 +12,7 @@ from configuration import get_default_config
 from feature_extraction import get_feature_extractor
 from dataloaders import get_dataloader
 
-from text_generation_val import generate_text_modification, generate_target_description
+from text_generation_val import generate_target_description
 
 def main(cfg, **kwargs):
     device = torch.device(f"cuda:{cfg['GENERAL']['DEVICE']}" if torch.cuda.is_available() else "cpu")
@@ -144,18 +144,19 @@ def main(cfg, **kwargs):
 
     tar_tensor_feat = []
     target_ids=[]
-    for j, test_batch in tqdm(enumerate(test_loader)):
-        image = test_batch['image']
-        pil = test_batch['image_pil']
-        target_ids.extend(test_batch['image_id'])
-        if extractor.lower() == 'openvision' or extractor.lower() == 'openclip':
-            img_feat = feature_extraction_model.encode_image(torch.cat([img_preprocess(img).unsqueeze(0) for img in pil],dim=0).to(device))
-        else:
-            img_feat = feature_extraction_model.get_image_features(pixel_values=image.to(device))
-        tar_tensor_feat.append(img_feat)
+    with torch.no_grad():
+        for j, test_batch in tqdm(enumerate(test_loader)):
+            image = test_batch['image']
+            pil = test_batch['image_pil']
+            target_ids.extend(test_batch['image_id'])
+            if extractor.lower() == 'openvision' or extractor.lower() == 'openclip':
+                img_feat = feature_extraction_model.encode_image(torch.cat([img_preprocess(img).unsqueeze(0) for img in pil],dim=0).to(device))
+            else:
+                img_feat = feature_extraction_model.get_image_features(pixel_values=image.to(device))
+            tar_tensor_feat.append(img_feat)
 
-        if j == 1:
-            break
+            if j == 1:
+                break
 
     # caption_feat = torch.cat(caption_feat, dim=0)
     # modification_feat = torch.cat(modification_feat, dim=0)

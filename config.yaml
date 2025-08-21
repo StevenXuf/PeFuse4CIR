@@ -72,8 +72,8 @@ OPENVISION:
 ## image generation config ##
 IMAGE-GENERATION:
     GLOBAL:
-        NUM_INFERENCE_STEPS: 50
-        IMAGE_GUIDANCE_SCALE: 1.5
+        NUM_INFERENCE_STEPS: 30
+        IMAGE_GUIDANCE_SCALE: 3.0
         GUIDANCE_SCALE: 7.5
     SDXL-INSTRUCTPIX2PIX:
         MODEL_NAME: "diffusers/sdxl-instructpix2pix-768"
