@@ -91,5 +91,5 @@ TEXT-GENERATION:
         MAX_NEW_TOKENS: 128
         TEMPERATURE: 0.1
         TOP_P: 0.8
-        TOP_K: 0
+        TOP_K: 50
     MODEL_NAME: "Qwen/Qwen2.5-VL-7B-Instruct"
