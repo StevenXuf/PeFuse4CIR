@@ -134,7 +134,7 @@ def main(cfg, **kwargs):
                                   max_new_tokens=max_new_tokens
                                   )
     text_generation_model = Qwen2_5_VLForConditionalGeneration.from_pretrained(model_id, 
-                                                                               torch_dtype=torch.bfloat16, 
+                                                                               torch_dtype='auto', 
                                                                                device_map={"": device}, 
                                                                                attn_implementation='flash_attention_2'
                                                                                ).to(device)
@@ -182,12 +182,13 @@ def main(cfg, **kwargs):
                     videos=video_inputs,
                     padding=True,
                     return_tensors="pt",
+                    padding_side="left"
                 )
-                inputs = inputs.to(device)
+                inputs = inputs.to(text_generation_model.device)
 
                 # Batch Inference
                 generated_ids = text_generation_model.generate(**inputs,
-                                                               generation_config=gen_config
+                                                               generation_config=gen_config,
                                                                )
                 generated_ids_trimmed = [
                     out_ids[len(in_ids):] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)

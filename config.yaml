@@ -8,6 +8,7 @@ GENERAL:
     DATASET: "CIRCO"
     TOP_K: [1, 5, 10, 25, 50]
     DIRECTION: "FORWARD" # options: FORWARD, BACKWARD
+    SPLIT: "val" 
 
 ## datset information ##
 RefinedFashionIQ:
@@ -90,5 +91,5 @@ TEXT-GENERATION:
         MAX_NEW_TOKENS: 128
         TEMPERATURE: 0.1
         TOP_P: 0.8
-        TOP_K: 50
+        TOP_K: 0
     MODEL_NAME: "Qwen/Qwen2.5-VL-7B-Instruct"
