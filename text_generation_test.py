@@ -103,7 +103,7 @@ def main(cfg, **kwargs):
                     return_tensors="pt",
                 )
                 inputs = inputs.to(device)
-
+                
                 # Batch Inference
                 generated_ids = text_generation_model.generate(**inputs,
                                                                generation_config=gen_config
@@ -115,7 +115,7 @@ def main(cfg, **kwargs):
                     generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
                 )
                 generated_text.extend(output_texts)
-
+                print(output_texts)
             if extractor.lower() == 'siglip2':
                 all_text_inputs = tokenizer(text=caption+generated_text, 
                                                     return_tensors="pt", 
@@ -170,8 +170,8 @@ def main(cfg, **kwargs):
                 img_feat = feature_extraction_model.get_image_features(pixel_values=image.to(device))
             tar_tensor_feat.append(img_feat)
 
-            # if j == 1:
-            #     break
+            if j == 1:
+                break
 
     # caption_feat = torch.cat(caption_feat, dim=0)
     # modification_feat = torch.cat(modification_feat, dim=0)
