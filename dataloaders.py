@@ -75,5 +75,5 @@ def get_dataloader(cfg, split='val', transform=None, dataset_name=None, extracto
 
 if __name__ == "__main__":
     cfg = get_default_config("config.yaml")
-    dataloader = get_dataloader(cfg, dataset_name='circo_target_image')
+    dataloader = get_dataloader(cfg, dataset_name='fashioniq', split='val')
     print(len(dataloader.dataset))

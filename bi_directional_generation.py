@@ -34,29 +34,6 @@ def generate_image_description(target_image):
             ],
         }
     ]
-    # target_description = [
-    #     {
-    #         "role": "system", 
-    #         "content": (
-    #             "You are an expert in detailed visual perception. "
-    #             "Given an image, you must produce a single, continuous, natural-language description. "
-    #             "Always use complete, well-formed English sentences, not fragments or bullet points. "
-    #             "Describe the image thoroughly, including objects, people, colors, lighting, textures, positions, and atmosphere. "
-    #             "Your response must be a coherent multi-sentence paragraph."
-    #         )
-    #     },
-    #     {
-    #         "role": "user",
-    #         "content": [
-    #             {"type": "image", "image": "data:image;base64," + convert_pil_to_base64(target_image)},
-    #             {
-    #                 "type": "text", 
-    #                 "text": "Please describe the image in full English sentences."
-    #             }
-    #         ],
-    #     }
-    # ]
-
     return target_description
 
 def main(cfg, **kwargs):
@@ -79,20 +56,26 @@ def main(cfg, **kwargs):
         max_new_tokens = kwargs['MAX_NEW_TOKENS']
     else:
         max_new_tokens = cfg['TEXT-GENERATION']['GLOBAL']['MAX_NEW_TOKENS']
+
     if kwargs.get('BATCH_SIZE'):
         batch_size = kwargs['BATCH_SIZE']
     else:
         batch_size = cfg['GENERAL']['BATCH_SIZE']
-
-    extractor = cfg['GENERAL']['EXTRACTOR']
-    dataset_name = cfg['GENERAL']['DATASET']
+    if kwargs.get('EXTRACTOR'):
+        extractor = kwargs['EXTRACTOR']
+    else:
+        extractor = cfg['GENERAL']['EXTRACTOR']
+    if kwargs.get('DATASET'):
+        dataset_name = kwargs['DATASET']
+    else:
+        dataset_name = cfg['GENERAL']['DATASET']
     top_k = cfg['GENERAL']['TOP_K']
     print(f"Using {extractor} for feature extraction using {dataset_name}")
 
     if extractor.lower() == 'openvision' or extractor.lower() == 'openclip':
-        feature_extraction_model, img_preprocess, tokenizer = get_feature_extractor(cfg)
+        feature_extraction_model, img_preprocess, tokenizer = get_feature_extractor(cfg, extractor=extractor)
     else:
-        feature_extraction_model, tokenizer = get_feature_extractor(cfg)
+        feature_extraction_model, tokenizer = get_feature_extractor(cfg, extractor=extractor)
     feature_extraction_model.eval()
     feature_extraction_model.to(device)
     gen_config = GenerationConfig(do_sample=True,
@@ -111,7 +94,7 @@ def main(cfg, **kwargs):
                                               use_fast=True
                                               )
 
-    dataloader = get_dataloader(cfg, batch_size=batch_size)
+    dataloader = get_dataloader(cfg, batch_size=batch_size, dataset_name=dataset_name, extractor_name=extractor)
 
     caption_feat = []
     description_feat = []

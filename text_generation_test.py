@@ -15,6 +15,37 @@ from dataloaders import get_dataloader
 
 from text_generation_val import generate_target_description
 
+def extract_target_feat_with_id(test_loader, feature_extraction_model, extractor, img_preprocess, device):
+    tar_tensor_feat = []
+    target_ids=[]
+    with torch.no_grad():
+        for j, test_batch in tqdm(enumerate(test_loader)):
+            image = test_batch['image']
+            pil = test_batch['image_pil']
+            target_ids.extend(test_batch['image_id'])
+            if extractor.lower() == 'openvision' or extractor.lower() == 'openclip':
+                img_feat = feature_extraction_model.encode_image(torch.cat([img_preprocess(img).unsqueeze(0) for img in pil],dim=0).to(device))
+            else:
+                img_feat = feature_extraction_model.get_image_features(pixel_values=image.to(device))
+            tar_tensor_feat.append(img_feat)
+
+            # if j == 1:
+            #     break
+    return target_ids, tar_tensor_feat
+
+def store_top_k(modality, query_ids, target_ids, description_feat, tar_tensor_feat, dataset_name, extractor, cutoff=50):
+    target_ids = np.array(target_ids)
+    sim = pairwise_cosine_similarity(description_feat, tar_tensor_feat)
+    _, indices = sim.topk(k=cutoff, dim=1)
+    predicted = [target_ids[row] for row in indices.tolist()]
+    if dataset_name.lower() == 'circo':
+        res={item[0]: item[1].astype(int).tolist() for item in zip(query_ids, predicted)}
+    elif dataset_name.lower() == 'cirr':
+        res={str(item[0]): item[1].tolist() for item in zip(query_ids, predicted)}
+        res['version'] = 'rc2'
+        res['metric'] = 'recall' if cutoff == 50 else 'recall_subset'
+    json.dump(res, open(f"predicted_results_{modality}_gen_{dataset_name}_{extractor}.json", "w"))
+
 def main(cfg, **kwargs):
     device = torch.device(f"cuda:{cfg['GENERAL']['DEVICE']}" if torch.cuda.is_available() else "cpu")
     model_id = cfg['TEXT-GENERATION']['MODEL_NAME']
@@ -157,39 +188,14 @@ def main(cfg, **kwargs):
     elif dataset_name.lower() == 'cirr':
         test_loader = get_dataloader(cfg, dataset_name='cirr_target_image', batch_size=512, extractor_name=extractor)
 
-    tar_tensor_feat = []
-    target_ids=[]
-    with torch.no_grad():
-        for j, test_batch in tqdm(enumerate(test_loader)):
-            image = test_batch['image']
-            pil = test_batch['image_pil']
-            target_ids.extend(test_batch['image_id'])
-            if extractor.lower() == 'openvision' or extractor.lower() == 'openclip':
-                img_feat = feature_extraction_model.encode_image(torch.cat([img_preprocess(img).unsqueeze(0) for img in pil],dim=0).to(device))
-            else:
-                img_feat = feature_extraction_model.get_image_features(pixel_values=image.to(device))
-            tar_tensor_feat.append(img_feat)
-
-            if j == 1:
-                break
+    target_ids, tar_tensor_feat = extract_target_feat_with_id(test_loader, feature_extraction_model, extractor, img_preprocess, device)
 
     # caption_feat = torch.cat(caption_feat, dim=0)
     # modification_feat = torch.cat(modification_feat, dim=0)
     description_feat = torch.cat(description_feat, dim=0)
     tar_tensor_feat = torch.cat(tar_tensor_feat, dim=0)
 
-    target_ids = np.array(target_ids)
-    sim = pairwise_cosine_similarity(description_feat, tar_tensor_feat)
-    cutoff = 50
-    _, indices = sim.topk(k=cutoff, dim=1)
-    predicted = [target_ids[row] for row in indices.tolist()]
-    if dataset_name.lower() == 'circo':
-        res={item[0]: item[1].astype(int).tolist() for item in zip(query_ids, predicted)}
-    elif dataset_name.lower() == 'cirr':
-        res={str(item[0]): item[1].tolist() for item in zip(query_ids, predicted)}
-        res['version'] = 'rc2'
-        res['metric'] = 'recall' if cutoff == 50 else 'recall_subset'
-    json.dump(res, open(f"predicted_results_txt_gen_{dataset_name}_{extractor}.json", "w"))
+    store_top_k("text", query_ids, target_ids, description_feat, tar_tensor_feat, dataset_name, extractor)
 
 def launch(**kwargs):
     cfg = get_default_config("config.yaml")
