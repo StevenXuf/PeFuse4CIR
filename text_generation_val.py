@@ -114,16 +114,22 @@ def main(cfg, **kwargs):
     else:
         max_new_tokens = cfg['TEXT-GENERATION']['GLOBAL']['MAX_NEW_TOKENS']
     print(f"Using {model_id} for text generation with temperature={temperature}, top_p={top_p}, top_k={llm_top_k}, max_new_tokens={max_new_tokens}")
-
-    extractor = cfg['GENERAL']['EXTRACTOR']
-    dataset_name = cfg['GENERAL']['DATASET']
+    
+    if kwargs.get('EXTRACTOR'):
+        extractor = kwargs['EXTRACTOR']
+    else:
+        extractor = cfg['GENERAL']['EXTRACTOR']
+    if kwargs.get('DATASET'):
+        dataset_name = kwargs['DATASET']
+    else:
+        dataset_name = cfg['GENERAL']['DATASET']
     top_k = cfg['GENERAL']['TOP_K']
     print(f"Using {extractor} for feature extraction using {dataset_name}")
 
     if extractor.lower() == 'openvision' or extractor.lower() == 'openclip':
-        feature_extraction_model, img_preprocess, tokenizer = get_feature_extractor(cfg)
+        feature_extraction_model, img_preprocess, tokenizer = get_feature_extractor(cfg, extractor=extractor)
     else:
-        feature_extraction_model, tokenizer = get_feature_extractor(cfg)
+        feature_extraction_model, tokenizer = get_feature_extractor(cfg, extractor=extractor)
     feature_extraction_model.eval()
     feature_extraction_model.to(device)
 
@@ -134,7 +140,7 @@ def main(cfg, **kwargs):
                                   max_new_tokens=max_new_tokens
                                   )
     text_generation_model = Qwen2_5_VLForConditionalGeneration.from_pretrained(model_id, 
-                                                                               torch_dtype='auto', 
+                                                                               torch_dtype=torch.bfloat16, 
                                                                                device_map={"": device}, 
                                                                                attn_implementation='flash_attention_2'
                                                                                ).to(device)
@@ -147,8 +153,7 @@ def main(cfg, **kwargs):
         split = kwargs['SPLIT']
     else:
         split = cfg['GENERAL']['SPLIT']
-    print(f"Using {split.upper()} split for the dataset")
-    dataloader = get_dataloader(cfg, split=split)
+    dataloader = get_dataloader(cfg, split=split, extractor_name=extractor, dataset_name=dataset_name)
 
     # caption_feat = []
     # modification_feat = []
@@ -184,7 +189,7 @@ def main(cfg, **kwargs):
                     return_tensors="pt",
                     padding_side="left"
                 )
-                inputs = inputs.to(text_generation_model.device)
+                inputs = inputs.to(device)
 
                 # Batch Inference
                 generated_ids = text_generation_model.generate(**inputs,

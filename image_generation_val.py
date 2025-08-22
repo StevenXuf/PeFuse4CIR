@@ -30,12 +30,24 @@ def main(cfg, **kwargs):
     image_size = cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['IMAGE_SIZE']
     model_id = cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['MODEL_NAME']
     top_k = cfg['GENERAL']['TOP_K']
-    device = torch.device(f"cuda:{cfg['GENERAL']['DEVICE']}" if torch.cuda.is_available() else "cpu")
-    extractor_name = cfg['GENERAL']['EXTRACTOR']
+    if kwargs.get('DEVICE'):
+        device = kwargs['DEVICE']
+    else:
+        device = torch.device(f"cuda:{cfg['GENERAL']['DEVICE']}" if torch.cuda.is_available() else "cpu")
+    if kwargs.get('EXTRACTOR'):
+        extractor_name = kwargs['EXTRACTOR']
+    else:
+        extractor_name = cfg['GENERAL']['EXTRACTOR']
     extractor_id = cfg[extractor_name]['MODEL_NAME']
-    dataset_name = cfg['GENERAL']['DATASET']
+    if kwargs.get('DATASET'):
+        dataset_name = kwargs['DATASET']
+    else:
+        dataset_name = cfg['GENERAL']['DATASET']
     print(f"Using {extractor_name} with id: {extractor_id} for feature extraction on {dataset_name} dataset.")
-
+    if kwargs.get('SPLIT'):
+        split = kwargs['SPLIT']
+    else:
+        split = cfg['GENERAL']['SPLIT']
     if kwargs.get('NUM_INFERENCE_STEPS'):
         n_infer_step = kwargs['NUM_INFERENCE_STEPS']
     else:
@@ -48,7 +60,10 @@ def main(cfg, **kwargs):
         guidance_scale = kwargs['GUIDANCE_SCALE']
     else:
         guidance_scale = cfg['IMAGE-GENERATION']['GLOBAL']['GUIDANCE_SCALE']
-
+    if kwargs.get('BATCH_SIZE'):
+        batch_size = kwargs['BATCH_SIZE']
+    else:
+        batch_size = cfg['GENERAL']['BATCH_SIZE']
     generation_model=StableDiffusionXLInstructPix2PixPipeline.from_pretrained(model_id, torch_dtype=torch.float16).to(device)
     print(f"Using {generation_model.__class__.__name__} with params: n_infer_step={n_infer_step}, image_guidance_scale={image_guidance_scale}, guidance_scale={guidance_scale}")
 
@@ -57,7 +72,12 @@ def main(cfg, **kwargs):
         os.makedirs(store_path)
 
     img_transform_for_generation = transform_image(image_size)
-    dataloader = get_dataloader(cfg, transform=img_transform_for_generation)
+    dataloader = get_dataloader(cfg, 
+                                split=split,
+                                batch_size=batch_size,
+                                transform=img_transform_for_generation, 
+                                extractor_name=extractor_name,
+                                dataset_name=dataset_name)
 
     img_transform_for_extraction = transform_image(cfg[extractor_name]['IMAGE_SIZE'], 
                                                    cfg[extractor_name]['IMAGE_MEAN'], 
@@ -65,9 +85,9 @@ def main(cfg, **kwargs):
                                                    )
 
     if extractor_name.lower() == 'openvision' or extractor_name.lower() == 'openclip':
-        feature_extraction_model, img_preprocess, tokenizer = get_feature_extractor(cfg)
+        feature_extraction_model, img_preprocess, tokenizer = get_feature_extractor(cfg, extractor=extractor_name)
     else:
-        feature_extraction_model, tokenizer = get_feature_extractor(cfg)
+        feature_extraction_model, tokenizer = get_feature_extractor(cfg, extractor=extractor_name)
     feature_extraction_model.eval()
     feature_extraction_model.to(device)
 
