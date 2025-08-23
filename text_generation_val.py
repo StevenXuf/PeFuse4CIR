@@ -11,6 +11,15 @@ from configuration import get_default_config
 from feature_extraction import get_metrics, get_feature_extractor
 from dataloaders import get_dataloader
 
+def fashioniq_eval(dataloader, generated_target_features, target_features, target_length, k):
+    n_shirt, n_dress, n_toptee = dataloader.dataset.length
+    shirt_metric_val = get_metrics(generated_target_features[:n_shirt, :], target_features[:n_shirt, :], k=k, target_length=target_length[:n_shirt], metrics='recall')
+    dress_metric_val = get_metrics(generated_target_features[n_shirt:n_shirt+n_dress, :], target_features[n_shirt:n_shirt+n_dress, :], k=k, target_length=target_length[n_shirt:n_shirt+n_dress], metrics='recall')
+    toptee_metric_val = get_metrics(generated_target_features[n_shirt+n_dress:, :], target_features[n_shirt+n_dress:, :], k=k, target_length=target_length[n_shirt+n_dress:], metrics='recall')
+    print(f'Recall@{k}: {shirt_metric_val:.2f}% for shirt when using generated images ---> real images retrieval')
+    print(f'Recall@{k}: {dress_metric_val:.2f}% for dress when using generated images ---> real images retrieval')
+    print(f'Recall@{k}: {toptee_metric_val:.2f}% for toptee when using generated images ---> real images retrieval')
+
 def convert_pil_to_base64(pil_image):
     buffered = io.BytesIO()
     pil_image.save(buffered, format="JPEG")
@@ -153,7 +162,15 @@ def main(cfg, **kwargs):
         split = kwargs['SPLIT']
     else:
         split = cfg['GENERAL']['SPLIT']
-    dataloader = get_dataloader(cfg, split=split, extractor_name=extractor, dataset_name=dataset_name)
+    if kwargs.get('BATCH_SIZE'):
+        batch_size = kwargs['BATCH_SIZE']
+    else:
+        batch_size = cfg['GENERAL']['BATCH_SIZE']
+    dataloader = get_dataloader(cfg, 
+                                split=split, 
+                                extractor_name=extractor, 
+                                batch_size=batch_size,
+                                dataset_name=dataset_name)
 
     # caption_feat = []
     # modification_feat = []
@@ -252,6 +269,8 @@ def main(cfg, **kwargs):
         # metric_val = get_metrics(modification_feat, caption_feat, k=k, target_length=target_length, metrics=metric)
         # print(f'{metric.upper()}@{k}: {metric_val:.2f}% when using generated modification ---> real modification')
 
+        if dataset_name.lower() == 'fashioniq' and split == 'val':
+            fashioniq_eval(dataloader, description_feat, tar_tensor_feat, target_length, k)
         #compute recall for generated description ---> target image
         metric_val = get_metrics(description_feat, tar_tensor_feat, k=k, target_length=target_length, metrics=metric)
         print(f'{metric.upper()}@{k}: {metric_val:.2f}% when using generated description ---> target images\n')

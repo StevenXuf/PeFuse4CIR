@@ -22,7 +22,7 @@ class FashionIQDataset(Dataset):
     def load_captions(self):
         # Load your dataset here
         captions = []
-        for cloth in ['dress', 'shirt', 'toptee']:
+        for cloth in ['shirt', 'dress', 'toptee']:
             existing_item=[]
             if self.split.lower() =='test':
                 with open(os.path.join(self.caption_folder, f"cap.{cloth}.test.json"), 'r') as f:

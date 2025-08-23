@@ -13,7 +13,7 @@ from configuration import get_default_config
 from refinedfashioniq import transform_image
 from feature_extraction import get_metrics, get_feature_extractor
 from dataloaders import get_dataloader
-from text_generation_val import generate_target_description
+from text_generation_val import generate_target_description, fashioniq_eval
 from image_generation_val import convert_pil_to_tensor, resize_crop_normalize
 
 def main(cfg, **kwargs):
@@ -146,9 +146,6 @@ def main(cfg, **kwargs):
             generated_captions.extend(output_texts)
             print(output_texts)
 
-            if i == 1:
-                break
-
     del text_generation_model
     gc.collect()
     torch.cuda.empty_cache()
@@ -206,14 +203,14 @@ def main(cfg, **kwargs):
             start += input_images.size(0)
 
             print(f'Batch {j+1} finished.')
-            if j == 1:
-                break
 
     print(target_length)
     generated_target_features = torch.cat(generated_target_features, dim=0)
     target_features = torch.cat(target_features, dim=0)
 
     for k in top_k:
+        if dataset_name.lower() == "fashioniq" and split == "val":
+            fashioniq_eval(dataloader, generated_target_features, target_features, target_length, k)
         tar_metric_val = get_metrics(generated_target_features, target_features, k=k, target_length=target_length, metrics='map' if dataset_name.lower() == "circo" else 'recall')
         print(f'{"mAP" if dataset_name.lower() == "circo" else "Recall"}@{k}: {tar_metric_val:.2f}% when using generated images ---> real images retrieval')
 

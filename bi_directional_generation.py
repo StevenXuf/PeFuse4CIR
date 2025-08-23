@@ -8,7 +8,7 @@ from qwen_vl_utils import process_vision_info
 from configuration import get_default_config
 from feature_extraction import get_metrics, get_feature_extractor
 from dataloaders import get_dataloader
-from text_generation_val import generate_target_description, convert_pil_to_base64
+from text_generation_val import generate_target_description, convert_pil_to_base64, fashioniq_eval
 
 def generate_image_description(target_image):
     target_description = [
@@ -69,6 +69,10 @@ def main(cfg, **kwargs):
         dataset_name = kwargs['DATASET']
     else:
         dataset_name = cfg['GENERAL']['DATASET']
+    if kwargs.get('SPLIT'):
+        split = kwargs['SPLIT']
+    else:
+        split = cfg['GENERAL']['SPLIT']
     top_k = cfg['GENERAL']['TOP_K']
     print(f"Using {extractor} for feature extraction using {dataset_name}")
 
@@ -174,6 +178,8 @@ def main(cfg, **kwargs):
         metric = 'recall'
     for k in top_k:
         #compute recall for generated description ---> target image
+        if dataset_name.lower() == "fashioniq" and split == 'val':
+            fashioniq_eval(dataloader, caption_feat, description_feat, target_length, k)
         metric_val = get_metrics(caption_feat, description_feat, k=k, target_length=target_length, metrics=metric)
         print(f'{metric.upper()}@{k}: {metric_val:.2f}% when using generated description ---> target description')
 
