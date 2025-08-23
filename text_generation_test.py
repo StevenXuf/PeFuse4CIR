@@ -57,7 +57,7 @@ def store_top_k(cfg, modality, query_ids, target_ids, description_feat, tar_tens
             image_guidance_scale = kwargs['IMAGE_GUIDANCE_SCALE']
         else:
             image_guidance_scale = cfg['IMAGE-GENERATION']['GLOBAL']['IMAGE_GUIDANCE_SCALE'] 
-        json.dump(res, open(f"predicted_results_{modality}_gen_{dataset_name}_{extractor}_{num_inference_steps}_{image_guidance_scale}_{guidance_scale}.json", "w"))
+        json.dump(res, open(f"{modality}_gen_{dataset_name}_{extractor}_{num_inference_steps}_{image_guidance_scale}_{guidance_scale}_top{cutoff}_results.json", "w"))
     elif modality == 'text' or modality == 'bi':
         if kwargs.get('TEMPERATURE'):
             temperature= kwargs['TEMPERATURE']
@@ -71,7 +71,7 @@ def store_top_k(cfg, modality, query_ids, target_ids, description_feat, tar_tens
             llm_top_k = kwargs['TOP_K']
         else:
             llm_top_k = cfg['TEXT-GENERATION']['GLOBAL']['TOP_K']
-        json.dump(res, open(f"predicted_results_{modality}_gen_{dataset_name}_{extractor}_{temperature}_{top_p}_{llm_top_k}.json", "w"))
+        json.dump(res, open(f"{modality}_gen_{dataset_name}_{extractor}_{temperature}_{top_p}_{llm_top_k}_top{cutoff}_results.json", "w"))
 
 def main(cfg, **kwargs):
     device = torch.device(f"cuda:{cfg['GENERAL']['DEVICE']}" if torch.cuda.is_available() else "cpu")
@@ -223,6 +223,7 @@ def main(cfg, **kwargs):
     tar_tensor_feat = torch.cat(tar_tensor_feat, dim=0)
 
     store_top_k(cfg, "text", query_ids, target_ids, description_feat, tar_tensor_feat, dataset_name, extractor, **kwargs)
+    store_top_k(cfg, "text", query_ids, target_ids, description_feat, tar_tensor_feat, dataset_name, extractor, cutoff=30, **kwargs)
 
 def launch(**kwargs):
     cfg = get_default_config("config.yaml")
