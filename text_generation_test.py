@@ -33,7 +33,7 @@ def extract_target_feat_with_id(test_loader, feature_extraction_model, extractor
             #     break
     return target_ids, tar_tensor_feat
 
-def store_top_k(modality, query_ids, target_ids, description_feat, tar_tensor_feat, dataset_name, extractor, cutoff=50):
+def store_top_k(cfg, modality, query_ids, target_ids, description_feat, tar_tensor_feat, dataset_name, extractor, cutoff=50, **kwargs):
     target_ids = np.array(target_ids)
     sim = pairwise_cosine_similarity(description_feat, tar_tensor_feat)
     _, indices = sim.topk(k=cutoff, dim=1)
@@ -44,7 +44,34 @@ def store_top_k(modality, query_ids, target_ids, description_feat, tar_tensor_fe
         res={str(item[0]): item[1].tolist() for item in zip(query_ids, predicted)}
         res['version'] = 'rc2'
         res['metric'] = 'recall' if cutoff == 50 else 'recall_subset'
-    json.dump(res, open(f"predicted_results_{modality}_gen_{dataset_name}_{extractor}.json", "w"))
+    if modality == 'image':
+        if kwargs.get('NUM_INFERENCE_STEPS'):
+            num_inference_steps = kwargs['NUM_INFERENCE_STEPS']
+        else:
+            num_inference_steps = cfg['IMAGE-GENERATION']['GLOBAL']['NUM_INFERENCE_STEPS']
+        if kwargs.get('GUIDANCE_SCALE'):
+            guidance_scale = kwargs['GUIDANCE_SCALE']
+        else:
+            guidance_scale = cfg['IMAGE-GENERATION']['GLOBAL']['GUIDANCE_SCALE']
+        if kwargs.get('IMAGE_GUIDANCE_SCALE'):
+            image_guidance_scale = kwargs['IMAGE_GUIDANCE_SCALE']
+        else:
+            image_guidance_scale = cfg['IMAGE-GENERATION']['GLOBAL']['IMAGE_GUIDANCE_SCALE'] 
+        json.dump(res, open(f"predicted_results_{modality}_gen_{dataset_name}_{extractor}_{num_inference_steps}_{image_guidance_scale}_{guidance_scale}.json", "w"))
+    elif modality == 'text' or modality == 'bi':
+        if kwargs.get('TEMPERATURE'):
+            temperature= kwargs['TEMPERATURE']
+        else:
+            temperature = cfg['TEXT-GENERATION']['GLOBAL']['TEMPERATURE']
+        if kwargs.get('TOP_P'):
+            top_p = kwargs['TOP_P']
+        else:
+            top_p = cfg['TEXT-GENERATION']['GLOBAL']['TOP_P']
+        if kwargs.get('TOP_K'):
+            llm_top_k = kwargs['TOP_K']
+        else:
+            llm_top_k = cfg['TEXT-GENERATION']['GLOBAL']['TOP_K']
+        json.dump(res, open(f"predicted_results_{modality}_gen_{dataset_name}_{extractor}_{temperature}_{top_p}_{llm_top_k}.json", "w"))
 
 def main(cfg, **kwargs):
     device = torch.device(f"cuda:{cfg['GENERAL']['DEVICE']}" if torch.cuda.is_available() else "cpu")
@@ -195,7 +222,7 @@ def main(cfg, **kwargs):
     description_feat = torch.cat(description_feat, dim=0)
     tar_tensor_feat = torch.cat(tar_tensor_feat, dim=0)
 
-    store_top_k("text", query_ids, target_ids, description_feat, tar_tensor_feat, dataset_name, extractor)
+    store_top_k(cfg, "text", query_ids, target_ids, description_feat, tar_tensor_feat, dataset_name, extractor, **kwargs)
 
 def launch(**kwargs):
     cfg = get_default_config("config.yaml")
