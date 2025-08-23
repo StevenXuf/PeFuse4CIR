@@ -223,7 +223,8 @@ def main(cfg, **kwargs):
     tar_tensor_feat = torch.cat(tar_tensor_feat, dim=0)
 
     store_top_k(cfg, "text", query_ids, target_ids, description_feat, tar_tensor_feat, dataset_name, extractor, **kwargs)
-    store_top_k(cfg, "text", query_ids, target_ids, description_feat, tar_tensor_feat, dataset_name, extractor, cutoff=30, **kwargs)
+    if dataset_name.lower() == 'cirr':
+        store_top_k(cfg, "text", query_ids, target_ids, description_feat, tar_tensor_feat, dataset_name, extractor, cutoff=30, **kwargs)
 
 def launch(**kwargs):
     cfg = get_default_config("config.yaml")
