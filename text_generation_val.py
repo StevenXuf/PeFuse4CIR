@@ -16,9 +16,10 @@ def fashioniq_eval(dataloader, generated_target_features, target_features, targe
     shirt_metric_val = get_metrics(generated_target_features[:n_shirt, :], target_features[:n_shirt, :], k=k, target_length=target_length[:n_shirt], metrics='recall')
     dress_metric_val = get_metrics(generated_target_features[n_shirt:n_shirt+n_dress, :], target_features[n_shirt:n_shirt+n_dress, :], k=k, target_length=target_length[n_shirt:n_shirt+n_dress], metrics='recall')
     toptee_metric_val = get_metrics(generated_target_features[n_shirt+n_dress:, :], target_features[n_shirt+n_dress:, :], k=k, target_length=target_length[n_shirt+n_dress:], metrics='recall')
-    print(f'Recall@{k}: {shirt_metric_val:.2f}% for shirt when using generated images ---> real images retrieval')
-    print(f'Recall@{k}: {dress_metric_val:.2f}% for dress when using generated images ---> real images retrieval')
-    print(f'Recall@{k}: {toptee_metric_val:.2f}% for toptee when using generated images ---> real images retrieval')
+    print(f'Recall@{k}: {shirt_metric_val:.2f}% for shirt')
+    print(f'Recall@{k}: {dress_metric_val:.2f}% for dress')
+    print(f'Recall@{k}: {toptee_metric_val:.2f}% for toptee')
+    print(f'Recall@{k}: {(shirt_metric_val+dress_metric_val+toptee_metric_val)/3:.2f}% for all categories')
 
 def convert_pil_to_base64(pil_image):
     buffered = io.BytesIO()
@@ -272,8 +273,9 @@ def main(cfg, **kwargs):
         if dataset_name.lower() == 'fashioniq' and split == 'val':
             fashioniq_eval(dataloader, description_feat, tar_tensor_feat, target_length, k)
         #compute recall for generated description ---> target image
-        metric_val = get_metrics(description_feat, tar_tensor_feat, k=k, target_length=target_length, metrics=metric)
-        print(f'{metric.upper()}@{k}: {metric_val:.2f}% when using generated description ---> target images\n')
+        else:
+            metric_val = get_metrics(description_feat, tar_tensor_feat, k=k, target_length=target_length, metrics=metric)
+            print(f'{metric.upper()}@{k}: {metric_val:.2f}% when using generated description ---> target images\n')
     print(f"{'*'*20}Text generation completed{'*'*20}")
 
 def launch(**kwargs):

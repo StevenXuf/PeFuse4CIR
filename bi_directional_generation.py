@@ -180,8 +180,9 @@ def main(cfg, **kwargs):
         #compute recall for generated description ---> target image
         if dataset_name.lower() == "fashioniq" and split == 'val':
             fashioniq_eval(dataloader, caption_feat, description_feat, target_length, k)
-        metric_val = get_metrics(caption_feat, description_feat, k=k, target_length=target_length, metrics=metric)
-        print(f'{metric.upper()}@{k}: {metric_val:.2f}% when using generated description ---> target description')
+        else:
+            metric_val = get_metrics(caption_feat, description_feat, k=k, target_length=target_length, metrics=metric)
+            print(f'{metric.upper()}@{k}: {metric_val:.2f}% when using generated description ---> target description')
 
 def launch(**kwargs):
     cfg = get_default_config("config.yaml")

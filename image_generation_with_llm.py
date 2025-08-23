@@ -211,8 +211,9 @@ def main(cfg, **kwargs):
     for k in top_k:
         if dataset_name.lower() == "fashioniq" and split == "val":
             fashioniq_eval(dataloader, generated_target_features, target_features, target_length, k)
-        tar_metric_val = get_metrics(generated_target_features, target_features, k=k, target_length=target_length, metrics='map' if dataset_name.lower() == "circo" else 'recall')
-        print(f'{"mAP" if dataset_name.lower() == "circo" else "Recall"}@{k}: {tar_metric_val:.2f}% when using generated images ---> real images retrieval')
+        else:
+            tar_metric_val = get_metrics(generated_target_features, target_features, k=k, target_length=target_length, metrics='map' if dataset_name.lower() == "circo" else 'recall')
+            print(f'{"mAP" if dataset_name.lower() == "circo" else "Recall"}@{k}: {tar_metric_val:.2f}% when using generated images ---> real images retrieval')
 
 
 def launch(**kwargs):
