@@ -154,7 +154,7 @@ def main(cfg, **kwargs):
                                                                               torch_dtype=torch.float16).to(device)
     print(f"Using {generation_model.__class__.__name__} with params: n_infer_step={n_infer_step}, image_guidance_scale={image_guidance_scale}, guidance_scale={guidance_scale}")
 
-    store_path = os.path.join(cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['OUTPUT_DIR'], f'Qwen_{dataset_name}_{n_infer_step}_{image_guidance_scale}_{guidance_scale}')
+    store_path = os.path.join(cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['OUTPUT_DIR'], f'Qwen_{dataset_name}_{extractor_name}_{n_infer_step}_{image_guidance_scale}_{guidance_scale}')
     if not os.path.exists(store_path):
         os.makedirs(store_path)
 
