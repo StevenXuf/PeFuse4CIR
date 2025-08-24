@@ -204,3 +204,4 @@ if __name__ == "__main__":
 
     #### TO DO: MODIFY BACKWARD COMPUTATION FOR text and image gen ####
     ### Use image-only, text-only, or combined as baselines
+    ### Check the order of the reference images and the target images!!!!!!!

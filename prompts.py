@@ -52,9 +52,10 @@ def generate_composed_description(reference_image, caption):
                 "Given a reference image and modification instructions, you will mentally apply the changes and then produce a accurate, and complete natural-language description of what the resulting image looks like. "
                 "Describe what should be in the final modified scene. " #instead of what are currently in the reference image.
                 "Focus on the objects or attributes in the reference image that are relevant to the modification instructions. "
-                "Remove all irrelevant attributes, and objects from the scene. "
+                "Remove all irrelevant attributes, and objects from the reference image. "
                 "Be concrete instead of ambiguous. "
                 "Be concise instead of verbose. "
+                # "Be objective instead of subjective. "
                 "Avoid adding imaginary things that are not in the reference image or the modification instructions. "
                 # "Include information both in the reference images and the modifications. "  #such as colors, textures, positions, objects, people, etc. 
                 # "For example, if the a instruction asks to change the color of the car from current color to another one and also change the perspective of the scene, you should specify what the current color is and what the new color should be, as well as the desired perspective. By this way, you include information from both images and texts while being concrete instead of ambiguous. "
@@ -84,10 +85,12 @@ def generate_target_description(target_image):
             "content": (
                 "You are an expert at visual perception. "
                 "Given an image, you can describe the image in an accurate, detailed and complete natural-language description. "
+                "Focus on the objects, people, attributes, relationships, or actions if they appear in the image. "
                 "Be concrete instead of ambiguous. "
-                "Include details in the image such as colors, positions, objects, people, and attributes, etc. "
+                "Be concise instead of verbose. "
+                # "Include details in the image such as colors, positions, objects, people, and attributes, etc. "
                 "Avoid adding imaginary things that are not in the image. "
-                "Write in clear, logical, full, and complete sentences in English."
+                "Write in clear, logical, and complete sentences in English."
             )
         },
         {
