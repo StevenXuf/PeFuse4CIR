@@ -8,7 +8,7 @@ from qwen_vl_utils import process_vision_info
 from configuration import get_default_config
 from feature_extraction import get_metrics, get_feature_extractor
 from dataloaders import get_dataloader
-from prompts import generate_target_description
+from prompts import generate_composed_description
 
 def fashioniq_eval(dataloader, generated_target_features, target_features, target_length, k):
     n_shirt, n_dress, n_toptee = dataloader.dataset.length
@@ -106,10 +106,10 @@ def main(cfg, **kwargs):
             target_length.extend(batch['all_target_length'])
 
             # text_modification = list(map(lambda x: generate_text_modification(*x),zip(target_pil, reference_pil)))
-            target_description = list(map(lambda x: generate_target_description(*x),zip(reference_pil, caption)))
+            composed_description = list(map(lambda x: generate_composed_description(*x),zip(reference_pil, caption)))
 
             generated_text = []
-            for text_info in [target_description]:
+            for text_info in [composed_description]:
                 texts = [
                     processor.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
                     for msg in text_info

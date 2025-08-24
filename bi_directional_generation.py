@@ -86,14 +86,14 @@ def main(cfg, **kwargs):
             caption = batch['caption']
             target_length.extend(batch['all_target_length'])
 
-            target_description = list(map(lambda x: generate_composed_description(*x),zip(reference_pil, caption)))
-            image_description = list(map(generate_target_description, all_target_pil))
+            composed_description = list(map(lambda x: generate_composed_description(*x),zip(reference_pil, caption)))
+            target_description = list(map(generate_target_description, all_target_pil))
 
             texts = [
                 processor.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
-                for msg in target_description+image_description
+                for msg in composed_description+target_description
             ]
-            image_inputs, video_inputs = process_vision_info(target_description+image_description)
+            image_inputs, video_inputs = process_vision_info(composed_description+target_description)
             inputs = processor(
                 text=texts,
                 images=image_inputs,
@@ -139,7 +139,7 @@ def main(cfg, **kwargs):
             else:
                 raise ValueError(f"Unsupported extractor: {extractor}")
 
-            steps = len(target_description)
+            steps = len(composed_description)
             caption_feat.append(gen_feat[:steps, :])
             description_feat.append(gen_feat[steps:, :])
 

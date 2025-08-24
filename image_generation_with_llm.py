@@ -117,13 +117,13 @@ def main(cfg, **kwargs):
             reference_pil = batch['reference_pil']
             caption = batch['caption']
 
-            target_description = list(map(lambda x: generate_composed_description(*x),zip(reference_pil, caption)))
+            composed_description = list(map(lambda x: generate_composed_description(*x),zip(reference_pil, caption)))
 
             texts = [
                 processor.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
-                for msg in target_description
+                for msg in composed_description
             ]
-            image_inputs, video_inputs = process_vision_info(target_description)
+            image_inputs, video_inputs = process_vision_info(composed_description)
             inputs = processor(
                 text=texts,
                 images=image_inputs,
