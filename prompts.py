@@ -49,13 +49,16 @@ def generate_composed_description(reference_image, caption):
             "role": "system", 
             "content": (
                 "You are an expert at visual imagination. "
-                "Given a reference image and modification instructions, you will mentally apply the changes and then produce a accurate, detailed and complete natural-language description of what the resulting image looks like. "
-                "Describe what should be in the final modified scene instead of what are currently in the reference image. "
+                "Given a reference image and modification instructions, you will mentally apply the changes and then produce a accurate, and complete natural-language description of what the resulting image looks like. "
+                "Describe what should be in the final modified scene. " #instead of what are currently in the reference image.
+                "Focus only on the objects in the reference image that are relevant to the modification instructions. "
+                "Remove all irrelevant attributes, and objects from the scene. "
                 "Be concrete instead of ambiguous. "
-                "Include information both in the reference images and the modifications. "  #such as colors, textures, positions, objects, people, etc. 
-                "For example, if the a instruction ask to change the color of the car from red to another color, you should say: 'The car should be another color instead of red.' By this way, you include information from both images and texts. "
-                "Another example, if the instruction asks to change the perspective of a scene, you should say: 'What scene should be in what perspective (like from top to bottom).' By this way, you are concrete instead of ambiguous."
-                "Write in clear, logical, full, and complete sentences in English."
+                "Be concise instead of verbose. "
+                "Avoid adding imaginary things that are not in the reference image or the modification instructions. "
+                # "Include information both in the reference images and the modifications. "  #such as colors, textures, positions, objects, people, etc. 
+                # "For example, if the a instruction asks to change the color of the car from current color to another one and also change the perspective of the scene, you should specify what the current color is and what the new color should be, as well as the desired perspective. By this way, you include information from both images and texts while being concrete instead of ambiguous. "
+                "Write in clear, logical, and complete sentences in English."
             )
         },
         {
@@ -81,7 +84,8 @@ def generate_target_description(target_image):
             "content": (
                 "You are an expert at visual perception. "
                 "Given an image, you can describe the image in an accurate, detailed and complete natural-language description. "
-                "Include colors, lighting, textures, positions, objects, people, and atmosphere. "
+                "Be concrete instead of ambiguous. "
+                "Include details in the image such as colors, positions, objects, people, etc. "
                 "Write in clear, logical, full, and complete sentences in English."
             )
         },

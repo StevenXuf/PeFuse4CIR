@@ -11,6 +11,7 @@ from open_clip import create_model_from_pretrained, get_tokenizer
 from configuration import get_default_config
 from refinedfashioniq import get_refined_fashioniq_loader,transform_image
 from attention import self_attention, cross_attention, co_attention
+from metrics import compute_map_at_k, compute_recall_at_k
 
 def get_feature_extractor(cfg, extractor=None):
     if extractor is None:
@@ -50,6 +51,11 @@ def get_metrics(feat1, feat2, k, target_length, metrics='recall'):
     indexes = torch.arange(sim.size(0), dtype=torch.long).unsqueeze(1).expand(*sim.size()).to(sim.device)
 
     res = compute(sim,targets,indexes=indexes)
+
+    if metrics == 'map':
+        print(f'manual mAP@{k}: {compute_map_at_k(sim, targets, k=k)*100}')
+    elif metrics == 'recall':
+        print(f'manual Recall@{k}: {compute_recall_at_k(sim, targets, k=k)*100}')
     return res*100
 
 def extract_features(model,processor,dataloader,config_path='./config.yaml',cfg=None):
