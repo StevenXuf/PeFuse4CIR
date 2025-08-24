@@ -7,7 +7,7 @@ def convert_pil_to_base64(pil_image):
     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
     return img_str
 
-def generate_modification_text(target_image, reference_image):
+def generate_modification(target_image, reference_image):
     text_modification = [
         {
             "role": "system", 
