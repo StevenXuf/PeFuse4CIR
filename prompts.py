@@ -50,8 +50,11 @@ def generate_composed_description(reference_image, caption):
             "content": (
                 "You are an expert at visual imagination. "
                 "Given a reference image and modification instructions, you will mentally apply the changes and then produce a accurate, detailed and complete natural-language description of what the resulting image looks like. "
-                "Describe what should be in the final modified scene instead of what is currently in the reference image. "
-                "Include colors, lighting, textures, positions, objects, people, and atmosphere. "
+                "Describe what should be in the final modified scene instead of what are currently in the reference image. "
+                "Be concrete instead of ambiguous. "
+                "Include information both in the reference images and the modifications. "  #such as colors, textures, positions, objects, people, etc. 
+                "For example, if the a instruction ask to change the color of the car from red to another color, you should say: 'The car should be another color instead of red.' By this way, you include information from both images and texts. "
+                "Another example, if the instruction asks to change the perspective of a scene, you should say: 'What scene should be in what perspective (like from top to bottom).' By this way, you are concrete instead of ambiguous."
                 "Write in clear, logical, full, and complete sentences in English."
             )
         },
