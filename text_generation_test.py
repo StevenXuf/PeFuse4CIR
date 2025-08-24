@@ -13,9 +13,37 @@ from configuration import get_default_config
 from feature_extraction import get_feature_extractor
 from dataloaders import get_dataloader
 
-from text_generation_val import generate_target_description
+from text_generation_val import convert_pil_to_base64 #generate_target_description
 
-def extract_target_feat_with_id(test_loader, feature_extraction_model, extractor, img_preprocess, device):
+def generate_target_description(reference_image, caption):
+    target_description = [
+        {
+            "role": "system", 
+            "content": (
+                "You are an expert at visual imagination. "
+                "Given a reference image and modification instructions, you will mentally apply the changes and then produce an accurate, detailed and complete natural-language description of what the resulting image looks like. "
+                "Only describe the final modified scene. "
+                "Include everything such as colors, textures, positions, objects, environments and people. "
+                "Write in clear, logical, full, and complete sentences in English."
+            )
+        },
+        {
+            "role": "user",
+            "content": [
+                {"type": "image", "image": "data:image;base64," + convert_pil_to_base64(reference_image)},
+                {
+                    "type": "text", 
+                    "text": (
+                        f"Here are the modification instructions: {caption}\n\n"
+                        "Now, describe how the final image looks in coherent and complete English using at least ten tokens."
+                    )
+                }
+            ],
+        }
+    ]
+    return target_description
+
+def extract_target_feat_with_id(test_loader, feature_extraction_model, extractor, device, img_preprocess=None):
     tar_tensor_feat = []
     target_ids=[]
     with torch.no_grad():
@@ -31,6 +59,7 @@ def extract_target_feat_with_id(test_loader, feature_extraction_model, extractor
 
             # if j == 1:
             #     break
+    print('Extracting finished.')
     return target_ids, tar_tensor_feat
 
 def store_top_k(cfg, modality, query_ids, target_ids, description_feat, tar_tensor_feat, dataset_name, extractor, cutoff=50, **kwargs):
@@ -215,7 +244,10 @@ def main(cfg, **kwargs):
     elif dataset_name.lower() == 'cirr':
         test_loader = get_dataloader(cfg, dataset_name='cirr_target_image', batch_size=512, extractor_name=extractor)
 
-    target_ids, tar_tensor_feat = extract_target_feat_with_id(test_loader, feature_extraction_model, extractor, img_preprocess, device)
+    if extractor.lower() == 'openclip' or extractor.lower() == 'openvision':
+        target_ids, tar_tensor_feat = extract_target_feat_with_id(test_loader, feature_extraction_model, extractor, device, img_preprocess)
+    else:
+        target_ids, tar_tensor_feat = extract_target_feat_with_id(test_loader, feature_extraction_model, extractor, device)
 
     # caption_feat = torch.cat(caption_feat, dim=0)
     # modification_feat = torch.cat(modification_feat, dim=0)
