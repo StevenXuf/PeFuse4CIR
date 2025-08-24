@@ -8,33 +8,8 @@ from qwen_vl_utils import process_vision_info
 from configuration import get_default_config
 from feature_extraction import get_metrics, get_feature_extractor
 from dataloaders import get_dataloader
-from text_generation_val import generate_target_description, convert_pil_to_base64, fashioniq_eval
-
-def generate_image_description(target_image):
-    target_description = [
-        {
-            "role": "system", 
-            "content": (
-                "You are an expert at visual perception. "
-                "Given an image, you can describe the image in an accurate, detailed and complete natural-language description. "
-                "Include colors, lighting, textures, positions, objects, people, and atmosphere. "
-                "Write in clear, logical, full, and complete sentences in English."
-            )
-        },
-        {
-            "role": "user",
-            "content": [
-                {"type": "image", "image": "data:image;base64," + convert_pil_to_base64(target_image)},
-                {
-                    "type": "text", 
-                    "text": (
-                        "Now, describe what you see from the given image in coherent and complete English using at least ten tokens."
-                    )
-                }
-            ],
-        }
-    ]
-    return target_description
+from text_generation_val import fashioniq_eval
+from prompts import generate_composed_description, generate_target_description
 
 def main(cfg, **kwargs):
     device = torch.device(f"cuda:{cfg['GENERAL']['DEVICE']}" if torch.cuda.is_available() else "cpu")
@@ -111,8 +86,8 @@ def main(cfg, **kwargs):
             caption = batch['caption']
             target_length.extend(batch['all_target_length'])
 
-            target_description = list(map(lambda x: generate_target_description(*x),zip(reference_pil, caption)))
-            image_description = list(map(generate_image_description, all_target_pil))
+            target_description = list(map(lambda x: generate_composed_description(*x),zip(reference_pil, caption)))
+            image_description = list(map(generate_target_description, all_target_pil))
 
             texts = [
                 processor.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)

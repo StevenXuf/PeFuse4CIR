@@ -13,7 +13,8 @@ from configuration import get_default_config
 from refinedfashioniq import transform_image
 from feature_extraction import get_metrics, get_feature_extractor
 from dataloaders import get_dataloader
-from text_generation_val import generate_target_description, fashioniq_eval
+from text_generation_val import fashioniq_eval
+from prompts import generate_composed_description
 from image_generation_val import convert_pil_to_tensor, resize_crop_normalize
 
 def main(cfg, **kwargs):
@@ -116,7 +117,7 @@ def main(cfg, **kwargs):
             reference_pil = batch['reference_pil']
             caption = batch['caption']
 
-            target_description = list(map(lambda x: generate_target_description(*x),zip(reference_pil, caption)))
+            target_description = list(map(lambda x: generate_composed_description(*x),zip(reference_pil, caption)))
 
             texts = [
                 processor.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)

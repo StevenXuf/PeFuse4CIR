@@ -13,35 +13,7 @@ from configuration import get_default_config
 from feature_extraction import get_feature_extractor
 from dataloaders import get_dataloader
 
-from text_generation_val import convert_pil_to_base64 #generate_target_description
-
-def generate_target_description(reference_image, caption):
-    target_description = [
-        {
-            "role": "system", 
-            "content": (
-                "You are an expert at visual imagination. "
-                "Given a reference image and modification instructions, you will mentally apply the changes and then produce an accurate, detailed and complete natural-language description of what the resulting image looks like. "
-                "Only describe the final modified scene. "
-                "Include everything such as colors, textures, positions, objects, environments and people. "
-                "Write in clear, logical, full, and complete sentences in English."
-            )
-        },
-        {
-            "role": "user",
-            "content": [
-                {"type": "image", "image": "data:image;base64," + convert_pil_to_base64(reference_image)},
-                {
-                    "type": "text", 
-                    "text": (
-                        f"Here are the modification instructions: {caption}\n\n"
-                        "Now, describe how the final image looks in coherent and complete English using at least ten tokens."
-                    )
-                }
-            ],
-        }
-    ]
-    return target_description
+from prompts import generate_composed_description
 
 def extract_target_feat_with_id(test_loader, feature_extraction_model, extractor, device, img_preprocess=None):
     tar_tensor_feat = []
@@ -173,7 +145,7 @@ def main(cfg, **kwargs):
             query_ids.extend(batch['query_id'])
 
             # text_modification = list(map(lambda x: generate_text_modification(*x),zip(target_pil, reference_pil)))
-            target_description = list(map(lambda x: generate_target_description(*x),zip(reference_pil, caption)))
+            target_description = list(map(lambda x: generate_composed_description(*x),zip(reference_pil, caption)))
 
             generated_text = []
             for text_info in [target_description]:
