@@ -51,7 +51,7 @@ def generate_composed_description(reference_image, caption):
                 "You are an expert at visual imagination. "
                 "Given a reference image and modification instructions, you will mentally apply the changes and then produce a accurate, and complete natural-language description of what the resulting image looks like. "
                 "Describe what should be in the final modified scene. " #instead of what are currently in the reference image.
-                "Focus only on the objects in the reference image that are relevant to the modification instructions. "
+                "Focus only on the objects or attributes in the reference image that are relevant to the modification instructions. "
                 "Remove all irrelevant attributes, and objects from the scene. "
                 "Be concrete instead of ambiguous. "
                 "Be concise instead of verbose. "
@@ -86,6 +86,7 @@ def generate_target_description(target_image):
                 "Given an image, you can describe the image in an accurate, detailed and complete natural-language description. "
                 "Be concrete instead of ambiguous. "
                 "Include details in the image such as colors, positions, objects, people, etc. "
+                "Avoid adding imaginary things that are not in the image. "
                 "Write in clear, logical, full, and complete sentences in English."
             )
         },
