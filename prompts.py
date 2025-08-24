@@ -20,6 +20,7 @@ def generate_modification(target_image, reference_image):
                 "Write in clear, full, and complete sentences in English."
             )
         },
+        {
             "role": "user",
             "content": [
                 {
