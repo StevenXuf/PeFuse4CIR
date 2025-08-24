@@ -50,7 +50,7 @@ def generate_composed_description(reference_image, caption):
             "content": (
                 "You are an expert at visual imagination. "
                 "Given a reference image and modification instructions, you will mentally apply the changes and then produce a accurate, detailed and complete natural-language description of what the resulting image looks like. "
-                "Only describe the final modified scene. "
+                "Describe what should be in the final modified scene instead of what is currently in the reference image. "
                 "Include colors, lighting, textures, positions, objects, people, and atmosphere. "
                 "Write in clear, logical, full, and complete sentences in English."
             )
