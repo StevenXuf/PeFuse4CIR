@@ -54,7 +54,7 @@ class FashionIQDataset(Dataset):
                 target_image = self.transform(target_image)
                 reference_image = self.transform(reference_image)
             return {
-                "caption": item["captions"][0],
+                "caption": f"{' and '.join(item['captions'])}",
                 "reference_image": reference_image,
                 "target_image": target_image,
                 "reference_id": item["candidate"],
@@ -65,7 +65,7 @@ class FashionIQDataset(Dataset):
             if self.transform:
                 reference_image = self.transform(reference_image)
             return {
-                "caption": item["captions"][0],
+                "caption": f"{' and '.join(item['captions'])}",
                 "reference_image": reference_image,
                 "reference_id": item["candidate"],
             }

@@ -9,7 +9,7 @@ from configuration import get_default_config
 from fashioniq import transform_image
 
 class CIRRDataset(Dataset):
-    def __init__(self, root_dir, split="val", captions_folder="captions", transform=None):
+    def __init__(self, root_dir, split="val", captions_folder="captions", captions_ext_folder="captions_ext", transform=None):
         """
         Args:
             root_dir (str): Path to `data/cirr`.
@@ -21,28 +21,38 @@ class CIRRDataset(Dataset):
         self.root_dir = root_dir
         self.split = split
         self.captions_folder = captions_folder
+        self.captions_ext_folder = captions_ext_folder
         self.transform = transform
 
-        captions_path = os.path.join(
+        self.captions_path = os.path.join(
             root_dir,
             captions_folder,
             f"cap.rc2.{self.split}.json"
         )
-        if not os.path.exists(captions_path):
-            raise FileNotFoundError(f"Captions file not found: {captions_path}")
-        
-        with open(captions_path, 'r') as f:
+        self.captions_ext_path = os.path.join(
+            root_dir,
+            captions_ext_folder,
+            f"cap.ext.rc2.{self.split}.json"
+        )
+        if not os.path.exists(self.captions_path):
+            raise FileNotFoundError(f"Captions file not found: {self.captions_path}")
+        if not os.path.exists(self.captions_ext_path):
+            raise FileNotFoundError(f"Captions file not found: {self.captions_ext_path}")
+
+        with open(self.captions_path, 'r') as f:
             captions = json.load(f)
+        with open(self.captions_ext_path, 'r') as p:
+            captions_ext_info = json.load(p)
 
         self.img_root = os.path.join(root_dir, "img_raw")
 
         # Pre-filter to keep only samples with both images existing
-        self.caption_data = []
+        self.caption_data = {}
         if self.split == "test1":
             for entry in captions:
                 ref_img_path = self._find_image_path(entry["reference"])
                 if ref_img_path is not None:
-                    self.caption_data.append(entry)
+                    self.caption_data[entry["pairid"]] = entry
                 else:
                     print(f"Skipping missing image for pairid={entry.get('pairid')}")
         elif self.split == "val" or self.split == "train":
@@ -50,22 +60,27 @@ class CIRRDataset(Dataset):
                 ref_img_path = self._find_image_path(entry["reference"])
                 tgt_img_path = self._find_image_path(entry["target_hard"])
                 if ref_img_path is not None and tgt_img_path is not None:
-                    self.caption_data.append(entry)
+                    self.caption_data[entry["pairid"]] = entry
                 else:
                     print(f"Skipping missing image for pairid={entry.get('pairid')}")
         else:
             raise ValueError("split should be in ['val', 'test1']")
+
+        self.ext_captions = self._get_ext_captions(captions_ext_info)
+    
 
 
     def __len__(self):
         return len(self.caption_data)
 
     def __getitem__(self, idx):
-        entry = self.caption_data[idx]
+        current_id = list(self.caption_data.keys())[idx]
+        entry = self.caption_data[current_id]
+        ext_caption = self.ext_captions[current_id]
 
         if self.split == "test1":
             reference_id = entry["reference"]
-            caption = entry["caption"]
+            caption = entry["caption"].replace(".", "") + ' and ' + ext_caption
             pairid = entry["pairid"]
 
             ref_img_path = self._find_image_path(reference_id)
@@ -82,7 +97,7 @@ class CIRRDataset(Dataset):
         else:
             reference_id = entry["reference"]
             target_id = entry["target_hard"]
-            caption = entry["caption"]
+            caption = entry["caption"].replace(".", "") + ' and ' + ext_caption
             pairid = entry["pairid"]
 
             ref_img_path = self._find_image_path(reference_id)
@@ -127,7 +142,30 @@ class CIRRDataset(Dataset):
                 return candidate
         
         return None
-    
+
+    def _get_ext_captions(self, captions_ext):
+        ext_captions = {}
+        uninformative_phrases = ['covered in query', 'none existed', 'nothing worth mentioning']
+        if self.split == "test1":
+            for ext in captions_ext:
+                ref_id = ext["reference"]
+                pair_id = ext["pairid"]
+                if pair_id in self.caption_data:
+                    if self.caption_data[pair_id]['reference'] == ref_id:
+                        filtered_caps = [cap for cap in list(map(lambda x: x.lower().replace(".", ""), list(ext['caption_extend'].values()))) if not any(phrase in cap for phrase in uninformative_phrases)]
+                        ext_captions[pair_id] = ' and '.join(filtered_caps)
+
+        else:
+            for ext in captions_ext:
+                ref_id = ext["reference"]
+                tgt_id = ext["target_hard"]
+                pair_id = ext["pairid"]
+                if pair_id in self.caption_data:
+                    if self.caption_data[pair_id]['reference'] == ref_id and self.caption_data[pair_id]['target_hard'] == tgt_id:
+                        filtered_caps = [cap for cap in list(map(lambda x: x.lower().replace(".", ""), list(ext['caption_extend'].values()))) if not any(phrase in cap for phrase in uninformative_phrases)]
+                        ext_captions[pair_id] = ' and '.join(filtered_caps)
+        return ext_captions
+
 def get_cirr_loader(data_path, batch_size=16, split='val', num_workers=0, transform=None):
     val_collate_fn = lambda batch: {
                             "reference_img": torch.stack([transform(item["reference_image"]) if transform is not None else item['reference_image'] for item in batch]),
@@ -176,3 +214,5 @@ if __name__ == "__main__":
     print(f"Number of samples in {cfg['CIRR']['IMAGE_FOLDER']}: {len(loader.dataset)}")
     for batch in loader:
         print(batch["reference_img"].shape)
+        print(batch["caption"])
+        break

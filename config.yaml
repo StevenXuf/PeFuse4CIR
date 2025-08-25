@@ -89,7 +89,7 @@ IMAGE-GENERATION:
 TEXT-GENERATION:
     GLOBAL:
         MAX_NEW_TOKENS: 128
-        TEMPERATURE: 0.4
+        TEMPERATURE: 0.1
         TOP_P: 0.9
         TOP_K: 50
     MODEL_NAME: "Qwen/Qwen2.5-VL-7B-Instruct"

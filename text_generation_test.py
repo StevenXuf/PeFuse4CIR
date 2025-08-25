@@ -13,7 +13,7 @@ from configuration import get_default_config
 from feature_extraction import get_feature_extractor
 from dataloaders import get_dataloader
 
-from prompts import generate_composed_description
+from prompts import get_composed_prompts
 
 def extract_target_feat_with_id(test_loader, feature_extraction_model, extractor, device, img_preprocess=None):
     tar_tensor_feat = []
@@ -75,7 +75,11 @@ def store_top_k(cfg, modality, query_ids, target_ids, description_feat, tar_tens
         json.dump(res, open(f"{modality}_gen_{dataset_name}_{extractor}_{temperature}_{top_p}_{llm_top_k}_top{cutoff}_results.json", "w"))
 
 def main(cfg, **kwargs):
-    device = torch.device(f"cuda:{cfg['GENERAL']['DEVICE']}" if torch.cuda.is_available() else "cpu")
+    if kwargs.get('DEVICE') is not None:
+        device = torch.device(f"cuda:{kwargs['DEVICE']}")
+    else:
+        device = torch.device(f"cuda:{cfg['GENERAL']['DEVICE']}" if torch.cuda.is_available() else "cpu")
+    print(device)
     model_id = cfg['TEXT-GENERATION']['MODEL_NAME']
     if kwargs.get('TEMPERATURE'):
         temperature = kwargs['TEMPERATURE']
@@ -145,7 +149,7 @@ def main(cfg, **kwargs):
             query_ids.extend(batch['query_id'])
 
             # text_modification = list(map(lambda x: generate_text_modification(*x),zip(target_pil, reference_pil)))
-            composed_description = list(map(lambda x: generate_composed_description(*x),zip(reference_pil, caption)))
+            composed_description = list(map(lambda x: get_composed_prompts(dataset_name, *x),zip(reference_pil, caption)))
 
             generated_text = []
             for text_info in [composed_description]:
@@ -212,9 +216,9 @@ def main(cfg, **kwargs):
     torch.cuda.empty_cache()
 
     if dataset_name.lower() == 'circo':
-        test_loader = get_dataloader(cfg, dataset_name='circo_target_image', batch_size=512, extractor_name=extractor)
+        test_loader = get_dataloader(cfg, dataset_name='circo_target_image', batch_size=1024, extractor_name=extractor)
     elif dataset_name.lower() == 'cirr':
-        test_loader = get_dataloader(cfg, dataset_name='cirr_target_image', batch_size=512, extractor_name=extractor)
+        test_loader = get_dataloader(cfg, dataset_name='cirr_target_image', batch_size=1024, extractor_name=extractor)
 
     if extractor.lower() == 'openclip' or extractor.lower() == 'openvision':
         target_ids, tar_tensor_feat = extract_target_feat_with_id(test_loader, feature_extraction_model, extractor, device, img_preprocess)

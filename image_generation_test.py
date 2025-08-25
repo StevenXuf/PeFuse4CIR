@@ -147,9 +147,9 @@ def main(cfg, **kwargs):
     generated_target_features = torch.cat(generated_target_features, dim=0)
 
     if dataset_name.lower() == 'circo':
-        test_loader = get_dataloader(cfg, dataset_name='circo_target_image', batch_size=512, extractor_name=extractor)
+        test_loader = get_dataloader(cfg, dataset_name='circo_target_image', batch_size=1024, extractor_name=extractor)
     elif dataset_name.lower() == 'cirr':
-        test_loader = get_dataloader(cfg, dataset_name='cirr_target_image', batch_size=512, extractor_name=extractor)
+        test_loader = get_dataloader(cfg, dataset_name='cirr_target_image', batch_size=1024, extractor_name=extractor)
 
     tar_tensor_feat = []
     target_ids = []

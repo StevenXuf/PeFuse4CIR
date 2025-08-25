@@ -14,7 +14,7 @@ from refinedfashioniq import transform_image
 from feature_extraction import get_metrics, get_feature_extractor
 from dataloaders import get_dataloader
 from text_generation_val import fashioniq_eval
-from prompts import generate_composed_description
+from prompts import get_composed_prompts
 from image_generation_val import convert_pil_to_tensor, resize_crop_normalize
 
 def main(cfg, **kwargs):
@@ -117,7 +117,7 @@ def main(cfg, **kwargs):
             reference_pil = batch['reference_pil']
             caption = batch['caption']
 
-            composed_description = list(map(lambda x: generate_composed_description(*x),zip(reference_pil, caption)))
+            composed_description = list(map(lambda x: get_composed_prompts(dataset_name, *x),zip(reference_pil, caption)))
 
             texts = [
                 processor.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)

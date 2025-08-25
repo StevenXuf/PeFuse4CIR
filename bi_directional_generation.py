@@ -9,7 +9,7 @@ from configuration import get_default_config
 from feature_extraction import get_metrics, get_feature_extractor
 from dataloaders import get_dataloader
 from text_generation_val import fashioniq_eval
-from prompts import generate_composed_description, generate_target_description
+from prompts import get_composed_prompts, get_target_prompts
 
 def main(cfg, **kwargs):
     device = torch.device(f"cuda:{cfg['GENERAL']['DEVICE']}" if torch.cuda.is_available() else "cpu")
@@ -86,8 +86,8 @@ def main(cfg, **kwargs):
             caption = batch['caption']
             target_length.extend(batch['all_target_length'])
 
-            composed_description = list(map(lambda x: generate_composed_description(*x),zip(reference_pil, caption)))
-            target_description = list(map(generate_target_description, all_target_pil))
+            composed_description = list(map(lambda x: get_composed_prompts(dataset_name, *x),zip(reference_pil, caption)))
+            target_description = list(map(get_target_prompts, all_target_pil))
 
             texts = [
                 processor.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
