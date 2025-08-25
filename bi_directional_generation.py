@@ -87,7 +87,7 @@ def main(cfg, **kwargs):
             target_length.extend(batch['all_target_length'])
 
             composed_description = list(map(lambda x: get_composed_prompts(dataset_name, *x),zip(reference_pil, caption)))
-            target_description = list(map(get_target_prompts, all_target_pil))
+            target_description = list(map(lambda x: get_target_prompts(dataset_name, *x), zip(all_target_pil)))
 
             texts = [
                 processor.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
