@@ -205,3 +205,5 @@ if __name__ == "__main__":
     #### TO DO: MODIFY BACKWARD COMPUTATION FOR text and image gen ####
     ### Use image-only, text-only, or combined as baselines
     ### Check the order of the reference images and the target images!!!!!!!
+    ### prompts should be diff when generating images since needs to specify which should be removed.
+    ### CIRR recall_subset should be re-computed
