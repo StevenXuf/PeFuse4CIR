@@ -57,7 +57,7 @@ def generate_composed_description_for_fashioniq(reference_image, caption):
                 Given a reference image of fashion items and modification instructions, mentally apply the changes and produce an accurate and complete natural-language description of the resulting fashion items. 
                 The modifications may describe direct attributes (e.g., “solid white with buttons”), comparisons (e.g., “longer sleeves,” “lighter in color”), combined attributes (e.g., “black with a red cherry pattern and deep V neckline”), or negations (e.g., “no lace design”).
                 Focus on the objects or attributes such as type, color, pattern, material, shape, fit, and style details in the reference image that are relevant or mentioned in the modification instructions.
-                Ignore people and irrelevant attributes like background that are not relevant or mentioned in the modifications.
+                Ignore people and attributes like background that are not relevant or mentioned in the modifications.
                 Be concrete rather than ambiguous. 
                 Be objective rather than subjective. 
                 Be concise rather than verbose.
@@ -127,7 +127,7 @@ def generate_composed_description_for_cirr(reference_image, caption):
                     You are an expert at visual imagination of real-world scenes. 
                     Given a reference image and modification instructions, mentally apply the modifications and describe the final image in clear, complete English. 
                     Focus on the elements (objects, people, animals) or attributes (color, size, shape, numbers), spatial relations, and background context in the reference image that are relevant or mentioned in the modification instructions.
-                    Ignore irrelevant attributes and elements in the reference image that are not relevant or mentioned in the modification instructions. 
+                    Ignore irrelevant attributes and elements in the reference image that are not mentioned in the modification instructions. 
                     If some attributes or elements are removed, do not include them in the final description.
                     Apply the modifications exactly as described, and ensure the final description reflects the scene after the changes.
                     The modifications may include:
@@ -212,7 +212,7 @@ def generate_composed_description_for_circo(reference_image, caption):
                     You are an expert at visual imagination of real-world scenes. 
                     Given a reference image and modification instructions, mentally apply the modifications and produce an accurate, detailed description of the resulting scene. 
                     Focus on the elements (objects, people, animals) or attributes (color, size, shape, numbers), spatial relations, and background context in the reference image that are relevant or mentioned in the modification instructions.
-                    Ignore irrelevant attributes and elements in the reference image that are not relevant or mentioned in the modification instructions.
+                    Ignore irrelevant attributes and elements in the reference image that are not mentioned in the modification instructions.
                     If some attributes or elements are removed, do not include them in the final description. 
                     Apply the modifications exactly as described, and describe the final scene after the changes.
                     The modifications may involve:
