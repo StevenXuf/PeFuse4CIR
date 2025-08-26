@@ -85,7 +85,7 @@ class CIRRDataset(Dataset):
 
             ref_img_path = self._find_image_path(reference_id)
             ref_img = Image.open(ref_img_path).convert("RGB")
-            ref_img = ref_img.resize((768, 768), Image.Resampling.BICUBIC) if ref_img.size[0] > 768 or ref_img.size[1] > 768 else ref_img
+            # ref_img = ref_img.resize((768, 768), Image.Resampling.BICUBIC) if ref_img.size[0] > 768 or ref_img.size[1] > 768 else ref_img
             
             return {
                 "reference_image": ref_img,
@@ -104,9 +104,9 @@ class CIRRDataset(Dataset):
             tgt_img_path = self._find_image_path(target_id)
 
             ref_img = Image.open(ref_img_path).convert("RGB")
-            ref_img = ref_img.resize((768, 768), Image.Resampling.BICUBIC) if ref_img.size[0] > 768 or ref_img.size[1] > 768 else ref_img
+            # ref_img = ref_img.resize((768, 768), Image.Resampling.BICUBIC) if ref_img.size[0] > 768 or ref_img.size[1] > 768 else ref_img
             tgt_img = Image.open(tgt_img_path).convert("RGB")
-            tgt_img = tgt_img.resize((768, 768), Image.Resampling.BICUBIC) if tgt_img.size[0] > 768 or tgt_img.size[1] > 768 else tgt_img
+            # tgt_img = tgt_img.resize((768, 768), Image.Resampling.BICUBIC) if tgt_img.size[0] > 768 or tgt_img.size[1] > 768 else tgt_img
 
             if self.transform:
                 ref_img = self.transform(ref_img)

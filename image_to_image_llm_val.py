@@ -5,7 +5,7 @@ import gc
 
 from tqdm import tqdm
 from diffusers import StableDiffusionXLInstructPix2PixPipeline
-from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor, GenerationConfig
+from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor, GenerationConfig, set_seed
 from qwen_vl_utils import process_vision_info
 
 from figures import show_tensor_images
@@ -151,6 +151,7 @@ def main(cfg, **kwargs):
     gc.collect()
     torch.cuda.empty_cache()
 
+    generator = torch.Generator(device="cuda").manual_seed(cfg['GENERAL']['SEED'])
     generation_model=StableDiffusionXLInstructPix2PixPipeline.from_pretrained(cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['MODEL_NAME'], 
                                                                               torch_dtype=torch.float16).to(device)
     print(f"Using {generation_model.__class__.__name__} with params: n_infer_step={n_infer_step}, image_guidance_scale={image_guidance_scale}, guidance_scale={guidance_scale}")
@@ -183,7 +184,9 @@ def main(cfg, **kwargs):
                 height=image_size,
                 num_inference_steps=n_infer_step,
                 image_guidance_scale=image_guidance_scale,
-                guidance_scale=guidance_scale).images
+                guidance_scale=guidance_scale,
+                generator=generator
+            ).images
             generated_target_image_tensor = torch.stack(convert_pil_to_tensor(generated_target_images))
             show_tensor_images(generated_target_image_tensor, num_images=generated_target_image_tensor.size(0), file_path=os.path.join(store_path,f"generated_target_image_grid_{i}.png"))
 
@@ -219,7 +222,7 @@ def main(cfg, **kwargs):
 
 def launch(**kwargs):
     cfg = get_default_config("config.yaml")
-    torch.manual_seed(cfg['GENERAL']['SEED'])
+    set_seed(cfg['GENERAL']['SEED'])
     main(cfg, **kwargs)
 
 if __name__ == "__main__":

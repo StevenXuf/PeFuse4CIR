@@ -3,7 +3,7 @@ GENERAL:
     BATCH_SIZE: 16 ## batch size should be lower for CIRR images as they are larger
     NUM_WORKERS: 4
     DEVICE: 1
-    SEED: 0
+    SEED: 42
     EXTRACTOR: "OPENCLIP" # options: CLIP, OPENCLIP, SIGLIP2, OPENVISION
     DATASET: "CIRCO"
     TOP_K: [1, 5, 10, 25, 50]

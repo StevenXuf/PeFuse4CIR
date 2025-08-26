@@ -2,7 +2,7 @@ import torch
 import fire
 
 from tqdm import tqdm
-from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor, GenerationConfig
+from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor, GenerationConfig,set_seed
 from qwen_vl_utils import process_vision_info
 
 from configuration import get_default_config
@@ -161,7 +161,7 @@ def main(cfg, **kwargs):
 
 def launch(**kwargs):
     cfg = get_default_config("config.yaml")
-    torch.manual_seed(cfg['GENERAL']['SEED'])
+    set_seed(cfg['GENERAL']['SEED'])
     main(cfg, **kwargs)
 
 if __name__ == "__main__":
