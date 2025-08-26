@@ -89,8 +89,6 @@ def main(cfg, **kwargs):
                                 batch_size=batch_size,
                                 dataset_name=dataset_name)
 
-    # caption_feat = []
-    # modification_feat = []
     description_feat = []
     tar_tensor_feat = []
     target_length = []
@@ -105,7 +103,6 @@ def main(cfg, **kwargs):
             all_target_tensor = batch['all_target_img']
             target_length.extend(batch['all_target_length'])
 
-            # text_modification = list(map(lambda x: generate_text_modification(*x),zip(target_pil, reference_pil)))
             composed_description = list(map(lambda x: get_composed_prompts(dataset_name, *x),zip(reference_pil, caption)))
 
             generated_text = []
@@ -162,8 +159,6 @@ def main(cfg, **kwargs):
                 raise ValueError(f"Unsupported extractor: {extractor}")
 
             steps = gen_feat.size(0)//2
-            # caption_feat.append(gen_feat[:steps, :])
-            # modification_feat.append(gen_feat[steps:steps*2, :])
             description_feat.append(gen_feat[steps:, :])
             if extractor.lower() == 'openvision' or extractor.lower() == 'openclip':
                 img_feat = feature_extraction_model.encode_image(torch.cat([img_preprocess(img).unsqueeze(0) for img in all_target_pil],dim=0).to(device))
@@ -172,8 +167,6 @@ def main(cfg, **kwargs):
             tar_tensor_feat.append(img_feat)
 
     # print(target_length)
-    # caption_feat = torch.cat(caption_feat, dim=0)
-    # modification_feat = torch.cat(modification_feat, dim=0)
     description_feat = torch.cat(description_feat, dim=0)
     tar_tensor_feat = torch.cat(tar_tensor_feat, dim=0)
 
@@ -182,13 +175,8 @@ def main(cfg, **kwargs):
     else:
         metric = 'recall'
     for k in top_k:
-        #compute recall for generated modification ---> caption
-        # metric_val = get_metrics(modification_feat, caption_feat, k=k, target_length=target_length, metrics=metric)
-        # print(f'{metric.upper()}@{k}: {metric_val:.2f}% when using generated modification ---> real modification')
-
         if dataset_name.lower() == 'fashioniq' and split == 'val':
             fashioniq_eval(dataloader, description_feat, tar_tensor_feat, target_length, k)
-        #compute recall for generated description ---> target image
         else:
             metric_val = get_metrics(description_feat, tar_tensor_feat, k=k, target_length=target_length, metrics=metric)
             print(f'{metric.upper()}@{k}: {metric_val:.2f}% when using generated description ---> target images\n')
@@ -207,3 +195,4 @@ if __name__ == "__main__":
     ### Check the order of the reference images and the target images!!!!!!!
     ### prompts should be diff when generating images since needs to specify which should be removed.
     ### CIRR recall_subset should be re-computed
+    ### Check FASHIONIQ performance with SIGLIP2

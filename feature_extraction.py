@@ -19,15 +19,18 @@ def get_feature_extractor(cfg, extractor=None):
     extractor_id = cfg[extractor]['MODEL_NAME']
 
     if extractor.lower() == 'openvision':
+        print(f"Using OpenVision for feature extraction")
         feature_extraction_model, img_preprocess = create_model_from_pretrained(f'hf-hub:{extractor_id}')
         feature_extraction_model = feature_extraction_model
         tokenizer = get_tokenizer(f'hf-hub:{extractor_id}')
         return feature_extraction_model, img_preprocess, tokenizer
     elif extractor.lower() == 'openclip':
+        print(f"Using OpenCLIP for feature extraction")
         feature_extraction_model, _, img_preprocess = open_clip.create_model_and_transforms(extractor_id, pretrained='laion2b_s34b_b79k')
         tokenizer = open_clip.get_tokenizer(extractor_id)
         return feature_extraction_model, img_preprocess, tokenizer
     else:
+        print(f"Using {extractor} for feature extraction")
         feature_extraction_model = AutoModel.from_pretrained(extractor_id)
         tokenizer = AutoTokenizer.from_pretrained(extractor_id)
         return feature_extraction_model, tokenizer
@@ -52,10 +55,10 @@ def get_metrics(feat1, feat2, k, target_length, metrics='recall'):
 
     res = compute(sim,targets,indexes=indexes)
 
-    if metrics == 'map':
-        print(f'manual mAP@{k}: {compute_map_at_k(sim, targets, k=k)*100}')
-    elif metrics == 'recall':
-        print(f'manual Recall@{k}: {compute_recall_at_k(sim, targets, k=k)*100}')
+    # if metrics == 'map':
+    #     print(f'manual mAP@{k}: {compute_map_at_k(sim, targets, k=k)*100}')
+    # elif metrics == 'recall':
+    #     print(f'manual Recall@{k}: {compute_recall_at_k(sim, targets, k=k)*100}')
     return res*100
 
 def extract_features(model,processor,dataloader,config_path='./config.yaml',cfg=None):

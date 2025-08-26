@@ -56,7 +56,7 @@ def download_and_resize_images(output_dir, url_folder, resize_to=(224, 224)):
 
 def transform_image(image_size, IMAGENET_MEAN=None, IMAGENET_STD=None):
     img_transform = transforms.Compose([
-        transforms.Resize(image_size,interpolation=transforms.InterpolationMode.BICUBIC),
+        transforms.Resize((image_size, image_size),interpolation=transforms.InterpolationMode.BICUBIC),
         transforms.CenterCrop(image_size),  # Standard size for most CNNs
         transforms.ToTensor(),
         transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD) if IMAGENET_MEAN is not None and IMAGENET_STD is not None else transforms.Lambda(lambda x: x)

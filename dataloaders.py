@@ -18,6 +18,7 @@ def get_dataloader(cfg, split='val', transform=None, dataset_name=None, extracto
         transform=transform_image(cfg[extractor_name]['IMAGE_SIZE'],
                                 cfg[extractor_name]['IMAGE_MEAN'],
                                 cfg[extractor_name]['IMAGE_STD'])
+    print(f"Using transform:\n {transform}")
     
     if dataset_name.lower() == "refinedfashioniq":
         dataloader = get_refined_fashioniq_loader(

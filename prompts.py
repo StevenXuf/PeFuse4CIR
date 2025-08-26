@@ -57,7 +57,7 @@ def generate_composed_description_for_fashioniq(reference_image, caption):
                 Given a reference image of fashion items and modification instructions, mentally apply the changes and produce an accurate and complete natural-language description of the resulting fashion items. 
                 The modifications may describe direct attributes (e.g., “solid white with buttons”), comparisons (e.g., “longer sleeves,” “lighter in color”), combined attributes (e.g., “black with a red cherry pattern and deep V neckline”), or negations (e.g., “no lace design”).
                 Focus on the objects or attributes such as type, color, pattern, material, shape, fit, and style details in the reference image that are relevant or mentioned in the modification instructions.
-                Ignore people and irrelevant attributes like background that are not mentioned in the modifications.
+                Ignore people and irrelevant attributes like background that are not relevant or mentioned in the modifications.
                 Be concrete rather than ambiguous. 
                 Be objective rather than subjective. 
                 Be concise rather than verbose.
@@ -91,7 +91,7 @@ def generate_target_description_for_fashioniq(target_image):
                     You are an expert at visual perception of fashion items. 
                     Given an image, describe the fashion item in clear, accurate, and complete English. 
                     Focus on visual attributes of the clothes such as type, color, texture, pattern, material, shape, fit, and style details. 
-                    Ignore people and irrelevant attributes like background from image.
+                    Ignore people and irrelevant attributes like background from the image.
                     Be concrete rather than ambiguous. 
                     Be objective rather than subjective. 
                     Be concise rather than verbose.

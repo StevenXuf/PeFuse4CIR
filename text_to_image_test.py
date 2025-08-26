@@ -73,6 +73,7 @@ def store_top_k(cfg, modality, query_ids, target_ids, description_feat, tar_tens
         else:
             llm_top_k = cfg['TEXT-GENERATION']['GLOBAL']['TOP_K']
         json.dump(res, open(f"{modality}_gen_{dataset_name}_{extractor}_{temperature}_{top_p}_{llm_top_k}_top{cutoff}_results.json", "w"))
+        print('Predictions saved.')
 
 def main(cfg, **kwargs):
     if kwargs.get('DEVICE') is not None:
