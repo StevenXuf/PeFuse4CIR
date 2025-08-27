@@ -215,9 +215,6 @@ def main(cfg, **kwargs):
             gen_feat = extract_text_features(composed_descriptions, extractor, tokenizer, feature_extraction_model)
             description_feat.append(gen_feat)
 
-            if i == 1:
-                break
-
         img_batch_size = 1024 if task == 'txt2img' else batch_size
         if dataset_name.lower() == 'cirr':
             if split.lower() == 'test1':
@@ -250,8 +247,6 @@ def main(cfg, **kwargs):
 
                 tar_tensor_feat.append(extract_image_features(pil, extractor, feature_extraction_model, img_preprocess))
                 
-                if j == 1:
-                    break
         elif task == 'txt2txt':
             for p, test_batch in tqdm(enumerate(test_loader)):
                 pil = test_batch['all_target_pil']
@@ -261,8 +256,7 @@ def main(cfg, **kwargs):
                 target_description = generate_texts(target_messages, gen_config, processor, text_generation_model)
                 print(target_description)
                 tar_tensor_feat.append(extract_text_features(target_description, extractor, tokenizer, feature_extraction_model))
-                if p == 1:
-                    break
+
             del text_generation_model
             del feature_extraction_model
             gc.collect()
