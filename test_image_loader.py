@@ -25,7 +25,7 @@ class TestImageDataset(Dataset):
         img_id = self.images[idx]
         img_path = os.path.join(self.image_path, img_id)
 
-        image = Image.open(img_path).convert("RGB")
+        image = Image.open(img_path).convert("RGB").resize((224, 224), Image.Resampling.BICUBIC)
 
         if self.transform:
             image = self.transform(image)

@@ -47,8 +47,8 @@ class FashionIQDataset(Dataset):
     def __getitem__(self, idx):
         item = self.caption[idx]
         if self.split.lower() == 'train' or self.split.lower() == 'val':
-            target_image = Image.open(os.path.join(self.image_path, item['target'] + '.jpg')).convert('RGB')
-            reference_image = Image.open(os.path.join(self.image_path, item['candidate'] + '.jpg')).convert('RGB')
+            target_image = Image.open(os.path.join(self.image_path, item['target'] + '.jpg')).convert('RGB').resize((224, 224), Image.Resampling.BICUBIC)
+            reference_image = Image.open(os.path.join(self.image_path, item['candidate'] + '.jpg')).convert('RGB').resize((224, 224), Image.Resampling.BICUBIC)
 
             if self.transform:
                 target_image = self.transform(target_image)
@@ -61,7 +61,7 @@ class FashionIQDataset(Dataset):
                 "target_id": item["target"]
             }
         else:
-            reference_image = Image.open(os.path.join(self.image_path, item['candidate'] + '.jpg')).convert('RGB')
+            reference_image = Image.open(os.path.join(self.image_path, item['candidate'] + '.jpg')).convert('RGB').resize((224, 224), Image.Resampling.BICUBIC)
             if self.transform:
                 reference_image = self.transform(reference_image)
             return {

@@ -79,8 +79,8 @@ def get_refined_fashioniq_loader(output_dir,batch_size=32,transform=None):
 
     for item in tqdm(dataset):
         try:
-            target = Image.open(os.path.join(output_dir, f'{item["target"]}.jpg'))
-            reference = Image.open(os.path.join(output_dir, f'{item["candidate"]}.jpg'))
+            target = Image.open(os.path.join(output_dir, f'{item["target"]}.jpg')).resize((224, 224), Image.Resampling.BICUBIC)
+            reference = Image.open(os.path.join(output_dir, f'{item["candidate"]}.jpg')).resize((224, 224), Image.Resampling.BICUBIC)
             target_images.append(target)
             reference_images.append(reference)
             captions.append(item['captions'][0])
