@@ -33,7 +33,8 @@ def get_feature_extractor(cfg, extractor=None):
         print(f"Using {extractor} for feature extraction")
         feature_extraction_model = AutoModel.from_pretrained(extractor_id)
         tokenizer = AutoTokenizer.from_pretrained(extractor_id)
-        return feature_extraction_model, tokenizer
+        img_preprocess = AutoProcessor.from_pretrained(extractor_id)
+        return feature_extraction_model, img_preprocess, tokenizer
 
 def get_metrics(feat1, feat2, k, target_length, metrics='recall'):
     if metrics == 'recall':

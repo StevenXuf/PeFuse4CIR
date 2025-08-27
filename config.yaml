@@ -7,8 +7,8 @@ GENERAL:
     EXTRACTOR: "OPENCLIP" # options: CLIP, OPENCLIP, SIGLIP2, OPENVISION
     DATASET: "CIRCO"
     TOP_K: [1, 5, 10, 25, 50]
-    DIRECTION: "FORWARD" # options: FORWARD, BACKWARD
     SPLIT: "val" 
+    TASK: "txt2img" # options: txt2img, txt2txt
 
 ## datset information ##
 RefinedFashionIQ:

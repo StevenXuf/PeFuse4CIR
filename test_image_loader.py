@@ -30,7 +30,10 @@ class TestImageDataset(Dataset):
         if self.transform:
             image = self.transform(image)
 
-        return {"image": image, "image_id": img_id.split('.')[0]}
+        return {
+            "target_image": image, 
+            "target_id": img_id.split('.')[0]
+            }
 
 
 def get_test_image_loader(dataset_name, batch_size=16, transform=None, num_workers=0):
@@ -41,9 +44,13 @@ def get_test_image_loader(dataset_name, batch_size=16, transform=None, num_worke
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False,
                             num_workers=num_workers, pin_memory=True,
                             collate_fn=lambda batch:{
-                                "image": torch.stack([transform(item["image"]) if transform else item["image"] for item in batch]),
-                                "image_pil": [item["image"] for item in batch],
-                                "image_id": [item["image_id"] for item in batch]
+                                "target_img": torch.stack([transform(item["target_image"]) if transform else item["target_image"] for item in batch]),
+                                "target_pil": [item["target_image"] for item in batch],
+                                "all_target_img": torch.stack([transform(item["target_image"]) if transform else item["target_image"] for item in batch]),
+                                "all_target_pil": [item["target_image"] for item in batch],
+                                "target_id": [item["target_id"] for item in batch],
+                                "all_target_id": [item["target_id"] for item in batch],
+                                "all_target_length": list(map(len,[[item["target_image"]] for item in batch]))
                             }
                             )
     return dataloader
@@ -57,7 +64,7 @@ if __name__ == "__main__":
     )
     dataloader = get_test_image_loader('circo', batch_size=16, transform=transform, num_workers=0)
     for batch in dataloader:
-        images = batch["image"]
-        image_ids = batch["image_id"]
+        images = batch["target_img"]
+        image_ids = batch["target_id"]
         print(f"Image size: {images.size()}, Image IDs: {image_ids}")
         break
