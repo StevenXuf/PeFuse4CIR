@@ -58,11 +58,12 @@ def generate_composed_description_for_fashioniq(reference_image, caption):
                 The modifications may describe direct attributes (e.g., “solid white with buttons”), comparisons (e.g., “longer sleeves,” “lighter in color”), combined attributes (e.g., “black with a red cherry pattern and deep V neckline”), or negations (e.g., “no lace design”).
                 Focus on the objects or attributes such as type, color, pattern, material, shape, fit, and style details in the reference image that are relevant or mentioned in the modification instructions.
                 Ignore people and background from the image.
-                Be concrete rather than ambiguous. 
+                Be specific rather than ambiguous. 
                 Be objective rather than subjective. 
                 Be concise rather than verbose.
                 Avoid unnecessary repetition or imaginary things. 
-                Do not use vague comparative terms like 'same/different/smaller/larger/shorter/longer/unchanged', etc. Instead, you should specify these differences clearly, like: another color instead of red (if no specific targeting color is mentioned), and a top-down angle (if mentioned) instead of unchanged angle, etc.
+                Do not use vague comparative terms like 'same/different/smaller/larger/shorter/longer/unchanged/darker/lighter', etc. Instead, you should specify these differences clearly, like: another color instead of red (if no specific targeting color is mentioned), and a top-down angle (if mentioned) instead of unchanged angle, etc. 
+                Note that I need to find targeting images based on your description solely without seeing the reference image or modification instructions.
                 Write 1 to 3 coherent sentences in clear English.
             """
         },
@@ -75,7 +76,7 @@ def generate_composed_description_for_fashioniq(reference_image, caption):
                     "text": (
                         f"Here are the modification instructions: {caption}\n\n"
                         "Now, describe how the final fashion item looks after applying the modifications. "
-                        "Write in coherent and complete English in 1 to 3 sentences."
+                        "Write in coherent and complete English in 1 to 3 sentences so that I can find targeting images based on your description without seeing the reference image or modification instructions."
                     )
                 }
             ],
@@ -92,11 +93,11 @@ def generate_target_description_for_fashioniq(target_image):
                     Given an image, describe the fashion item in clear, accurate, and complete English. 
                     Focus on visual attributes of the clothes such as type, color, texture, pattern, material, shape, fit, and style details. 
                     Ignore people and background from the image.
-                    Be concrete rather than ambiguous. 
+                    Be specific rather than ambiguous. 
                     Be objective rather than subjective. 
                     Be concise rather than verbose.
                     Avoid unnecessary repetition or imaginary things. 
-                    Write in 1 to 3 coherent sentences.
+                    Write in 1 to 3 coherent sentences so that I can find similar images based on your description without seeing the given image.
                 """
         },
         {
@@ -107,7 +108,7 @@ def generate_target_description_for_fashioniq(target_image):
                     "type": "text", 
                     "text": (
                         "Now, describe the fashion item from the given image. "
-                         "Write in coherent and complete English in 1 to 3 sentences."
+                         "Write in coherent and complete English in 1 to 3 sentences so that I can find similar images based on your description without seeing the given image."
                     )
                 }
             ],
@@ -138,12 +139,13 @@ def generate_composed_description_for_cirr(reference_image, caption):
                         7. Conjunction Statements: multiple modifications combined (e.g., “remove the tree and add two benches”).
                         8. Spatial Relations & Background: modifying positions, layout, or setting (e.g., “change the background to a beach”).
                         9. Viewpoint: adjusting perspective or framing (e.g., “zoom out to show the whole scene”).
-                    Be concrete rather than ambiguous. 
+                    Be specific rather than ambiguous. 
                     Be objective rather than subjective.   
                     Be concise rather than verbose.
                     Avoid imaginary details not supported by the reference image or the modification.
                     Do not use vague comparative terms like 'same/different/smaller/larger/shorter/longer/unchanged', etc. Instead, you should specify these differences clearly, like: another color instead of red (if no specific targeting color is mentioned), and a clear sky (if mentioned) instead of unchanged sky, etc.
-                    Write 1 to 3 coherent sentences in clear English.
+                    Note that I need to find targeting images based on your description solely without seeing the reference image or modification instructions.
+                    Write 1 to 3 coherent sentences.
                     """
         },
         {
@@ -155,7 +157,7 @@ def generate_composed_description_for_cirr(reference_image, caption):
                     "text": (
                         f"Here are the modification instructions: {caption}\n\n"
                         "Now, describe how the final scene looks after applying the modifications." 
-                        "Write 1 to 3 coherent and complete sentences in English."
+                        "Write 1 to 3 coherent and complete sentences in English so that I can find targeting images based on your description without seeing the reference image or modification instructions."
                     )
                 }
             ],
@@ -173,11 +175,11 @@ def generate_target_description_for_cirr(target_image):
                     Mention all important elements (objects, people, animals), attributes (color, size, shape, texture, number), and spatial relations. 
                     Focus on the elements or attributes in the image.
                     Include relevant background details such as environment, lighting, and viewpoint. 
-                    Be concrete rather than ambiguous. 
+                    Be specific rather than ambiguous. 
                     Be objective rather than subjective. 
                     Be concise rather than verbose.
                     Avoid unnecessary repetition or imaginary things.
-                    Write 1 to 3 coherent sentences that capture everything needed to uniquely identify the image. 
+                    Write 1 to 3 coherent sentences so that I can find similar images based on your description without seeing the given image. 
             """
         },
         {
@@ -188,7 +190,7 @@ def generate_target_description_for_cirr(target_image):
                     "type": "text", 
                     "text": (
                         "Now, describe the scene from the given image. "
-                        "Write 1 to 3 complete and coherent sentences in English."
+                        "Write 1 to 3 complete and coherent sentences so that I can find similar images based on your description without seeing the given image."
                     )
                 }
             ],
@@ -221,11 +223,12 @@ def generate_composed_description_for_circo(reference_image, caption):
                         7. Conjunction Statements: multiple edits at once (e.g., “surrounded by snow and trees are more bare”).
                         8. Spatial Relations & Background: positioning or environment changes (e.g., “skyscrapers in the background”).
                         9. Viewpoint: changes in perspective or framing (e.g., “shot from above”).
-                    Be concrete rather than ambiguous. 
+                    Be specific rather than ambiguous. 
                     Be objective rather than subjective. 
                     Be concise rather than verbose. 
                     Avoid imaginary details not supported by the reference image or the modification. 
                     Do not use vague comparative terms like 'same/different/smaller/larger/shorter/longer/unchanged', etc. Instead, you should specify these differences clearly, like: another color instead of red (if no specific targeting color is mentioned), and a clear sky (if mentioned) instead of unchanged sky, etc.
+                    Note that I need to find targeting images based on your description solely without seeing the reference image or modification instructions.
                     Write 1 to 3 coherent sentences in clear English.
                 """
         },
@@ -238,7 +241,7 @@ def generate_composed_description_for_circo(reference_image, caption):
                     "text": (
                         f"Here are the modification instructions: {caption}\n\n"
                         "Now, describe how the final scene looks after applying these modifications."
-                        "Write 1 to 3 coherent and complete sentences."
+                        "Write 1 to 3 coherent and complete sentences so that I can find targeting images based on your description without seeing the reference image or modification instructions."
                     )
                 }
             ],
@@ -256,11 +259,11 @@ def generate_target_description_for_circo(target_image):
                     Mention all visible objects, attributes (color, size, shape, material, number), and spatial relations. 
                     Include relevant background details such as setting, environment, and viewpoint. 
                     Focus on the objects or attributes in the image. 
-                    Be concrete rather than ambiguous. 
+                    Be specific rather than ambiguous. 
                     Be objective rather than subjective. 
                     Be concise rather than verbose.
                     Avoid unnecessary repetition or imaginary things.
-                    Write 1 to 3 coherent sentences in clear English.
+                    Write 1 to 3 coherent sentences in clear English so that I can find similar images based on your description without seeing the given image.
                     """
         },
         {
@@ -271,7 +274,7 @@ def generate_target_description_for_circo(target_image):
                     "type": "text", 
                     "text": (
                         "Now, describe the scene from the given image. "
-                        "Write 1 to 3 complete sentences in clear English."
+                        "Write 1 to 3 complete sentences in clear English so that I can find similar images based on your description without seeing the given image."
                     )
                 }
             ],
