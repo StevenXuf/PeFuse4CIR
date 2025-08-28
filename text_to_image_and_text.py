@@ -236,6 +236,7 @@ def main(cfg, **kwargs):
             print(composed_descriptions)
             gen_feat = extract_text_features(composed_descriptions, extractor, tokenizer, feature_extraction_model)
             description_feat.append(gen_feat)
+        print("Finished generating composed descriptions")
 
         if task == 'txt2img':
             del text_generation_model
@@ -248,7 +249,8 @@ def main(cfg, **kwargs):
                 target_length.extend(test_batch['all_target_length'])
 
                 tar_tensor_feat.append(extract_image_features(pil, extractor, feature_extraction_model, img_preprocess))
-                
+            print("Finished extracting target image features") 
+
         elif task == 'txt2txt':
             for p, test_batch in tqdm(enumerate(test_loader)):
                 pil = test_batch['all_target_pil']
@@ -258,7 +260,8 @@ def main(cfg, **kwargs):
                 target_description = generate_texts(target_messages, gen_config, processor, text_generation_model)
                 print(target_description)
                 tar_tensor_feat.append(extract_text_features(target_description, extractor, tokenizer, feature_extraction_model))
-
+            print("Finished generating target descriptions and extracting features")
+            
             del text_generation_model
             del feature_extraction_model
             gc.collect()
