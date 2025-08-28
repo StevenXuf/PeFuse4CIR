@@ -241,7 +241,7 @@ def main(cfg, **kwargs):
             del text_generation_model
             gc.collect()
             torch.cuda.empty_cache()
-            
+
             for j, test_batch in tqdm(enumerate(test_loader)):
                 pil = test_batch['all_target_pil']
                 target_ids.extend(test_batch['target_id'])
@@ -268,7 +268,6 @@ def main(cfg, **kwargs):
             
     description_feat = torch.cat(description_feat, dim=0)  
     tar_tensor_feat = torch.cat(tar_tensor_feat, dim=0)
-    print(target_length)
 
     if dataset_name.lower() == 'circo' and split.lower() == 'test':
         store_top_k(cfg, task, query_ids, target_ids, description_feat, tar_tensor_feat, dataset_name, extractor, **kwargs)
