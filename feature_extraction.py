@@ -23,18 +23,16 @@ def get_feature_extractor(cfg, extractor=None):
         feature_extraction_model, img_preprocess = create_model_from_pretrained(f'hf-hub:{extractor_id}')
         feature_extraction_model = feature_extraction_model
         tokenizer = get_tokenizer(f'hf-hub:{extractor_id}')
-        return feature_extraction_model, img_preprocess, tokenizer
     elif extractor.lower() == 'openclip':
         print(f"Using OpenCLIP for feature extraction")
         feature_extraction_model, _, img_preprocess = open_clip.create_model_and_transforms(extractor_id, pretrained='laion2b_s34b_b79k')
         tokenizer = open_clip.get_tokenizer(extractor_id)
-        return feature_extraction_model, img_preprocess, tokenizer
     else:
         print(f"Using {extractor} for feature extraction")
         feature_extraction_model = AutoModel.from_pretrained(extractor_id)
         tokenizer = AutoTokenizer.from_pretrained(extractor_id)
         img_preprocess = AutoProcessor.from_pretrained(extractor_id)
-        return feature_extraction_model, img_preprocess, tokenizer
+    return feature_extraction_model, img_preprocess, tokenizer
 
 def get_metrics(feat1, feat2, k, target_length, metrics='recall'):
     if metrics == 'recall':
