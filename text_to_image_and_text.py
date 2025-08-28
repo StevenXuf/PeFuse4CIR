@@ -36,13 +36,14 @@ def generate_texts(messages, gen_config, processor, text_generation_model):
         videos=video_inputs,
         padding=True,
         return_tensors="pt",
+        padding_side='left'
     )
     inputs = inputs.to(text_generation_model.device)
 
     # Batch Inference
     generated_ids = text_generation_model.generate(**inputs,
                                                 generation_config=gen_config
-                                                ).detach()
+                                                )
     generated_ids_trimmed = [
         out_ids[len(in_ids):] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
     ]
@@ -63,7 +64,7 @@ def extract_text_features(input_texts, extractor, tokenizer, feature_extraction_
     elif extractor.lower() == 'openvision' or extractor.lower() == 'openclip':
         all_inputs = tokenizer(input_texts,
                             context_length=feature_extraction_model.context_length
-                            ).to(feature_extraction_model.device)
+                            ).to(next(feature_extraction_model.parameters()).device)
         gen_feat = feature_extraction_model.encode_text(all_inputs)
     else:
         raise ValueError(f"Unsupported extractor: {extractor}")
@@ -71,7 +72,7 @@ def extract_text_features(input_texts, extractor, tokenizer, feature_extraction_
 
 def extract_image_features(pil, extractor, feature_extraction_model, img_preprocess):
     if extractor.lower() == 'openvision' or extractor.lower() == 'openclip':
-        img_inputs = torch.cat([img_preprocess(img).unsqueeze(0) for img in pil],dim=0).to(feature_extraction_model.device)
+        img_inputs = torch.cat([img_preprocess(img).unsqueeze(0) for img in pil],dim=0).to(next(feature_extraction_model.parameters()).device)
         img_feat = feature_extraction_model.encode_image(img_inputs)
     elif extractor.lower() == 'siglip2' or extractor.lower() == 'clip':
         img_inputs = img_preprocess(images=pil, return_tensors="pt").to(feature_extraction_model.device)
@@ -195,7 +196,28 @@ def main(cfg, **kwargs):
                                 extractor_name=extractor, 
                                 batch_size=batch_size
                                 )
-
+    
+    img_batch_size = 1024 if task == 'txt2img' else batch_size
+    if dataset_name.lower() == 'cirr':
+        if split.lower() == 'test1':
+            test_loader = get_dataloader(cfg, dataset_name='cirr_target_image', batch_size=img_batch_size, extractor_name=extractor)
+        elif split.lower() == 'train' or split.lower() == 'val':
+            test_loader = get_dataloader(cfg, dataset_name=dataset_name, split=split.lower(), batch_size=img_batch_size, extractor_name=extractor)
+        else:
+            raise ValueError(f"Unsupported split: {split} for dataset: {dataset_name}")
+    elif dataset_name.lower() == 'circo':
+        if split.lower() == 'test':
+            test_loader = get_dataloader(cfg, dataset_name='circo_target_image', batch_size=img_batch_size, extractor_name=extractor)
+        elif split.lower() == 'val':
+            test_loader = get_dataloader(cfg, dataset_name=dataset_name, split='val', batch_size=img_batch_size, extractor_name=extractor)
+        else:
+            raise ValueError(f"Unsupported split: {split} for dataset: {dataset_name}")
+    elif dataset_name.lower() == 'fashioniq':
+        if split.lower() == 'val' or split.lower() == 'train':
+            test_loader = get_dataloader(cfg, dataset_name=dataset_name, split=split.lower(), batch_size=img_batch_size, extractor_name=extractor)
+        else:
+            raise ValueError(f"Unsupported split: {split} for dataset: {dataset_name}")
+            
     description_feat = []
     query_ids = []
     tar_tensor_feat = []
@@ -215,31 +237,11 @@ def main(cfg, **kwargs):
             gen_feat = extract_text_features(composed_descriptions, extractor, tokenizer, feature_extraction_model)
             description_feat.append(gen_feat)
 
-        img_batch_size = 1024 if task == 'txt2img' else batch_size
-        if dataset_name.lower() == 'cirr':
-            if split.lower() == 'test1':
-                test_loader = get_dataloader(cfg, dataset_name='cirr_target_image', batch_size=img_batch_size, extractor_name=extractor)
-            elif split.lower() == 'train' or split.lower() == 'val':
-                test_loader = get_dataloader(cfg, dataset_name=dataset_name, split=split.lower(), batch_size=img_batch_size, extractor_name=extractor)
-            else:
-                raise ValueError(f"Unsupported split: {split} for dataset: {dataset_name}")
-        elif dataset_name.lower() == 'circo':
-            if split.lower() == 'test':
-                test_loader = get_dataloader(cfg, dataset_name='circo_target_image', batch_size=img_batch_size, extractor_name=extractor)
-            elif split.lower() == 'val':
-                test_loader = get_dataloader(cfg, dataset_name=dataset_name, split='val', batch_size=img_batch_size, extractor_name=extractor)
-            else:
-                raise ValueError(f"Unsupported split: {split} for dataset: {dataset_name}")
-        elif dataset_name.lower() == 'fashioniq':
-            if split.lower() == 'val' or split.lower() == 'train':
-                test_loader = get_dataloader(cfg, dataset_name=dataset_name, split=split.lower(), batch_size=img_batch_size, extractor_name=extractor)
-            else:
-                raise ValueError(f"Unsupported split: {split} for dataset: {dataset_name}")
-
         if task == 'txt2img':
             del text_generation_model
             gc.collect()
             torch.cuda.empty_cache()
+            
             for j, test_batch in tqdm(enumerate(test_loader)):
                 pil = test_batch['all_target_pil']
                 target_ids.extend(test_batch['target_id'])
