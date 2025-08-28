@@ -191,7 +191,7 @@ def get_cirr_loader(data_path, batch_size=16, split='val', num_workers=0, transf
     )
     loader = DataLoader(dataset, 
                         batch_size=batch_size, 
-                        shuffle=True, 
+                        shuffle=False, 
                         num_workers=num_workers,
                         collate_fn=val_collate_fn if split == 'val' else test_collate_fn
                         )

@@ -98,7 +98,7 @@ def get_refined_fashioniq_loader(output_dir,batch_size=32,transform=None):
         'reference_id': reference_ids,
         'caption': captions
     })
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, 
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False, 
         collate_fn=lambda batch: {
             'target_img': torch.stack([x['target'] if transform is None else transform(x['target']) for x in batch]),
             'target_id': [x['target_id'] for x in batch],

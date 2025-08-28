@@ -97,7 +97,7 @@ def get_fashioniq_loader(data_path, batch_size=16, split='val', num_workers=0, t
     loader = DataLoader(dataset, 
                         batch_size=batch_size, 
                         num_workers=num_workers,
-                        shuffle=True,
+                        shuffle=False,
                         collate_fn=collate_fn_val_train if split in ['train', 'val'] else collate_fn_test
     )
     return loader
