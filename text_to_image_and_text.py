@@ -74,7 +74,10 @@ def extract_image_features(pil, extractor, feature_extraction_model, img_preproc
     if extractor.lower() == 'openvision' or extractor.lower() == 'openclip':
         img_inputs = torch.cat([img_preprocess(img).unsqueeze(0) for img in pil],dim=0).to(next(feature_extraction_model.parameters()).device)
         img_feat = feature_extraction_model.encode_image(img_inputs)
-    elif extractor.lower() == 'siglip2' or extractor.lower() == 'clip':
+    elif extractor.lower() == 'clip':
+        img_inputs = torch.cat([img_preprocess(img).unsqueeze(0) for img in pil],dim=0).to(feature_extraction_model.device)
+        img_feat = feature_extraction_model.get_image_features(pixel_values=img_inputs)
+    elif extractor.lower() == 'siglip2':
         img_inputs = img_preprocess(images=pil, return_tensors="pt").to(feature_extraction_model.device)
         img_feat = feature_extraction_model.get_image_features(**img_inputs)
     else:
@@ -244,7 +247,7 @@ def main(cfg, **kwargs):
             torch.cuda.empty_cache()
 
             for j, test_batch in tqdm(enumerate(test_loader)):
-                pil = test_batch['all_target_pil']
+                pil = test_batch['all_original_target_pil'] if extractor.lower() == 'clip' else test_batch['all_target_pil']
                 target_ids.extend(test_batch['target_id'])
                 target_length.extend(test_batch['all_target_length'])
 
@@ -276,7 +279,7 @@ def main(cfg, **kwargs):
         store_top_k(cfg, task, query_ids, target_ids, description_feat, tar_tensor_feat, dataset_name, extractor, **kwargs)
     elif dataset_name.lower() == 'cirr' and split.lower() == 'test1':
         store_top_k(cfg, task, query_ids, target_ids, description_feat, tar_tensor_feat, dataset_name, extractor, **kwargs)
-        store_top_k(cfg, task, query_ids, target_ids, description_feat, tar_tensor_feat, dataset_name, extractor, cutoff=30, **kwargs)
+        # store_top_k(cfg, task, query_ids, target_ids, description_feat, tar_tensor_feat, dataset_name, extractor, cutoff=30, **kwargs)
     elif dataset_name.lower() == 'fashioniq' and split.lower() == 'val':
         for k in top_k:
             fashioniq_eval(dataloader, description_feat, tar_tensor_feat, target_length, k)
