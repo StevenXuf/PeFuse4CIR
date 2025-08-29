@@ -7,16 +7,6 @@ from torchvision.transforms import Compose, CenterCrop, ToTensor, Normalize, Res
 from torchvision.transforms import InterpolationMode
 
 
-def collate_fn(batch):
-    '''
-    function which discard None images in a batch when using torch DataLoader
-    :param batch: input_batch
-    :return: output_batch = input_batch - None_values
-    '''
-    batch = list(filter(lambda x: x is not None, batch))
-    return torch.utils.data.dataloader.default_collate(batch)
-
-
 class TargetPad():
     """
     If an image aspect ratio is above a target ratio, pad the image to match such target ratio.
@@ -56,5 +46,5 @@ def targetpad_transform(mean, std, target_ratio: float=1.25, dim: int=224) -> to
         CenterCrop(dim),
         lambda img: img.convert("RGB"),
         ToTensor(),
-        Normalize(mean, std),
+        Normalize(mean=mean, std=std),
     ])
