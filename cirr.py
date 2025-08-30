@@ -103,8 +103,7 @@ class CIRRDataset(Dataset):
             tgt_img_path = self._find_image_path(target_id)
 
             ref_img = Image.open(ref_img_path).convert("RGB").resize((224, 224), Image.Resampling.BICUBIC)
-            original_target = Image.open(tgt_img_path)
-            tgt_img = original_target.convert("RGB").resize((224, 224), Image.Resampling.BICUBIC)
+            tgt_img = Image.open(tgt_img_path).convert("RGB").resize((224, 224), Image.Resampling.BICUBIC)
 
             if self.transform:
                 ref_img = self.transform(ref_img)
@@ -112,7 +111,6 @@ class CIRRDataset(Dataset):
 
             return {
                 "reference_image": ref_img,
-                "original_target": original_target,
                 "target_image": tgt_img,
                 "caption": caption,
                 "reference_id": reference_id,
@@ -169,7 +167,6 @@ def get_cirr_loader(data_path, batch_size=16, split='val', num_workers=0, transf
     val_collate_fn = lambda batch: {
                             "reference_img": torch.stack([transform(item["reference_image"]) if transform is not None else item['reference_image'] for item in batch]),
                             "reference_pil": [item["reference_image"] for item in batch], 
-                            "original_target_pil": [item["original_target"] for item in batch],
                             "target_img": torch.stack([transform(item["target_image"]) if transform is not None else item['target_image'] for item in batch]),
                             "target_pil": [item["target_image"] for item in batch],
                             "all_target_img": torch.stack([transform(item["target_image"]) if transform is not None else item['target_image'] for item in batch]),

@@ -126,7 +126,7 @@ def generate_composed_description_for_cirr(reference_image, caption):
             "role": "system", 
             "content": """
                     You are an expert at visual imagination of real-world scenes. 
-                    Given a reference image and modification instructions, mentally apply the modifications and describe the final image in clear, complete English. 
+                    Given a reference image and modification instructions, mentally apply the modifications to the reference image and describe the resulting image in clear, complete English. 
                     Focus on the elements (objects, people, animals) or attributes (color, size, shape, numbers), spatial relations, and background context in the reference image that are relevant or mentioned in the modification instructions.
                     Apply the modifications exactly as described, and ensure the final description reflects the scene after the changes.
                     The modifications may include:
@@ -163,6 +163,43 @@ def generate_composed_description_for_cirr(reference_image, caption):
             ],
         }
     ]
+    # target_description = [
+    #     {
+    #         "role": "system", 
+    #         "content": """
+    #                 You are an expert at visual imagination of real-world scenes. 
+    #                 Given a reference image and modification instructions, mentally apply the modifications to the reference image and describe the resulting image in clear, complete English. 
+    #                 Focus on the elements (objects, people, animals) or attributes (color, size, shape, numbers), spatial relations, and background context in the reference image.
+    #                 Only mention what are in the resulting images instead of what is not.
+    #                 The modifications may include:
+    #                     1. Cardinality: adjusting the number of objects (e.g., “only one bird remains”).
+    #                     2. Addition: adding new objects or attributes (e.g., “add a red chair in the corner”).
+    #                     3. Negation: removing elements (e.g., “remove the table”).
+    #                     4. Direct Addressing: ensuring specific mentioned objects are clearly included.
+    #                     5. Compare & Change: replacing one attribute with another (e.g., “same sofa but in leather”).
+    #                     6. Comparative Statement: relative size, quantity, or intensity changes (e.g., “a larger group of people”).
+    #                     7. Conjunction Statements: multiple modifications combined (e.g., “remove the tree and add two benches”).
+    #                     8. Spatial Relations & Background: modifying positions, layout, or setting (e.g., “change the background to a beach”).
+    #                     9. Viewpoint: adjusting perspective or framing (e.g., “zoom out to show the whole scene”).
+    #                 Be specific, objective, and concise.
+    #                 Avoid imaginary details not supported by the reference image or the modification.
+    #                 """
+    #     },
+    #     {
+    #         "role": "user",
+    #         "content": [
+    #             {"type": "image", "image": "data:image;base64," + convert_pil_to_base64(reference_image)},
+    #             {
+    #                 "type": "text", 
+    #                 "text": (
+    #                     f"Here are the modification instructions: {caption}\n\n"
+    #                     "Now, describe how the resulting image looks after applying the modifications." 
+    #                     "Write 1 to 3 coherent and complete sentences in English so that I can find targeting images based on your description without seeing the reference image or modification instructions."
+    #                 )
+    #             }
+    #         ],
+    #     }
+    # ]
     return target_description
 
 def generate_target_description_for_cirr(target_image):

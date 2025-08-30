@@ -86,8 +86,7 @@ class CIRCODataset(Dataset):
                 target_img_id = str(self.annotations[index]['target_img_id'])
                 gt_img_ids = [str(x) for x in self.annotations[index]['gt_img_ids']]
                 target_img_path = self.img_paths[self.img_ids_indexes_map[target_img_id]]
-                original_target = Image.open(target_img_path)
-                target_img = self.preprocess(original_target.convert('RGB').resize((224, 224), Image.Resampling.BICUBIC)) if self.preprocess is not None else original_target.convert('RGB').resize((224, 224), Image.Resampling.BICUBIC)
+                target_img = self.preprocess(Image.open(target_img_path).convert('RGB').resize((224, 224), Image.Resampling.BICUBIC)) if self.preprocess is not None else Image.open(target_img_path).convert('RGB').resize((224, 224), Image.Resampling.BICUBIC)
                 # Pad ground truth image IDs with zeros for collate_fn
                 gt_img_ids += [''] * (self.max_num_gts - len(gt_img_ids))
                 gt_img_ids = [ gt_img_id for gt_img_id in gt_img_ids if len(gt_img_id) > 0]  
@@ -98,13 +97,11 @@ class CIRCODataset(Dataset):
                 return {
                     'reference_img': reference_img,
                     'reference_img_id': reference_img_id,
-                    "original_target": original_target,
                     'target_img': target_img,
                     'target_img_id': target_img_id,
                     'relative_caption': relative_caption,
                     'shared_concept': shared_concept,
                     'gt_img_ids': gt_img_ids,
-                    "all_original_target": all_original_target,
                     'gt_img': gt_img,
                     'query_id': query_id,
                 }
@@ -150,14 +147,12 @@ def get_circo_loader(data_path, batch_size=16, split='val', num_workers=0, trans
         'reference_img': torch.stack([transform(item['reference_img']) if transform is not None else item['reference_img'] for item in batch]),
         'reference_pil': [item['reference_img'] for item in batch],
         'reference_id': [item['reference_img_id'] for item in batch],
-        'original_target_pil': [item['original_target'] for item in batch],
         'target_img': torch.stack([transform(item['target_img']) if transform is not None else item['target_img'] for item in batch]),
         'target_pil': [item['target_img'] for item in batch],
         'target_id': [item['target_img_id'] for item in batch],
         'caption': [f"{item['relative_caption']} and has {item['shared_concept']}." for item in batch],
         'concept': [item['shared_concept'] for item in batch],
         'all_target_ids': [item['gt_img_ids'] for item in batch],
-        "all_original_target_pil": [item for sublist in batch for item in sublist['all_original_target']],
         'all_target_pil': [item for sublist in batch for item in sublist['gt_img']],
         'all_target_img': torch.stack([transform(item) if transform is not None else item for sublist in batch for item in sublist['gt_img']]),
         'all_target_length': list(map(len, [item['gt_img'] for item in batch])),
@@ -190,11 +185,10 @@ if __name__ == "__main__":
         cfg['CLIP']['IMAGE_MEAN'],
         cfg['CLIP']['IMAGE_STD']
     )
-    circo_loader = get_circo_loader(cfg['CIRCO']['IMAGE_FOLDER'], batch_size=cfg['GENERAL']['BATCH_SIZE'], split='val', num_workers=cfg['GENERAL']['NUM_WORKERS'], transform=img_transform)
-
+    circo_loader = get_circo_loader(cfg['CIRCO']['IMAGE_FOLDER'], batch_size=cfg['GENERAL']['BATCH_SIZE'], split='test', num_workers=cfg['GENERAL']['NUM_WORKERS'], transform=img_transform)
+    print(len(circo_loader.dataset))
     for batch in circo_loader:
         ref_pil = batch['reference_img']
-        tar_pil = batch['target_img']
         print(batch['caption'])
         break
         # Just to test the loader

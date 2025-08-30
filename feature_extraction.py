@@ -28,13 +28,11 @@ def get_feature_extractor(cfg, extractor=None):
         print(f"Using OpenCLIP for feature extraction")
         feature_extraction_model, _, img_preprocess = open_clip.create_model_and_transforms(extractor_id, pretrained='laion2b_s34b_b79k')
         tokenizer = open_clip.get_tokenizer(extractor_id)
-    elif extractor.lower() == 'clip':
+    elif extractor.lower() == 'clip' or extractor.lower() == 'siglip2':
         print(f"Using {extractor} for feature extraction")
-        feature_extraction_model = AutoModel.from_pretrained(extractor_id)
-        tokenizer = AutoTokenizer.from_pretrained(extractor_id)
-        img_preprocess = targetpad_transform(cfg[extractor]['IMAGE_MEAN'], cfg[extractor]['IMAGE_STD'], target_ratio=1.25, dim=cfg[extractor]['IMAGE_SIZE'])
-    elif extractor.lower() == 'siglip2':
-        print(f"Using {extractor} for feature extraction")
+        # feature_extraction_model = AutoModel.from_pretrained(extractor_id)
+        # tokenizer = AutoTokenizer.from_pretrained(extractor_id)
+        # img_preprocess = targetpad_transform(cfg[extractor]['IMAGE_MEAN'], cfg[extractor]['IMAGE_STD'], target_ratio=1.25, dim=cfg[extractor]['IMAGE_SIZE'])
         feature_extraction_model = AutoModel.from_pretrained(extractor_id)
         tokenizer = AutoTokenizer.from_pretrained(extractor_id)
         img_preprocess = AutoProcessor.from_pretrained(extractor_id)

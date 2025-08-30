@@ -47,17 +47,14 @@ class FashionIQDataset(Dataset):
     def __getitem__(self, idx):
         item = self.caption[idx]
         if self.split.lower() == 'train' or self.split.lower() == 'val':
-            original_target = Image.open(os.path.join(self.image_path, item['target'] + '.jpg'))
-            original_reference = Image.open(os.path.join(self.image_path, item['candidate'] + '.jpg'))
-            target_image = original_target.convert('RGB').resize((224, 224), Image.Resampling.BICUBIC)
-            reference_image = original_reference.convert('RGB').resize((224, 224), Image.Resampling.BICUBIC)
+            target_image = Image.open(os.path.join(self.image_path, item['target'] + '.jpg')).convert('RGB').resize((224, 224), Image.Resampling.BICUBIC)
+            reference_image = Image.open(os.path.join(self.image_path, item['candidate'] + '.jpg')).convert('RGB').resize((224, 224), Image.Resampling.BICUBIC)
 
             if self.transform:
                 target_image = self.transform(target_image)
                 reference_image = self.transform(reference_image)
             return {
                 "caption": f"{' and '.join(item['captions'])}",
-                "original_target": original_target,
                 "reference_image": reference_image,
                 "target_image": target_image,
                 "reference_id": item["candidate"],
@@ -79,7 +76,6 @@ def get_fashioniq_loader(data_path, batch_size=16, split='val', num_workers=0, t
                             "reference_img": torch.stack([transform(item["reference_image"]) for item in batch]),
                             "reference_pil": [item["reference_image"] for item in batch],
                             "reference_id": [item["reference_id"] for item in batch],
-                            "all_original_target_pil": [item["original_target"] for item in batch],
                             "target_img": torch.stack([transform(item["target_image"]) for item in batch]),
                             "target_pil": [item["target_image"] for item in batch],
                             "target_id": [item["target_id"] for item in batch],

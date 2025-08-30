@@ -74,10 +74,8 @@ def extract_image_features(pil, extractor, feature_extraction_model, img_preproc
     if extractor.lower() == 'openvision' or extractor.lower() == 'openclip':
         img_inputs = torch.cat([img_preprocess(img).unsqueeze(0) for img in pil],dim=0).to(next(feature_extraction_model.parameters()).device)
         img_feat = feature_extraction_model.encode_image(img_inputs)
-    elif extractor.lower() == 'clip':
-        img_inputs = torch.cat([img_preprocess(img).unsqueeze(0) for img in pil],dim=0).to(feature_extraction_model.device)
-        img_feat = feature_extraction_model.get_image_features(pixel_values=img_inputs)
-    elif extractor.lower() == 'siglip2':
+    elif extractor.lower() == 'clip' or extractor.lower() == 'siglip2':
+        # img_inputs = torch.cat([img_preprocess(img).unsqueeze(0) for img in pil],dim=0).to(feature_extraction_model.device)
         img_inputs = img_preprocess(images=pil, return_tensors="pt").to(feature_extraction_model.device)
         img_feat = feature_extraction_model.get_image_features(**img_inputs)
     else:
@@ -202,7 +200,7 @@ def main(cfg, **kwargs):
     
     img_batch_size = 1024 if task == 'txt2img' else batch_size
     if dataset_name.lower() == 'cirr':
-        if split.lower() == 'test1':
+        if split.lower() == 'test':
             test_loader = get_dataloader(cfg, dataset_name='cirr_target_image', batch_size=img_batch_size, extractor_name=extractor)
         elif split.lower() == 'train' or split.lower() == 'val':
             test_loader = get_dataloader(cfg, dataset_name=dataset_name, split=split.lower(), batch_size=img_batch_size, extractor_name=extractor)
@@ -247,7 +245,8 @@ def main(cfg, **kwargs):
             torch.cuda.empty_cache()
 
             for j, test_batch in tqdm(enumerate(test_loader)):
-                pil = test_batch['all_original_target_pil'] if extractor.lower() == 'clip' else test_batch['all_target_pil']
+                # pil = test_batch['all_original_target_pil'] if extractor.lower() == 'clip' else test_batch['all_target_pil']
+                pil = test_batch['all_target_pil']
                 target_ids.extend(test_batch['target_id'])
                 target_length.extend(test_batch['all_target_length'])
 
@@ -277,7 +276,7 @@ def main(cfg, **kwargs):
 
     if dataset_name.lower() == 'circo' and split.lower() == 'test':
         store_top_k(cfg, task, query_ids, target_ids, description_feat, tar_tensor_feat, dataset_name, extractor, **kwargs)
-    elif dataset_name.lower() == 'cirr' and split.lower() == 'test1':
+    elif dataset_name.lower() == 'cirr' and split.lower() == 'test':
         store_top_k(cfg, task, query_ids, target_ids, description_feat, tar_tensor_feat, dataset_name, extractor, **kwargs)
         # store_top_k(cfg, task, query_ids, target_ids, description_feat, tar_tensor_feat, dataset_name, extractor, cutoff=30, **kwargs)
     elif dataset_name.lower() == 'fashioniq' and split.lower() == 'val':

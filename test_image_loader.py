@@ -25,14 +25,12 @@ class TestImageDataset(Dataset):
         img_id = self.images[idx]
         img_path = os.path.join(self.image_path, img_id)
 
-        original_target = Image.open(img_path)
-        image = original_target.convert("RGB").resize((224, 224), Image.Resampling.BICUBIC)
+        image = Image.open(img_path).convert("RGB").resize((224, 224), Image.Resampling.BICUBIC)
 
         if self.transform:
             image = self.transform(image)
 
         return {
-            "original_target": original_target,
             "target_image": image,
             "target_id": img_id.split('.')[0]
             }
@@ -46,7 +44,6 @@ def get_test_image_loader(dataset_name, batch_size=16, transform=None, num_worke
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False,
                             num_workers=num_workers, pin_memory=True,
                             collate_fn=lambda batch:{
-                                "all_original_target_pil": [item["original_target"] for item in batch],
                                 "target_img": torch.stack([transform(item["target_image"]) if transform else item["target_image"] for item in batch]),
                                 "target_pil": [item["target_image"] for item in batch],
                                 "all_target_img": torch.stack([transform(item["target_image"]) if transform else item["target_image"] for item in batch]),
