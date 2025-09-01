@@ -46,38 +46,6 @@ def generate_composed_description_for_fashioniq(reference_image, caption):
             ],
         }
     ]
-    # target_description = [
-    #     {
-    #         "role": "system", 
-    #         "content": """
-    #             You are a visual imagination expert. Describe transformed images by:
-    #                 1. ANALYZE the reference image and modification instructions
-    #                 2. SYNTHESIZE changes while maintaining original context
-    #                 3. DESCRIBE key elements (objects/attributes/relations/background)
-    #                 4. VALIDATE against instructions and visual consistency
-    #                 5. REFINE to 1-3 specific, coherent sentences
-
-    #             Guidelines:
-    #             - Be precise about visual attributes (color, size, shape, count, position)
-    #             - Maintain spatial relationships and background context
-    #             - Exclude any reference to the original image or modification process
-    #             - Avoid speculative elements beyond given instructions
-    #             - Use concrete visual descriptors only
-    #             - Be objective, specific, and concise in your descriptions.
-    #             - Ignore person and background elements in your descriptions.
-    #         """
-    #     },
-    #     {
-    #         "role": "user",
-    #         "content": [
-    #             {"type": "image", "image": "data:image;base64," + convert_pil_to_base64(reference_image)},
-    #             {
-    #                 "type": "text", 
-    #                 "text": f"Modification instructions: {caption}\n\nDescribe the final image in 1-3 specific English sentences:"
-    #             }
-    #         ]
-    #     }
-    # ]
     return target_description
 
 def generate_target_description_for_fashioniq(target_image):
