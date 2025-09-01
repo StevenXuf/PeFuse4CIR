@@ -7,6 +7,7 @@ from torch.utils.data import Dataset, DataLoader
 
 from configuration import get_default_config
 from fashioniq import transform_image
+from test_image_loader import get_test_image_loader
 
 class CIRRDataset(Dataset):
     def __init__(self, root_dir, split="val", captions_folder="captions", captions_ext_folder="captions_ext", transform=None):
@@ -23,7 +24,6 @@ class CIRRDataset(Dataset):
         self.captions_folder = captions_folder
         self.captions_ext_folder = captions_ext_folder
         self.transform = transform
-
         self.captions_path = os.path.join(
             root_dir,
             captions_folder,
@@ -65,8 +65,9 @@ class CIRRDataset(Dataset):
                     print(f"Skipping missing image for pairid={entry.get('pairid')}")
         else:
             raise ValueError("split should be in ['val', 'test1']")
-
+        print(f"Number of valid caption entries: {len(self.caption_data)}")
         self.ext_captions = self._get_ext_captions(captions_ext_info)
+        print(f"Number of valid extended captions: {len(self.ext_captions)}")
     
 
 
@@ -85,11 +86,14 @@ class CIRRDataset(Dataset):
 
             ref_img_path = self._find_image_path(reference_id)
             ref_img = Image.open(ref_img_path).convert("RGB").resize((224, 224), Image.Resampling.BICUBIC)
-
+            img_subset_ids = entry["img_set"]['members']
+            image_set = [Image.open(self._find_image_path(img_id)).convert("RGB").resize((224, 224), Image.Resampling.BICUBIC) for img_id in img_subset_ids]
             return {
                 "reference_image": ref_img,
                 "reference_id": reference_id,
                 "caption": caption,
+                "image_set": image_set,
+                "image_subset_ids": img_subset_ids,
                 "query_id": pairid
             }
 
@@ -163,15 +167,13 @@ class CIRRDataset(Dataset):
                         ext_captions[pair_id] = ' and '.join(filtered_caps)
         return ext_captions
 
-def get_cirr_loader(data_path, batch_size=16, split='val', num_workers=0, transform=None):
+def get_cirr_loader(data_path, batch_size=16, split='val', mode='relative', num_workers=0, transform=None):
     val_collate_fn = lambda batch: {
                             "reference_img": torch.stack([transform(item["reference_image"]) if transform is not None else item['reference_image'] for item in batch]),
                             "reference_pil": [item["reference_image"] for item in batch], 
                             "target_img": torch.stack([transform(item["target_image"]) if transform is not None else item['target_image'] for item in batch]),
                             "target_pil": [item["target_image"] for item in batch],
-                            "all_target_img": torch.stack([transform(item["target_image"]) if transform is not None else item['target_image'] for item in batch]),
-                            "all_target_pil": [item["target_image"] for item in batch],
-                            "all_target_length": list(map(len,[[item["target_image"]] for item in batch])),
+                            "target_length": list(map(len,[[item["target_image"]] for item in batch])),
                             "caption": [item["caption"] for item in batch],
                             "reference_id": [item["reference_id"] for item in batch],
                             "target_id": [item["target_id"] for item in batch],
@@ -182,19 +184,31 @@ def get_cirr_loader(data_path, batch_size=16, split='val', num_workers=0, transf
         "reference_pil": [item["reference_image"] for item in batch],
         "caption": [item["caption"] for item in batch],
         "reference_id": [item["reference_id"] for item in batch],
+        "image_set": [item for sublist in batch for item in sublist["image_set"]],
+        "image_subset_ids": [item["image_subset_ids"] for item in batch],
         "query_id": [item["query_id"] for item in batch]
     }
-    dataset = CIRRDataset(
-        root_dir=data_path,
-        split=split,
-        captions_folder="captions"
-    )
-    loader = DataLoader(dataset, 
-                        batch_size=batch_size, 
-                        shuffle=False, 
-                        num_workers=num_workers,
-                        collate_fn=val_collate_fn if split == 'val' else test_collate_fn
-                        )
+    if mode == 'relative':
+        dataset = CIRRDataset(
+            root_dir=data_path,
+            split=split,
+            captions_folder="captions"
+        )
+        loader = DataLoader(dataset, 
+                            batch_size=batch_size, 
+                            shuffle=False, 
+                            num_workers=num_workers,
+                            collate_fn=val_collate_fn if split == 'val' else test_collate_fn
+                            )
+    elif mode =='classic':
+        loader = get_test_image_loader(
+            'cirr',
+            batch_size=batch_size,
+            num_workers=num_workers,
+            transform=transform
+        )
+    else:
+        raise ValueError(f"Unknown mode: {mode}")
     return loader
 
 
@@ -207,9 +221,11 @@ if __name__ == "__main__":
         cfg['CLIP']['IMAGE_STD']
     )
 
-    loader = get_cirr_loader(cfg['CIRR']['IMAGE_FOLDER'], transform=img_transform, split='test1')
-    print(f"Number of samples in {cfg['CIRR']['IMAGE_FOLDER']}: {len(loader.dataset)}")
-    for batch in loader:
-        print(batch["reference_img"].shape)
-        print(batch["caption"])
-        break
+    loader = get_cirr_loader(cfg['CIRR']['IMAGE_FOLDER'], transform=img_transform, split='test', mode='relative')
+    print(len(loader.dataset))
+    res = []    
+    for i,batch in enumerate(loader):
+        res.extend(batch['image_subset_ids'])
+        if i == 5:
+            break
+    print(res)

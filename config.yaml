@@ -9,6 +9,7 @@ GENERAL:
     TOP_K: [1, 5, 10, 25, 50]
     SPLIT: "val" 
     TASK: "txt2img" # options: txt2img, txt2txt
+    MODE: "relative" # options: relative, classic
 
 ## datset information ##
 RefinedFashionIQ:
@@ -36,12 +37,14 @@ CIRR:
 ## feature extractor config ##
 CLIP:
     MODEL_NAME: "openai/clip-vit-base-patch32"
+    PRETRAINED: None
     IMAGE_SIZE: 224
     IMAGE_MEAN: [0.48145466, 0.4578275, 0.40821073]
     IMAGE_STD: [0.26862954, 0.26130258, 0.27577711]
 
 OPENCLIP:
     MODEL_NAME: "ViT-B-32"
+    PRETRAINED: "laion2b_s34b_b79k"
     IMAGE_SIZE: 224
     IMAGE_MEAN: [0.48145466, 0.4578275, 0.40821073]
     IMAGE_STD: [0.26862954, 0.26130258, 0.27577711]
@@ -60,12 +63,14 @@ BLIP2-OFFICIAL:
 
 SIGLIP2:
     MODEL_NAME: "google/siglip2-base-patch16-224"
+    PRETRAINED: None
     IMAGE_SIZE: 224
     IMAGE_MEAN: [0.5, 0.5, 0.5]
     IMAGE_STD: [0.5, 0.5, 0.5]
 
 OPENVISION:
     MODEL_NAME: "UCSC-VLAA/openvision-vit-base-patch16-224"
+    PRETRAINED: None
     IMAGE_SIZE: 224
     IMAGE_MEAN: [0.485, 0.456, 0.406]
     IMAGE_STD: [0.229, 0.224, 0.225]

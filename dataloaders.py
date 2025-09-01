@@ -3,9 +3,8 @@ from refinedfashioniq import get_refined_fashioniq_loader, transform_image
 from circo import get_circo_loader
 from cirr import get_cirr_loader
 from fashioniq import get_fashioniq_loader
-from test_image_loader import get_test_image_loader
 
-def get_dataloader(cfg, split='val', transform=None, dataset_name=None, extractor_name=None, batch_size=None):
+def get_dataloader(cfg, split='val', mode='relative', transform=None, dataset_name=None, extractor_name=None, batch_size=None):
 
     if dataset_name is None:
         dataset_name = cfg['GENERAL']['DATASET']
@@ -31,6 +30,7 @@ def get_dataloader(cfg, split='val', transform=None, dataset_name=None, extracto
             data_path=cfg['FashionIQ']['IMAGE_FOLDER'],
             batch_size=batch_size,
             split=split, #use val or test split
+            mode=mode,
             num_workers=cfg['GENERAL']['NUM_WORKERS'],
             transform=transform
         )
@@ -39,6 +39,7 @@ def get_dataloader(cfg, split='val', transform=None, dataset_name=None, extracto
             data_path=cfg['CIRCO']['IMAGE_FOLDER'],
             batch_size=batch_size,
             split=split, #use val or test split
+            mode=mode,
             num_workers=cfg['GENERAL']['NUM_WORKERS'],
             transform=transform
         )
@@ -47,34 +48,24 @@ def get_dataloader(cfg, split='val', transform=None, dataset_name=None, extracto
             data_path=cfg['CIRR']['IMAGE_FOLDER'],
             batch_size=batch_size,
             split=split, # use val or test1 split
-            num_workers=cfg['GENERAL']['NUM_WORKERS'],
-            transform=transform
-        )
-    elif dataset_name.lower() == "circo_target_image": # this is different from the test split of CIRCO
-        dataloader = get_test_image_loader(
-            'circo',
-            batch_size=batch_size,
-            num_workers=cfg['GENERAL']['NUM_WORKERS'],
-            transform=transform
-        )
-    elif dataset_name.lower() == "cirr_target_image": # this is different from the test split of CIRR
-        dataloader = get_test_image_loader(
-            'cirr',
-            batch_size=batch_size,
+            mode=mode,
             num_workers=cfg['GENERAL']['NUM_WORKERS'],
             transform=transform
         )
     else:
         raise ValueError(f"Unknown dataset: {dataset_name}")
 
-    if dataset_name.lower() in ['circo_target_image', 'cirr_target_image']:
-        print(f'{dataset_name.upper()} LOADED SUCCESSFULLY.')
-    else:
+    if mode == 'relative':
+        print(f'ON {mode.upper()} MODE.')
         print(f'{dataset_name.upper()} {split.upper()} LOADED SUCCESSFULLY.')
+    elif mode == 'classic':
+        print(f'ON {mode.upper()} MODE.')
+        print(f'{dataset_name.upper()} LOADED SUCCESSFULLY.')
+    print(f'{len(dataloader.dataset)} ITEMS IN DATALOADER.')
 
     return dataloader
 
 if __name__ == "__main__":
     cfg = get_default_config("config.yaml")
-    dataloader = get_dataloader(cfg, dataset_name='fashioniq', split='val')
+    dataloader = get_dataloader(cfg, dataset_name='circo', split='val', mode='relative')
     print(len(dataloader.dataset))

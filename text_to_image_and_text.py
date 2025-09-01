@@ -14,15 +14,25 @@ from feature_extraction import get_feature_extractor, get_metrics
 from dataloaders import get_dataloader
 from prompts import get_composed_prompts, get_target_prompts
 
-def fashioniq_eval(dataloader, generated_target_features, target_features, target_length, k):
-    n_shirt, n_dress, n_toptee = dataloader.dataset.length
-    shirt_metric_val = get_metrics(generated_target_features[:n_shirt, :], target_features[:n_shirt, :], k=k, target_length=target_length[:n_shirt], metrics='recall')
-    dress_metric_val = get_metrics(generated_target_features[n_shirt:n_shirt+n_dress, :], target_features[n_shirt:n_shirt+n_dress, :], k=k, target_length=target_length[n_shirt:n_shirt+n_dress], metrics='recall')
-    toptee_metric_val = get_metrics(generated_target_features[n_shirt+n_dress:, :], target_features[n_shirt+n_dress:, :], k=k, target_length=target_length[n_shirt+n_dress:], metrics='recall')
-    print(f'Recall@{k}: {shirt_metric_val:.2f}% for shirt')
-    print(f'Recall@{k}: {dress_metric_val:.2f}% for dress')
-    print(f'Recall@{k}: {toptee_metric_val:.2f}% for toptee')
-    print(f'Recall@{k}: {(shirt_metric_val+dress_metric_val+toptee_metric_val)/3:.2f}% for all categories')
+def fashioniq_eval(dataloader, generated_target_features, target_features, ground_truth, target_id, k):
+    clothes = ['shirt', 'dress', 'toptee']
+    truth_start = 0
+    tar_start = 0
+    all_recall = []
+    for j, (n, c) in enumerate(zip(dataloader.dataset.length, dataloader.dataset.candidate_length)):
+        vals, ids = pairwise_cosine_similarity(generated_target_features[truth_start:truth_start+n, :], target_features[tar_start:tar_start+c, :]).topk(k=k, dim=1)
+        total_recall=0.0
+        for i in range(n):
+            truth = ground_truth[truth_start:truth_start+n][i]
+            preds = [target_id[tar_start:tar_start+c][idx] for idx in ids[i].tolist()]
+            if truth in preds:
+                total_recall += 1.0
+        print(f"Recall@{k}: {total_recall / n * 100:.2f}% for {clothes[j]}")
+        all_recall.append(total_recall / n * 100)
+        truth_start += n
+        tar_start += c
+
+    print(f'Recall@{k}: {np.mean(all_recall):.2f}% for all categories')
 
 def generate_texts(messages, gen_config, processor, text_generation_model):
     texts = [
@@ -74,8 +84,10 @@ def extract_image_features(pil, extractor, feature_extraction_model, img_preproc
     if extractor.lower() == 'openvision' or extractor.lower() == 'openclip':
         img_inputs = torch.cat([img_preprocess(img).unsqueeze(0) for img in pil],dim=0).to(next(feature_extraction_model.parameters()).device)
         img_feat = feature_extraction_model.encode_image(img_inputs)
-    elif extractor.lower() == 'clip' or extractor.lower() == 'siglip2':
-        # img_inputs = torch.cat([img_preprocess(img).unsqueeze(0) for img in pil],dim=0).to(feature_extraction_model.device)
+    elif extractor.lower() == 'clip':
+        img_inputs = torch.cat([img_preprocess(img).unsqueeze(0) for img in pil],dim=0).to(feature_extraction_model.device)
+        img_feat = feature_extraction_model.get_image_features(pixel_values=img_inputs)
+    elif extractor.lower() == 'siglip2':
         img_inputs = img_preprocess(images=pil, return_tensors="pt").to(feature_extraction_model.device)
         img_feat = feature_extraction_model.get_image_features(**img_inputs)
     else:
@@ -84,16 +96,25 @@ def extract_image_features(pil, extractor, feature_extraction_model, img_preproc
     return img_feat
 
 def store_top_k(cfg, task, query_ids, target_ids, description_feat, tar_tensor_feat, dataset_name, extractor, cutoff=50, **kwargs):
-    target_ids = np.array(target_ids)
-    sim = pairwise_cosine_similarity(description_feat, tar_tensor_feat)
-    _, indices = sim.topk(k=cutoff, dim=1)
-    predicted = [target_ids[row] for row in indices.tolist()]
-    if dataset_name.lower() == 'circo':
-        res={item[0]: item[1].astype(int).tolist() for item in zip(query_ids, predicted)}
-    elif dataset_name.lower() == 'cirr':
-        res={str(item[0]): item[1].tolist() for item in zip(query_ids, predicted)}
-        res['version'] = 'rc2'
-        res['metric'] = 'recall' if cutoff == 50 else 'recall_subset'
+    if cutoff == 3:
+        start=0
+        res = {'version': 'rc2', 'metric': 'recall_subset'}
+        for i in range(len(query_ids)):
+            current_ids = target_ids[i]
+            _,ids = pairwise_cosine_similarity(description_feat[i,:], tar_tensor_feat[start:start+len(current_ids), :]).topk(k=cutoff, dim=1)
+            res[str(query_ids[i])] = [current_ids[idx] for idx in ids[0].tolist()]
+            start += len(current_ids)
+    else:
+        target_ids = np.array(target_ids)
+        sim = pairwise_cosine_similarity(description_feat, tar_tensor_feat)
+        _, indices = sim.topk(k=cutoff, dim=1)
+        predicted = [target_ids[row] for row in indices.tolist()]
+        if dataset_name.lower() == 'circo':
+            res={item[0]: item[1].astype(int).tolist() for item in zip(query_ids, predicted)}
+        elif dataset_name.lower() == 'cirr':
+            res={str(item[0]): item[1].tolist() for item in zip(query_ids, predicted)}
+            res['version'] = 'rc2'
+            res['metric'] = 'recall'
     if task == 'img2txt' or task == 'img2img':
         if kwargs.get('NUM_INFERENCE_STEPS'):
             num_inference_steps = kwargs['NUM_INFERENCE_STEPS']
@@ -162,6 +183,14 @@ def main(cfg, **kwargs):
         extractor = kwargs['EXTRACTOR']
     else:
         extractor = cfg['GENERAL']['EXTRACTOR']
+    if kwargs.get('EXTRACTOR_ID'):
+        extractor_id = kwargs['EXTRACTOR_ID']
+    else:
+        extractor_id = None
+    if kwargs.get('PRETRAINED'):
+        pretrained = kwargs['PRETRAINED']
+    else:
+        pretrained = cfg[extractor]['PRETRAINED']
     if kwargs.get('DATASET'):
         dataset_name = kwargs['DATASET']
     else:
@@ -170,9 +199,13 @@ def main(cfg, **kwargs):
         split = kwargs['SPLIT']
     else:
         split = cfg['GENERAL']['SPLIT']
+    if kwargs.get('MODE'):
+        mode = kwargs['MODE']
+    else:
+        mode = cfg['GENERAL']['MODE']
     print(f"Using {extractor} for feature extraction on {dataset_name} ({split})")
 
-    feature_extraction_model, img_preprocess, tokenizer = get_feature_extractor(cfg, extractor=extractor)
+    feature_extraction_model, img_preprocess, tokenizer = get_feature_extractor(cfg, extractor=extractor, extractor_id=extractor_id, pretrained=pretrained)
     feature_extraction_model.eval()
     feature_extraction_model.to(device)
 
@@ -193,29 +226,56 @@ def main(cfg, **kwargs):
                                               )
     dataloader = get_dataloader(cfg, 
                                 split=split.lower(), 
+                                mode='relative',
                                 dataset_name=dataset_name, 
-                                extractor_name=extractor, 
+                                extractor_name=extractor,
                                 batch_size=batch_size
                                 )
-    
+
     img_batch_size = 1024 if task == 'txt2img' else batch_size
     if dataset_name.lower() == 'cirr':
         if split.lower() == 'test':
-            test_loader = get_dataloader(cfg, dataset_name='cirr_target_image', batch_size=img_batch_size, extractor_name=extractor)
+            test_loader = get_dataloader(cfg, 
+                                         mode='classic',
+                                         dataset_name=dataset_name, 
+                                         batch_size=img_batch_size, 
+                                         extractor_name=extractor)
         elif split.lower() == 'train' or split.lower() == 'val':
-            test_loader = get_dataloader(cfg, dataset_name=dataset_name, split=split.lower(), batch_size=img_batch_size, extractor_name=extractor)
+            test_loader = get_dataloader(cfg, 
+                                         dataset_name=dataset_name, 
+                                         split=split.lower(),
+                                         mode='relative',
+                                         batch_size=img_batch_size, 
+                                         extractor_name=extractor
+                                         )
         else:
             raise ValueError(f"Unsupported split: {split} for dataset: {dataset_name}")
     elif dataset_name.lower() == 'circo':
         if split.lower() == 'test':
-            test_loader = get_dataloader(cfg, dataset_name='circo_target_image', batch_size=img_batch_size, extractor_name=extractor)
+            test_loader = get_dataloader(cfg, 
+                                         mode='classic',
+                                         dataset_name=dataset_name, 
+                                         batch_size=img_batch_size, 
+                                         extractor_name=extractor)
         elif split.lower() == 'val':
-            test_loader = get_dataloader(cfg, dataset_name=dataset_name, split='val', batch_size=img_batch_size, extractor_name=extractor)
+            test_loader = get_dataloader(cfg, 
+                                         dataset_name=dataset_name, 
+                                         split='val', 
+                                         mode='relative',
+                                         batch_size=img_batch_size, 
+                                         extractor_name=extractor
+                                         )
         else:
             raise ValueError(f"Unsupported split: {split} for dataset: {dataset_name}")
     elif dataset_name.lower() == 'fashioniq':
         if split.lower() == 'val' or split.lower() == 'train':
-            test_loader = get_dataloader(cfg, dataset_name=dataset_name, split=split.lower(), batch_size=img_batch_size, extractor_name=extractor)
+            test_loader = get_dataloader(cfg, 
+                                         dataset_name=dataset_name, 
+                                         split=split.lower(), 
+                                         mode='classic',
+                                         batch_size=img_batch_size, 
+                                         extractor_name=extractor,
+                                         )
         else:
             raise ValueError(f"Unsupported split: {split} for dataset: {dataset_name}")
             
@@ -224,12 +284,21 @@ def main(cfg, **kwargs):
     tar_tensor_feat = []
     target_ids = []
     target_length = []
+    fashioniq_ground_truth = []
+    if dataset_name.lower() == 'cirr' and split.lower() == 'test':
+        img_subset = []
+        img_subset_ids = []
+        img_subset_feat = []
     with torch.no_grad(), torch.autocast("cuda"):
         for i, batch in tqdm(enumerate(dataloader), desc="Gnerating descriptions", total=len(dataloader)):
             reference_pil = batch['reference_pil']
             caption = batch['caption']
-            if dataset_name.lower() != 'fashioniq':
-                query_ids.extend(batch['query_id'])
+            query_ids.extend(batch['query_id'])
+            if dataset_name.lower() == 'fashioniq':
+                fashioniq_ground_truth.extend(batch['target_id'])
+            if dataset_name.lower() == 'cirr' and split.lower() == 'test':
+                img_subset.extend(batch['image_set'])
+                img_subset_ids.extend(batch['image_subset_ids'])
 
             composed_messages = list(map(lambda x: get_composed_prompts(dataset_name, *x),zip(reference_pil, caption)))
 
@@ -245,24 +314,39 @@ def main(cfg, **kwargs):
             torch.cuda.empty_cache()
 
             for j, test_batch in tqdm(enumerate(test_loader)):
-                # pil = test_batch['all_original_target_pil'] if extractor.lower() == 'clip' else test_batch['all_target_pil']
-                pil = test_batch['all_target_pil']
+                pil = test_batch['target_pil']
                 target_ids.extend(test_batch['target_id'])
-                target_length.extend(test_batch['all_target_length'])
+                target_length.extend(test_batch['target_length'])
 
                 tar_tensor_feat.append(extract_image_features(pil, extractor, feature_extraction_model, img_preprocess))
             print("Finished extracting target image features") 
 
+            if dataset_name.lower() == 'cirr' and split.lower() == 'test':
+                n_iters = len(img_subset)//img_batch_size + 1 if len(img_subset)%img_batch_size != 0 else len(img_subset)//img_batch_size
+                for i in range(n_iters):
+                    img_subset_feat.append(extract_image_features(img_subset[i*img_batch_size:(i+1)*img_batch_size], extractor, feature_extraction_model, img_preprocess))
+                img_subset_feat = torch.cat(img_subset_feat, dim=0)
+                print("Finished extracting subset image features")
+
         elif task == 'txt2txt':
             for p, test_batch in tqdm(enumerate(test_loader)):
-                pil = test_batch['all_target_pil']
+                pil = test_batch['target_pil']
                 target_ids.extend(test_batch['target_id'])
-                target_length.extend(test_batch['all_target_length'])
+                target_length.extend(test_batch['target_length'])
                 target_messages = list(map(lambda x: get_target_prompts(dataset_name, x), pil))
                 target_description = generate_texts(target_messages, gen_config, processor, text_generation_model)
                 print(target_description)
                 tar_tensor_feat.append(extract_text_features(target_description, extractor, tokenizer, feature_extraction_model))
             print("Finished generating target descriptions and extracting features")
+
+            if dataset_name.lower() == 'cirr' and split.lower() == 'test':
+                n_iters = len(img_subset)//32 + 1 if len(img_subset)%32 != 0 else len(img_subset)//32
+                for i in range(n_iters):
+                    target_messages = list(map(lambda x: get_target_prompts(dataset_name, x), img_subset[i*32:(i+1)*32]))
+                    target_description = generate_texts(target_messages, gen_config, processor, text_generation_model)
+                    img_subset_feat.append(extract_text_features(target_description, extractor, tokenizer, feature_extraction_model))
+                img_subset_feat = torch.cat(img_subset_feat, dim=0)
+                print("Finished extracting subset image features")
             
             del text_generation_model
             del feature_extraction_model
@@ -278,12 +362,12 @@ def main(cfg, **kwargs):
         store_top_k(cfg, task, query_ids, target_ids, description_feat, tar_tensor_feat, dataset_name, extractor, **kwargs)
     elif dataset_name.lower() == 'cirr' and split.lower() == 'test':
         store_top_k(cfg, task, query_ids, target_ids, description_feat, tar_tensor_feat, dataset_name, extractor, **kwargs)
-        # store_top_k(cfg, task, query_ids, target_ids, description_feat, tar_tensor_feat, dataset_name, extractor, cutoff=30, **kwargs)
+        store_top_k(cfg, task, query_ids, img_subset_ids, description_feat, img_subset_feat, dataset_name, extractor, cutoff=3, **kwargs)
     elif dataset_name.lower() == 'fashioniq' and split.lower() == 'val':
         for k in top_k:
-            fashioniq_eval(dataloader, description_feat, tar_tensor_feat, target_length, k)
+            fashioniq_eval(dataloader, description_feat, tar_tensor_feat, fashioniq_ground_truth, target_ids, k)
     else:
-        metric = 'map' if dataset_name.lower() == 'circo' else 'recall'
+        metric = 'map' if dataset_name.lower() == 'circo' else 'recall' ######modify here!!!!!
         for k in top_k:
             metric_val = get_metrics(description_feat,
                                       tar_tensor_feat,
@@ -301,3 +385,7 @@ def launch(**kwargs):
 
 if __name__ == "__main__":
     fire.Fire(launch)
+
+
+####use targetpad to improve CLIP/OpenCLIP
+####Adjust the prompts

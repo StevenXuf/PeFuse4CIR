@@ -14,10 +14,15 @@ from attention import self_attention, cross_attention, co_attention
 from metrics import compute_map_at_k, compute_recall_at_k
 from utils import targetpad_transform
 
-def get_feature_extractor(cfg, extractor=None):
+def get_feature_extractor(cfg, extractor=None, extractor_id=None, pretrained=None):
     if extractor is None:
         extractor = cfg['GENERAL']['EXTRACTOR']
-    extractor_id = cfg[extractor]['MODEL_NAME']
+    if extractor_id is None:
+        extractor_id = cfg[extractor]['MODEL_NAME']
+    if extractor.lower() == 'openclip':
+        if pretrained is None:
+            pretrained = cfg[extractor]['PRETRAINED']
+        print(f"Using pretrained model: {pretrained}")
 
     if extractor.lower() == 'openvision':
         print(f"Using OpenVision for feature extraction")
@@ -26,13 +31,15 @@ def get_feature_extractor(cfg, extractor=None):
         tokenizer = get_tokenizer(f'hf-hub:{extractor_id}')
     elif extractor.lower() == 'openclip':
         print(f"Using OpenCLIP for feature extraction")
-        feature_extraction_model, _, img_preprocess = open_clip.create_model_and_transforms(extractor_id, pretrained='laion2b_s34b_b79k')
+        feature_extraction_model, _, img_preprocess = open_clip.create_model_and_transforms(extractor_id, pretrained=pretrained)
         tokenizer = open_clip.get_tokenizer(extractor_id)
-    elif extractor.lower() == 'clip' or extractor.lower() == 'siglip2':
-        print(f"Using {extractor} for feature extraction")
-        # feature_extraction_model = AutoModel.from_pretrained(extractor_id)
-        # tokenizer = AutoTokenizer.from_pretrained(extractor_id)
-        # img_preprocess = targetpad_transform(cfg[extractor]['IMAGE_MEAN'], cfg[extractor]['IMAGE_STD'], target_ratio=1.25, dim=cfg[extractor]['IMAGE_SIZE'])
+    elif extractor.lower() == 'clip':
+        print(f"Using CLIP for feature extraction")
+        feature_extraction_model = AutoModel.from_pretrained(extractor_id)
+        tokenizer = AutoTokenizer.from_pretrained(extractor_id)
+        img_preprocess = targetpad_transform(cfg[extractor]['IMAGE_MEAN'], cfg[extractor]['IMAGE_STD'], target_ratio=1.25, dim=cfg[extractor]['IMAGE_SIZE'])
+    elif extractor.lower() == 'siglip2':
+        print(f"Using SigLip2 for feature extraction")
         feature_extraction_model = AutoModel.from_pretrained(extractor_id)
         tokenizer = AutoTokenizer.from_pretrained(extractor_id)
         img_preprocess = AutoProcessor.from_pretrained(extractor_id)

@@ -7,42 +7,6 @@ def convert_pil_to_base64(pil_image):
     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
     return img_str
 
-def generate_modification(target_image, reference_image):
-    text_modification = [
-        {
-            "role": "system", 
-            "content": (
-                "You are an expert at comparing images and identifying visual differences. "
-                "Given two images (first: reference, second: target), "
-                "Describe all the changes needed to transform the first image into the second. "
-                "Be complete and specific—mention differences in objects, colors, lighting, textures, positions, sizes, and background details. "
-                "Only describe every visible changes between the images. "
-                "Write in clear, full, and complete sentences in English."
-            )
-        },
-        {
-            "role": "user",
-            "content": [
-                {
-                    "type": "image", 
-                    "image": "data:image;base64," + convert_pil_to_base64(reference_image)
-                },
-                {
-                    "type": "image", 
-                    "image": "data:image;base64," + convert_pil_to_base64(target_image)
-                },
-                {
-                    "type": "text", 
-                    "text": (
-                        "Compare the first image to the second image. "
-                        "Describe exactly what has been changed, added, or removed in order to make the first image match the second."
-                    )
-                }
-            ],
-        }
-    ]
-    return text_modification
-
 ######################################
 # Prompts for FASHIONIQ dataset
 ######################################
@@ -56,14 +20,14 @@ def generate_composed_description_for_fashioniq(reference_image, caption):
                 You are an expert at visual imagination of fashion items. 
                 Given a reference image of fashion items and modification instructions, mentally apply the changes and produce an accurate and complete natural-language description of the resulting fashion items. 
                 The modifications may describe direct attributes (e.g., “solid white with buttons”), comparisons (e.g., “longer sleeves,” “lighter in color”), combined attributes (e.g., “black with a red cherry pattern and deep V neckline”), or negations (e.g., “no lace design”).
-                Focus on the objects or attributes such as type, color, pattern, material, shape, fit, and style details in the reference image that are relevant or mentioned in the modification instructions.
+                Focus on the fashion item and its attributes such as type, color, pattern, material, shape, fit, and style details in the reference image that are relevant or mentioned in the modification instructions.
                 Ignore people and background from the image.
+                Be concise rather than verbose.
                 Be specific rather than ambiguous. 
                 Be objective rather than subjective. 
-                Be concise rather than verbose.
                 Avoid unnecessary repetition or imaginary things. 
-                Do not use vague comparative terms like 'same/different/smaller/larger/shorter/longer/unchanged/darker/lighter', etc. Instead, you should specify these differences clearly, like: another color instead of red (if no specific targeting color is mentioned), and a top-down angle (if mentioned) instead of unchanged angle, etc. 
-                Note that I need to find targeting images based on your description solely without seeing the reference image or modification instructions.
+                Do not use vague comparative terms like 'same/different/smaller/larger/shorter/longer/unchanged', etc. Instead, you should specify these differences clearly, like: another color instead of red (if no specific targeting color is mentioned), and a clear sky (if mentioned) instead of unchanged sky, etc.
+                Note that I need to find targeting images based on your description solely without knowing the reference image or modification instructions.
                 Write 1 to 3 coherent sentences in clear English.
             """
         },
@@ -76,12 +40,44 @@ def generate_composed_description_for_fashioniq(reference_image, caption):
                     "text": (
                         f"Here are the modification instructions: {caption}\n\n"
                         "Now, describe how the final fashion item looks after applying the modifications. "
-                        "Write in coherent and complete English in 1 to 3 sentences so that I can find targeting images based on your description without seeing the reference image or modification instructions."
+                        "Write in coherent and complete English in 1 to 3 sentences."
                     )
                 }
             ],
         }
     ]
+    # target_description = [
+    #     {
+    #         "role": "system", 
+    #         "content": """
+    #             You are a visual imagination expert. Describe transformed images by:
+    #                 1. ANALYZE the reference image and modification instructions
+    #                 2. SYNTHESIZE changes while maintaining original context
+    #                 3. DESCRIBE key elements (objects/attributes/relations/background)
+    #                 4. VALIDATE against instructions and visual consistency
+    #                 5. REFINE to 1-3 specific, coherent sentences
+
+    #             Guidelines:
+    #             - Be precise about visual attributes (color, size, shape, count, position)
+    #             - Maintain spatial relationships and background context
+    #             - Exclude any reference to the original image or modification process
+    #             - Avoid speculative elements beyond given instructions
+    #             - Use concrete visual descriptors only
+    #             - Be objective, specific, and concise in your descriptions.
+    #             - Ignore person and background elements in your descriptions.
+    #         """
+    #     },
+    #     {
+    #         "role": "user",
+    #         "content": [
+    #             {"type": "image", "image": "data:image;base64," + convert_pil_to_base64(reference_image)},
+    #             {
+    #                 "type": "text", 
+    #                 "text": f"Modification instructions: {caption}\n\nDescribe the final image in 1-3 specific English sentences:"
+    #             }
+    #         ]
+    #     }
+    # ]
     return target_description
 
 def generate_target_description_for_fashioniq(target_image):
@@ -121,56 +117,14 @@ def generate_target_description_for_fashioniq(target_image):
 # Prompts for CIRR dataset
 ###################################
 def generate_composed_description_for_cirr(reference_image, caption):
-    target_description = [
-        {
-            "role": "system", 
-            "content": """
-                    You are an expert at visual imagination of real-world scenes. 
-                    Given a reference image and modification instructions, mentally apply the modifications to the reference image and describe the resulting image in clear, complete English. 
-                    Focus on the elements (objects, people, animals) or attributes (color, size, shape, numbers), spatial relations, and background context in the reference image that are relevant or mentioned in the modification instructions.
-                    Apply the modifications exactly as described, and ensure the final description reflects the scene after the changes.
-                    The modifications may include:
-                        1. Cardinality: adjusting the number of objects (e.g., “only one bird remains”).
-                        2. Addition: adding new objects or attributes (e.g., “add a red chair in the corner”).
-                        3. Negation: removing elements (e.g., “remove the table”).
-                        4. Direct Addressing: ensuring specific mentioned objects are clearly included.
-                        5. Compare & Change: replacing one attribute with another (e.g., “same sofa but in leather”).
-                        6. Comparative Statement: relative size, quantity, or intensity changes (e.g., “a larger group of people”).
-                        7. Conjunction Statements: multiple modifications combined (e.g., “remove the tree and add two benches”).
-                        8. Spatial Relations & Background: modifying positions, layout, or setting (e.g., “change the background to a beach”).
-                        9. Viewpoint: adjusting perspective or framing (e.g., “zoom out to show the whole scene”).
-                    Be specific rather than ambiguous. 
-                    Be objective rather than subjective.   
-                    Be concise rather than verbose.
-                    Avoid imaginary details not supported by the reference image or the modification.
-                    Do not use vague comparative terms like 'same/different/smaller/larger/shorter/longer/unchanged', etc. Instead, you should specify these differences clearly, like: another color instead of red (if no specific targeting color is mentioned), and a clear sky (if mentioned) instead of unchanged sky, etc.
-                    Note that I need to find targeting images based on your description solely without seeing the reference image or modification instructions.
-                    Write 1 to 3 coherent sentences.
-                    """
-        },
-        {
-            "role": "user",
-            "content": [
-                {"type": "image", "image": "data:image;base64," + convert_pil_to_base64(reference_image)},
-                {
-                    "type": "text", 
-                    "text": (
-                        f"Here are the modification instructions: {caption}\n\n"
-                        "Now, describe how the final scene looks after applying the modifications." 
-                        "Write 1 to 3 coherent and complete sentences in English so that I can find targeting images based on your description without seeing the reference image or modification instructions."
-                    )
-                }
-            ],
-        }
-    ]
     # target_description = [
     #     {
     #         "role": "system", 
     #         "content": """
     #                 You are an expert at visual imagination of real-world scenes. 
     #                 Given a reference image and modification instructions, mentally apply the modifications to the reference image and describe the resulting image in clear, complete English. 
-    #                 Focus on the elements (objects, people, animals) or attributes (color, size, shape, numbers), spatial relations, and background context in the reference image.
-    #                 Only mention what are in the resulting images instead of what is not.
+    #                 Focus on the elements (objects, people, animals) or attributes (color, size, shape, numbers), spatial relations, and background context in the reference image that are relevant or mentioned in the modification instructions.
+    #                 Apply the modifications exactly as described, and ensure the final description reflects the scene after the changes.
     #                 The modifications may include:
     #                     1. Cardinality: adjusting the number of objects (e.g., “only one bird remains”).
     #                     2. Addition: adding new objects or attributes (e.g., “add a red chair in the corner”).
@@ -181,8 +135,13 @@ def generate_composed_description_for_cirr(reference_image, caption):
     #                     7. Conjunction Statements: multiple modifications combined (e.g., “remove the tree and add two benches”).
     #                     8. Spatial Relations & Background: modifying positions, layout, or setting (e.g., “change the background to a beach”).
     #                     9. Viewpoint: adjusting perspective or framing (e.g., “zoom out to show the whole scene”).
-    #                 Be specific, objective, and concise.
+    #                 Be specific rather than ambiguous. 
+    #                 Be objective rather than subjective.   
+    #                 Be concise rather than verbose.
     #                 Avoid imaginary details not supported by the reference image or the modification.
+    #                 Do not use vague comparative terms like 'same/different/smaller/larger/shorter/longer/unchanged', etc. Instead, you should specify these differences clearly, like: another color instead of red (if no specific targeting color is mentioned), and a clear sky (if mentioned) instead of unchanged sky, etc.
+    #                 Note that I need to find targeting images based on your description solely without seeing the reference image or modification instructions.
+    #                 Write 1 to 3 coherent sentences.
     #                 """
     #     },
     #     {
@@ -193,13 +152,75 @@ def generate_composed_description_for_cirr(reference_image, caption):
     #                 "type": "text", 
     #                 "text": (
     #                     f"Here are the modification instructions: {caption}\n\n"
-    #                     "Now, describe how the resulting image looks after applying the modifications." 
+    #                     "Now, describe how the final scene looks after applying the modifications." 
     #                     "Write 1 to 3 coherent and complete sentences in English so that I can find targeting images based on your description without seeing the reference image or modification instructions."
     #                 )
     #             }
     #         ],
     #     }
     # ]
+    target_description = [
+        # {
+        #     "role": "system", 
+        #     "content": """
+        #             You are an expert at visual imagination of real-world scenes. 
+        #             Given a reference image and modification instructions, mentally apply the modifications to the reference image and describe the resulting image in clear, specific, and complete English. 
+        #             Focus on the elements (objects, people, animals) or attributes (color, size, shape, numbers), spatial relations, and background context.
+        #             Pay special attention to the elements and attributes mentioned in the modification instructions.
+        #             Be as specific as possible when describing the resulting image so that other people can find targeting images based on your description without knowing the reference image or modification instructions.
+        #             You should follow these steps: 
+        #                 1. First carefully observe the reference image and read the modification instructions;
+        #                 2. Then connect the attributes and elements from modification instructions with reference image;
+        #                 3. Describe the reference image;
+        #                 4. Change your description based on the modification instructions;
+        #                 5. Cross validate your description with the reference image and modification instructions;
+        #                 6. Refine your description;
+        #                 7. Finally only output the modified description.
+        #             Be objective and concise.
+        #             Avoid unnecessary repetition or imaginary things.
+        #             Write in 1 to 3 coherent sentences.
+        #             """
+        # },
+        {
+            "role": "system",
+            "content": """
+                You are an expert at visually imagining real-world scenes. 
+                Given a reference image and modification instructions, carefully apply the modifications 
+                and produce a precise English description of the resulting image. 
+
+                Focus on:
+                - Key elements (objects, people, animals) and their attributes (color, size, shape, quantity).
+                - Spatial relationships and background context.
+                - Exact modifications specified in the instructions.
+
+                Guidelines:
+                1. Observe the reference image and read the modification instructions.
+                2. Link the instructions to relevant elements in the reference image.
+                3. Describe the original scene briefly.
+                4. Update the description according to the modifications.
+                5. Verify that all important details from the instructions are included.
+                6. Output only the final modified description.
+
+                Requirements:
+                - Write objectively in 1 to 3 coherent sentences.
+                - Be specific and clear so the description can be used for image retrieval.
+                - Avoid unnecessary repetition or invented details.
+            """
+        },
+        {
+            "role": "user",
+            "content": [
+                {"type": "image", "image": "data:image;base64," + convert_pil_to_base64(reference_image)},
+                {
+                    "type": "text", 
+                    "text": (
+                        f"Here are the modification instructions: {caption}\n\n"
+                        "Now, describe the resulting image in 1 to 3 coherent sentences in English."
+                    )
+                }
+            ],
+        }
+    ]
     return target_description
 
 def generate_target_description_for_cirr(target_image):

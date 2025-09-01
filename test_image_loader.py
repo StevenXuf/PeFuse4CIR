@@ -1,5 +1,6 @@
 import torch
 import os
+import json
 
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
@@ -14,16 +15,18 @@ class TestImageDataset(Dataset):
         if self.data_name.lower() == 'circo':
             self.image_path = os.path.join(self.cfg['CIRCO']['IMAGE_FOLDER'], "COCO2017_unlabeled/unlabeled2017")
         elif self.data_name.lower() == 'cirr':
-            self.image_path = os.path.join(self.cfg['CIRR']['IMAGE_FOLDER'], "img_raw/test1")
-        self.images = os.listdir(self.image_path)
+            self.image_path = os.path.join(self.cfg['CIRR']['IMAGE_FOLDER'], "img_raw")
         self.transform = transform
+        with open(os.path.join(self.cfg['CIRR']['IMAGE_FOLDER'], "image_splits", f"split.rc2.test1.json")) as f:
+            self.images = json.load(f)
+        print(f"Number of items in images: {len(self.images)}")
 
     def __len__(self):
         return len(self.images)
 
     def __getitem__(self, idx):
-        img_id = self.images[idx]
-        img_path = os.path.join(self.image_path, img_id)
+        img_id = list(self.images.keys())[idx]
+        img_path = os.path.join(self.image_path, self.images[img_id])
 
         image = Image.open(img_path).convert("RGB").resize((224, 224), Image.Resampling.BICUBIC)
 
@@ -46,11 +49,8 @@ def get_test_image_loader(dataset_name, batch_size=16, transform=None, num_worke
                             collate_fn=lambda batch:{
                                 "target_img": torch.stack([transform(item["target_image"]) if transform else item["target_image"] for item in batch]),
                                 "target_pil": [item["target_image"] for item in batch],
-                                "all_target_img": torch.stack([transform(item["target_image"]) if transform else item["target_image"] for item in batch]),
-                                "all_target_pil": [item["target_image"] for item in batch],
                                 "target_id": [item["target_id"] for item in batch],
-                                "all_target_id": [item["target_id"] for item in batch],
-                                "all_target_length": list(map(len,[[item["target_image"]] for item in batch]))
+                                "target_length": list(map(len,[[item["target_image"]] for item in batch]))
                             }
                             )
     return dataloader
@@ -62,9 +62,9 @@ if __name__ == "__main__":
         cfg['CLIP']['IMAGE_MEAN'],
         cfg['CLIP']['IMAGE_STD']
     )
-    dataloader = get_test_image_loader('circo', batch_size=16, transform=transform, num_workers=0)
+    dataloader = get_test_image_loader('cirr', batch_size=512, transform=transform, num_workers=0)
     for batch in dataloader:
         images = batch["target_img"]
         image_ids = batch["target_id"]
-        print(f"Image size: {images.size()}, Image IDs: {image_ids}")
+        print(f"Image size: {images.size()}")
         break

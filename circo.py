@@ -9,6 +9,7 @@ from torch.utils.data import Dataset, DataLoader
 
 from refinedfashioniq import transform_image
 from configuration import get_default_config
+from test_image_loader import get_test_image_loader
 
 class CIRCODataset(Dataset):
     """
@@ -139,7 +140,7 @@ class CIRCODataset(Dataset):
             raise ValueError("mode should be in ['relative', 'classic']")
 
 
-def get_circo_loader(data_path, batch_size=16, split='val', num_workers=0, transform=None):
+def get_circo_loader(data_path, batch_size=16, split='val', mode='relative', num_workers=0, transform=None):
     """
     Get DataLoader for CIRCO dataset.
     """
@@ -147,15 +148,12 @@ def get_circo_loader(data_path, batch_size=16, split='val', num_workers=0, trans
         'reference_img': torch.stack([transform(item['reference_img']) if transform is not None else item['reference_img'] for item in batch]),
         'reference_pil': [item['reference_img'] for item in batch],
         'reference_id': [item['reference_img_id'] for item in batch],
-        'target_img': torch.stack([transform(item['target_img']) if transform is not None else item['target_img'] for item in batch]),
-        'target_pil': [item['target_img'] for item in batch],
-        'target_id': [item['target_img_id'] for item in batch],
+        'target_img': torch.stack([transform(item) if transform is not None else item for sublist in batch for item in sublist['gt_img']]),
+        'target_pil': [item for sublist in batch for item in sublist['gt_img']],
+        'target_id': [item for sublist in batch for item in sublist['gt_img_ids']],
         'caption': [f"{item['relative_caption']} and has {item['shared_concept']}." for item in batch],
         'concept': [item['shared_concept'] for item in batch],
-        'all_target_ids': [item['gt_img_ids'] for item in batch],
-        'all_target_pil': [item for sublist in batch for item in sublist['gt_img']],
-        'all_target_img': torch.stack([transform(item) if transform is not None else item for sublist in batch for item in sublist['gt_img']]),
-        'all_target_length': list(map(len, [item['gt_img'] for item in batch])),
+        'target_length': list(map(len, [item['gt_img'] for item in batch])),
         'query_id': [item['query_id'] for item in batch]
     }
     test_collate_fn = lambda batch:{
@@ -167,14 +165,21 @@ def get_circo_loader(data_path, batch_size=16, split='val', num_workers=0, trans
         'query_id': [item['query_id'] for item in batch]
     }
 
-    dataset = CIRCODataset(data_path=data_path, split=split, mode='relative')
-    loader = DataLoader(dataset, 
-                        batch_size=batch_size, 
-                        shuffle=False, 
-                        num_workers=num_workers,
-                        collate_fn=test_collate_fn if split == 'test' else val_collate_fn
-    )
-
+    if mode == 'relative':
+        dataset = CIRCODataset(data_path=data_path, split=split, mode='relative')
+        loader = DataLoader(dataset, 
+                            batch_size=batch_size, 
+                            shuffle=False, 
+                            num_workers=num_workers,
+                            collate_fn=test_collate_fn if split == 'test' else val_collate_fn
+        )
+    elif mode == 'classic':
+        loader = get_test_image_loader(
+            'circo',
+            batch_size=batch_size,
+            num_workers=num_workers,
+            transform=transform
+        )
     return loader
 
 
@@ -185,7 +190,12 @@ if __name__ == "__main__":
         cfg['CLIP']['IMAGE_MEAN'],
         cfg['CLIP']['IMAGE_STD']
     )
-    circo_loader = get_circo_loader(cfg['CIRCO']['IMAGE_FOLDER'], batch_size=cfg['GENERAL']['BATCH_SIZE'], split='test', num_workers=cfg['GENERAL']['NUM_WORKERS'], transform=img_transform)
+    circo_loader = get_circo_loader(cfg['CIRCO']['IMAGE_FOLDER'], 
+                                    batch_size=cfg['GENERAL']['BATCH_SIZE'], 
+                                    split='test', 
+                                    mode='classic',
+                                    num_workers=cfg['GENERAL']['NUM_WORKERS'], 
+                                    transform=img_transform)
     print(len(circo_loader.dataset))
     for batch in circo_loader:
         ref_pil = batch['reference_img']
