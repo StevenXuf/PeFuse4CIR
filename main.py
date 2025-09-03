@@ -15,7 +15,6 @@ from utils import get_default_config, convert_pil_to_tensor, resize_crop_normali
 
 def main(cfg, **kwargs):
     ### General Parameters
-    seed = kwargs.get('seed', cfg['GENERAL']['SEED'])
     top_k = kwargs.get('top_k', cfg['GENERAL']['TOP_K'])
     task = kwargs.get('task', cfg['GENERAL']['TASK'])
     device = torch.device(f"cuda:{kwargs['device']}") if kwargs.get('device') is not None else torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -33,28 +32,30 @@ def main(cfg, **kwargs):
     top_p = kwargs.get('top_p', cfg['TEXT-GENERATION']['GLOBAL']['TOP_P'])
     llm_top_k = kwargs.get('llm_top_k', cfg['TEXT-GENERATION']['GLOBAL']['TOP_K'])
     max_new_tokens = kwargs.get('max_new_tokens', cfg['TEXT-GENERATION']['GLOBAL']['MAX_NEW_TOKENS'])
-    print(f"Using {model_id} for text generation with temperature={temperature}, top_p={top_p}, top_k={llm_top_k}, max_new_tokens={max_new_tokens}")
-
-    ### Image Generation Parameters
-    image_size = cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['IMAGE_SIZE']
-    n_infer_step = kwargs.get('n_infer_step', cfg['IMAGE-GENERATION']['GLOBAL']['NUM_INFERENCE_STEPS'])
-    image_guidance_scale = kwargs.get('image_guidance_scale', cfg['IMAGE-GENERATION']['GLOBAL']['IMAGE_GUIDANCE_SCALE'])
-    guidance_scale = kwargs.get('guidance_scale', cfg['IMAGE-GENERATION']['GLOBAL']['GUIDANCE_SCALE'])
-    use_llm = kwargs.get('use_llm', cfg['GENERAL']['USE_LLM'])
 
     feature_extraction_model, img_preprocess, tokenizer = get_feature_extractor(cfg, 
                                                                                 extractor=extractor, 
                                                                                 extractor_id=extractor_id, 
                                                                                 pretrained=pretrained
                                                                                 )
-    feature_extraction_model.eval()
     feature_extraction_model.to(device)
+    feature_extraction_model.eval()
 
     if task.startswith('img2'):
+        ### Image Generation Parameters
+        seed = kwargs.get('seed', cfg['GENERAL']['SEED'])
+        image_size = cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['IMAGE_SIZE']
+        n_infer_step = kwargs.get('n_infer_step', cfg['IMAGE-GENERATION']['GLOBAL']['NUM_INFERENCE_STEPS'])
+        image_guidance_scale = kwargs.get('image_guidance_scale', cfg['IMAGE-GENERATION']['GLOBAL']['IMAGE_GUIDANCE_SCALE'])
+        guidance_scale = kwargs.get('guidance_scale', cfg['IMAGE-GENERATION']['GLOBAL']['GUIDANCE_SCALE'])
+        use_llm = kwargs.get('use_llm', cfg['GENERAL']['USE_LLM'])
+
         img_transform_for_generation = transform_image(image_size)
         generator = torch.Generator(device="cuda").manual_seed(seed)
         image_generation_model=StableDiffusionXLInstructPix2PixPipeline.from_pretrained(cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['MODEL_NAME'], 
                                                                                   torch_dtype=torch.float16).to(device)
+        image_generation_model.eval()
+        image_generation_model.enable_xformers_memory_efficient_attention()
         print(f"Using {image_generation_model.__class__.__name__} with params: n_infer_step={n_infer_step}, image_guidance_scale={image_guidance_scale}, guidance_scale={guidance_scale}")
 
         store_path = os.path.join(cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['OUTPUT_DIR'], f'Qwen_{use_llm}_{dataset_name}_{extractor}_{n_infer_step}_{image_guidance_scale}_{guidance_scale}')
@@ -71,7 +72,9 @@ def main(cfg, **kwargs):
                                                                             torch_dtype=torch.bfloat16, 
                                                                             device_map={"": device}, 
                                                                             attn_implementation='flash_attention_2'
-                                                                            ).eval().to(device)
+                                                                            ).to(device)
+    text_generation_model.eval()
+    print(f"Using {text_generation_model.__class__.__name__} for text generation with temperature={temperature}, top_p={top_p}, top_k={llm_top_k}, max_new_tokens={max_new_tokens}")
     processor = AutoProcessor.from_pretrained(model_id, 
                                             padding_side='left', 
                                             use_fast=True
