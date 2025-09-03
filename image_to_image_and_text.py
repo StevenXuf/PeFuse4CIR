@@ -124,10 +124,6 @@ def main(cfg, **kwargs):
                                             padding_side='left', 
                                             use_fast=True
                                             )
-    img_transform_for_extraction = transform_image(cfg[extractor]['IMAGE_SIZE'], 
-                                                   cfg[extractor]['IMAGE_MEAN'], 
-                                                   cfg[extractor]['IMAGE_STD']
-                                                   )
     dataloader = get_dataloader(cfg, 
                                 split=split.lower(), 
                                 mode='relative',
