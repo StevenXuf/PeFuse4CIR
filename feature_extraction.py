@@ -9,10 +9,10 @@ from transformers import AutoProcessor, AutoModel, AutoTokenizer
 from open_clip import create_model_from_pretrained, get_tokenizer
 
 from configuration import get_default_config
-from refinedfashioniq import get_refined_fashioniq_loader,transform_image
+from refinedfashioniq import get_refined_fashioniq_loader
 from attention import self_attention, cross_attention, co_attention
 from metrics import compute_map_at_k, compute_recall_at_k
-from utils import targetpad_transform
+from utils import targetpad_transform, transform_image
 
 def get_feature_extractor(cfg, extractor=None, extractor_id=None, pretrained=None):
     if extractor is None:

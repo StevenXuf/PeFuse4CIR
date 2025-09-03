@@ -1,8 +1,10 @@
+import base64
+import io
 import PIL
 import torch
 import torchvision.transforms.functional as F
-from torchvision.transforms import Compose, CenterCrop, ToTensor, Normalize, Resize
-from torchvision.transforms import InterpolationMode
+
+from torchvision.transforms import Compose, CenterCrop, ToTensor, Normalize, Resize, Lambda, InterpolationMode
 
 class TargetPad():
     """
@@ -45,3 +47,31 @@ def targetpad_transform(mean, std, target_ratio: float=1.25, dim: int=224) -> to
         ToTensor(),
         Normalize(mean=mean, std=std),
     ])
+
+def convert_pil_to_tensor(list_of_pils, transform=None):
+    if transform is not None:
+        return [transform(image) for image in list_of_pils]
+    else:
+        return [ToTensor()(image) for image in list_of_pils]
+    
+def resize_crop_normalize(tensor_img, size=224, IMAGE_MEAN=None, IMAGE_STD=None):
+    # tensor_img: C×H×W in [0,1]
+    img = F.resize(tensor_img, [size, size], interpolation=InterpolationMode.BICUBIC)
+    img = F.center_crop(img, size)
+    img = F.normalize(img, mean=IMAGE_MEAN, std=IMAGE_STD)
+    return img
+
+def convert_pil_to_base64(pil_image):
+    buffered = io.BytesIO()
+    pil_image.save(buffered, format="JPEG")
+    img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+    return img_str
+
+def transform_image(image_size, IMAGENET_MEAN=None, IMAGENET_STD=None):
+    img_transform = Compose([
+        Resize((image_size, image_size),interpolation=InterpolationMode.BICUBIC),
+        CenterCrop(image_size),
+        ToTensor(),
+        Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD) if IMAGENET_MEAN is not None and IMAGENET_STD is not None else Lambda(lambda x: x)
+    ])
+    return img_transform

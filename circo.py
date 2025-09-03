@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Union, List, Dict, Literal
 from torch.utils.data import Dataset, DataLoader
 
-from refinedfashioniq import transform_image
+from utils import transform_image
 from configuration import get_default_config
 from test_image_loader import get_test_image_loader
 

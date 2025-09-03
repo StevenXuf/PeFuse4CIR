@@ -101,7 +101,7 @@ def store_top_k(cfg, task, query_ids, target_ids, description_feat, tar_tensor_f
         res = {'version': 'rc2', 'metric': 'recall_subset'}
         for i in range(len(query_ids)):
             current_ids = target_ids[i]
-            _,ids = pairwise_cosine_similarity(description_feat[i,:], tar_tensor_feat[start:start+len(current_ids), :]).topk(k=cutoff, dim=1)
+            _,ids = pairwise_cosine_similarity(description_feat[i:i+1,:], tar_tensor_feat[start:start+len(current_ids), :]).topk(k=cutoff, dim=1)
             res[str(query_ids[i])] = [current_ids[idx] for idx in ids[0].tolist()]
             start += len(current_ids)
     else:
@@ -199,10 +199,6 @@ def main(cfg, **kwargs):
         split = kwargs['SPLIT']
     else:
         split = cfg['GENERAL']['SPLIT']
-    if kwargs.get('MODE'):
-        mode = kwargs['MODE']
-    else:
-        mode = cfg['GENERAL']['MODE']
     print(f"Using {extractor} for feature extraction on {dataset_name} ({split})")
 
     feature_extraction_model, img_preprocess, tokenizer = get_feature_extractor(cfg, extractor=extractor, extractor_id=extractor_id, pretrained=pretrained)
@@ -231,7 +227,6 @@ def main(cfg, **kwargs):
                                 extractor_name=extractor,
                                 batch_size=batch_size
                                 )
-
     img_batch_size = 1024 if task == 'txt2img' else batch_size
     if dataset_name.lower() == 'cirr':
         if split.lower() == 'test':

@@ -10,6 +10,7 @@ GENERAL:
     SPLIT: "val" 
     TASK: "txt2img" # options: txt2img, txt2txt
     MODE: "relative" # options: relative, classic
+    RAW_CAPTION: False # whether to use raw caption without any prompt engineering
 
 ## datset information ##
 RefinedFashionIQ:

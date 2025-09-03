@@ -1,10 +1,8 @@
 import torch
 import os
 import fire
-import torchvision.transforms.functional as F
 
 from tqdm import tqdm
-from torchvision.transforms import transforms
 from diffusers import StableDiffusionXLInstructPix2PixPipeline
 
 from figures import show_tensor_images
@@ -12,19 +10,7 @@ from configuration import get_default_config
 from refinedfashioniq import transform_image
 from feature_extraction import get_metrics, get_feature_extractor
 from dataloaders import get_dataloader
-
-def convert_pil_to_tensor(list_of_pils, transform=None):
-    if transform is not None:
-        return [transform(image) for image in list_of_pils]
-    else:
-        return [transforms.ToTensor()(image) for image in list_of_pils]
-    
-def resize_crop_normalize(tensor_img, size=224, IMAGE_MEAN=None, IMAGE_STD=None):
-    # tensor_img: C×H×W in [0,1]
-    img = F.resize(tensor_img, [size, size], interpolation=transforms.InterpolationMode.BICUBIC)
-    img = F.center_crop(img, size)
-    img = F.normalize(img, mean=IMAGE_MEAN, std=IMAGE_STD)
-    return img
+from utils import convert_pil_to_tensor, resize_crop_normalize
 
 def main(cfg, **kwargs):
     image_size = cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['IMAGE_SIZE']

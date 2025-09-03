@@ -6,7 +6,7 @@ from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 
 from configuration import get_default_config
-from fashioniq import transform_image
+from utils import transform_image
 from test_image_loader import get_test_image_loader
 
 class CIRRDataset(Dataset):
@@ -81,12 +81,12 @@ class CIRRDataset(Dataset):
 
         if self.split == "test1":
             reference_id = entry["reference"]
-            caption = entry["caption"].replace(".", "") #+ ' and ' + ext_caption
+            caption = entry["caption"].replace(".", "") + ' and ' + ext_caption
             pairid = entry["pairid"]
 
             ref_img_path = self._find_image_path(reference_id)
             ref_img = Image.open(ref_img_path).convert("RGB").resize((224, 224), Image.Resampling.BICUBIC)
-            img_subset_ids = entry["img_set"]['members']
+            img_subset_ids = [member for member in entry["img_set"]['members'] if member != reference_id]
             image_set = [Image.open(self._find_image_path(img_id)).convert("RGB").resize((224, 224), Image.Resampling.BICUBIC) for img_id in img_subset_ids]
             return {
                 "reference_image": ref_img,
@@ -100,7 +100,7 @@ class CIRRDataset(Dataset):
         else:
             reference_id = entry["reference"]
             target_id = entry["target_hard"]
-            caption = entry["caption"].replace(".", "") #+ ' and ' + ext_caption
+            caption = entry["caption"].replace(".", "") + ' and ' + ext_caption
             pairid = entry["pairid"]
 
             ref_img_path = self._find_image_path(reference_id)
@@ -223,9 +223,9 @@ if __name__ == "__main__":
 
     loader = get_cirr_loader(cfg['CIRR']['IMAGE_FOLDER'], transform=img_transform, split='test', mode='relative')
     print(len(loader.dataset))
-    res = []    
-    for i,batch in enumerate(loader):
-        res.extend(batch['image_subset_ids'])
-        if i == 5:
-            break
-    print(res)
+    # res = []    
+    # for i,batch in enumerate(loader):
+    #     res.extend(batch['image_subset_ids'])
+    #     if i == 5:
+    #         break
+    # print(res)

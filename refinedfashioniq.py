@@ -7,9 +7,9 @@ from PIL import Image
 from io import BytesIO
 from datasets import load_dataset, Dataset
 from torch.utils.data import DataLoader
-from torchvision import transforms
 
 from configuration import get_default_config
+from utils import transform_image
 
 def download_and_resize_images(output_dir, url_folder, resize_to=(224, 224)):
     """
@@ -53,15 +53,6 @@ def download_and_resize_images(output_dir, url_folder, resize_to=(224, 224)):
                     print(f"Failed to process line: {line}\nError: {e}")
         print(f"Finished processing {input_file}")
     print("All done!")
-
-def transform_image(image_size, IMAGENET_MEAN=None, IMAGENET_STD=None):
-    img_transform = transforms.Compose([
-        transforms.Resize((image_size, image_size),interpolation=transforms.InterpolationMode.BICUBIC),
-        transforms.CenterCrop(image_size),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD) if IMAGENET_MEAN is not None and IMAGENET_STD is not None else transforms.Lambda(lambda x: x)
-    ])
-    return img_transform
 
 def get_refined_fashioniq_loader(output_dir,batch_size=32,transform=None):
     """

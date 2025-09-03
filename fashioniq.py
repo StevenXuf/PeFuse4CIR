@@ -4,7 +4,7 @@ import torch
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 
-from refinedfashioniq import transform_image
+from utils import transform_image
 from configuration import get_default_config
 
 class FashionIQDataset(Dataset):

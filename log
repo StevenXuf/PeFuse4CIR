@@ -1,0 +1,26 @@
+Using Qwen/Qwen2.5-VL-7B-Instruct for text generation with temperature=0.1, top_p=0.9, top_k=50, max_new_tokens=128
+Using CLIP for feature extraction on CIRR (test)
+Using CLIP for feature extraction
+Using transform:
+ Compose(
+    Resize(size=(224, 224), interpolation=bicubic, max_size=None, antialias=True)
+    CenterCrop(size=(224, 224))
+    ToTensor()
+    Normalize(mean=[0.48145466, 0.4578275, 0.40821073], std=[0.26862954, 0.26130258, 0.27577711])
+)
+Number of valid caption entries: 4148
+Number of valid extended captions: 4148
+ON RELATIVE MODE.
+CIRR TEST LOADED SUCCESSFULLY.
+4148 ITEMS IN DATALOADER.
+Using transform:
+ Compose(
+    Resize(size=(224, 224), interpolation=bicubic, max_size=None, antialias=True)
+    CenterCrop(size=(224, 224))
+    ToTensor()
+    Normalize(mean=[0.48145466, 0.4578275, 0.40821073], std=[0.26862954, 0.26130258, 0.27577711])
+)
+Number of items in images: 2315
+ON CLASSIC MODE.
+CIRR LOADED SUCCESSFULLY.
+2315 ITEMS IN DATALOADER.
