@@ -5,8 +5,7 @@ import json
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 
-from configuration import get_default_config
-from utils import transform_image
+from utils import transform_image, get_default_config
 from test_image_loader import get_test_image_loader
 
 class CIRRDataset(Dataset):

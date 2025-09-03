@@ -7,12 +7,11 @@ from diffusers import StableDiffusionXLInstructPix2PixPipeline
 from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor, GenerationConfig, set_seed
 
 from figures import show_tensor_images
-from configuration import get_default_config
 from feature_extraction import get_feature_extractor, get_metrics
 from dataloaders import get_dataloader
 from text_to_image_and_text import fashioniq_eval, generate_texts, extract_text_features, extract_image_features, store_top_k
 from prompts import get_composed_prompts, get_target_prompts
-from utils import convert_pil_to_tensor, resize_crop_normalize, transform_image, delete_models
+from utils import get_default_config, convert_pil_to_tensor, resize_crop_normalize, transform_image, delete_models
 
 def main(cfg, **kwargs):
     ### General Parameters

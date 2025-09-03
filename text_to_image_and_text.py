@@ -9,7 +9,7 @@ from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor, Gene
 from qwen_vl_utils import process_vision_info
 from torchmetrics.functional.pairwise import pairwise_cosine_similarity
 
-from configuration import get_default_config
+from utils import get_default_config
 from feature_extraction import get_feature_extractor, get_metrics
 from dataloaders import get_dataloader
 from prompts import get_composed_prompts, get_target_prompts

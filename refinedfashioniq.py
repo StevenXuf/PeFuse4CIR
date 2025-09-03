@@ -8,8 +8,7 @@ from io import BytesIO
 from datasets import load_dataset, Dataset
 from torch.utils.data import DataLoader
 
-from configuration import get_default_config
-from utils import transform_image
+from utils import transform_image, get_default_config
 
 def download_and_resize_images(output_dir, url_folder, resize_to=(224, 224)):
     """

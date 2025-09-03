@@ -4,8 +4,7 @@ import torch
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 
-from utils import transform_image
-from configuration import get_default_config
+from utils import transform_image, get_default_config
 
 class FashionIQDataset(Dataset):
     def __init__(self, data_path, split='val', caption_folder='captions', split_folder='image_splits', mode='relative', transform=None):

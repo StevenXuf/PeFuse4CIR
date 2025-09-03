@@ -4,8 +4,16 @@ import PIL
 import torch
 import gc
 import torchvision.transforms.functional as F
+import yaml
 
+from omegaconf import OmegaConf
 from torchvision.transforms import Compose, CenterCrop, ToTensor, Normalize, Resize, Lambda, InterpolationMode
+
+def get_default_config(config_path='./config.yaml'):
+    with open(config_path,'r') as f:
+        return yaml.safe_load(f)
+def get_default_omegaconf(config_path='./config.yaml'):
+    return OmegaConf.load(config_path)
 
 class TargetPad():
     """
@@ -31,7 +39,6 @@ class TargetPad():
         vp = max(int((scaled_max_wh - h) / 2), 0)
         padding = [hp, vp, hp, vp]
         return F.pad(image, padding, 0, 'constant')
-
 
 def targetpad_transform(mean, std, target_ratio: float=1.25, dim: int=224) -> torch.Tensor:
     """

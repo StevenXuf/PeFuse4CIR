@@ -5,8 +5,7 @@ import json
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 
-from utils import transform_image
-from configuration import get_default_config
+from utils import transform_image, get_default_config
 
 class TestImageDataset(Dataset):
     def __init__(self, data_name, transform=None):
