@@ -158,7 +158,8 @@ def main(cfg, **kwargs):
                                          mode='classic',
                                          dataset_name=dataset_name, 
                                          batch_size=img_batch_size, 
-                                         extractor_name=extractor)
+                                         extractor_name=extractor
+                                         )
         elif split.lower() == 'val':
             test_loader = get_dataloader(cfg, 
                                          dataset_name=dataset_name, 
@@ -206,13 +207,13 @@ def main(cfg, **kwargs):
                 reference_img = batch['reference_img']
                 if use_llm == 'yes':
                     composed_messages = list(map(lambda x: get_composed_prompts(dataset_name, *x),zip(reference_pil, caption)))
-                    composed_descriptions = generate_texts(composed_messages, gen_config, processor, text_generation_model)
-                    print(composed_descriptions)
+                    caption = generate_texts(composed_messages, gen_config, processor, text_generation_model)
+                    print(caption)
 
                 show_tensor_images(reference_img, num_images=reference_img.size(0), file_path=os.path.join(store_path,f"reference_image_grid_{i}.png"))
                 print(f"Generating target images for batch {i+1}")
                 generated_target_images = image_generation_model(
-                    prompt=composed_descriptions,
+                    prompt=caption,
                     image=reference_img.to(device),
                     width=image_size,
                     height=image_size,
@@ -225,7 +226,6 @@ def main(cfg, **kwargs):
                 show_tensor_images(generated_target_image_tensor, num_images=generated_target_image_tensor.size(0), file_path=os.path.join(store_path,f"generated_target_image_grid_{i}.png"))
 
                 query_feat.append(extract_image_features(generated_target_images, extractor, feature_extraction_model, img_preprocess))
-                print(f'Batch {i+1} finished.')
 
             elif task.startswith('txt2'):
                 composed_messages = list(map(lambda x: get_composed_prompts(dataset_name, *x),zip(reference_pil, caption)))
@@ -234,7 +234,8 @@ def main(cfg, **kwargs):
                 query_feat.append(extract_text_features(composed_descriptions, extractor, tokenizer, feature_extraction_model))
             else:
                 raise ValueError(f"Unsupported task: {task}. Should be one of ['txt2img', 'txt2txt', 'img2img', 'img2txt']")
-
+            
+            print(f'Batch {i+1} finished.')
         print(f"Finished extracting query features for {task} on {dataset_name}.".upper())
 
         if task.endswith('2img'):
@@ -313,7 +314,3 @@ def launch(**kwargs):
 
 if __name__ == "__main__":
     fire.Fire(launch)
-
-
-####use targetpad to improve CLIP/OpenCLIP
-####Adjust the prompts
