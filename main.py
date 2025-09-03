@@ -16,79 +16,32 @@ from utils import convert_pil_to_tensor, resize_crop_normalize, transform_image,
 
 def main(cfg, **kwargs):
     ### General Parameters
-    top_k = cfg['GENERAL']['TOP_K']
-    if kwargs.get('TASK'):
-        task = kwargs['TASK']
-    else:
-        task = cfg['GENERAL']['TASK']
-    if kwargs.get('DEVICE') is not None:
-        device = torch.device(f"cuda:{kwargs['DEVICE']}")
-    else:
-        device = torch.device(f"cuda:{cfg['GENERAL']['DEVICE']}" if torch.cuda.is_available() else "cpu")
-    if kwargs.get('BATCH_SIZE'):
-        batch_size = kwargs['BATCH_SIZE']
-    else:
-        batch_size = cfg['GENERAL']['BATCH_SIZE']
-    if kwargs.get('EXTRACTOR'):
-        extractor = kwargs['EXTRACTOR']
-    else:
-        extractor = cfg['GENERAL']['EXTRACTOR']
-    if kwargs.get('EXTRACTOR_ID'):
-        extractor_id = kwargs['EXTRACTOR_ID']
-    else:
-        extractor_id = None
-    if kwargs.get('PRETRAINED'):
-        pretrained = kwargs['PRETRAINED']
-    else:
-        pretrained = cfg[extractor]['PRETRAINED']
-    if kwargs.get('DATASET'):
-        dataset_name = kwargs['DATASET']
-    else:
-        dataset_name = cfg['GENERAL']['DATASET']
-    if kwargs.get('SPLIT'):
-        split = kwargs['SPLIT']
-    else:
-        split = cfg['GENERAL']['SPLIT']
+    seed = kwargs.get('seed', cfg['GENERAL']['SEED'])
+    top_k = kwargs.get('top_k', cfg['GENERAL']['TOP_K'])
+    task = kwargs.get('task', cfg['GENERAL']['TASK'])
+    device = torch.device(f"cuda:{kwargs['device']}") if kwargs.get('device') is not None else torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    batch_size = kwargs.get('batch_size', cfg['GENERAL']['BATCH_SIZE'])
+    extractor = kwargs.get('extractor', cfg['GENERAL']['EXTRACTOR'])
+    extractor_id = kwargs.get('extractor_id', None)
+    pretrained = kwargs.get('pretrained', cfg[extractor]['PRETRAINED'])
+    dataset_name = kwargs.get('dataset_name', cfg['GENERAL']['DATASET'])
+    split = kwargs.get('split', cfg['GENERAL']['SPLIT'])
     print(f"Using {extractor} for feature extraction on {dataset_name} ({split})")
 
     ### Text Generation Parameters
     model_id = cfg['TEXT-GENERATION']['MODEL_NAME']
-    if kwargs.get('TEMPERATURE'):
-        temperature = kwargs['TEMPERATURE']
-    else:
-        temperature = cfg['TEXT-GENERATION']['GLOBAL']['TEMPERATURE']
-    if kwargs.get('TOP_P'):
-        top_p = kwargs['TOP_P']
-    else:
-        top_p = cfg['TEXT-GENERATION']['GLOBAL']['TOP_P']
-    if kwargs.get('TOP_K'):
-        llm_top_k = kwargs['TOP_K']
-    else:
-        llm_top_k = cfg['TEXT-GENERATION']['GLOBAL']['TOP_K']
-    if kwargs.get('MAX_NEW_TOKENS'):
-        max_new_tokens = kwargs['MAX_NEW_TOKENS']
-    else:
-        max_new_tokens = cfg['TEXT-GENERATION']['GLOBAL']['MAX_NEW_TOKENS']
+    temperature = kwargs.get('temperature', cfg['TEXT-GENERATION']['GLOBAL']['TEMPERATURE'])
+    top_p = kwargs.get('top_p', cfg['TEXT-GENERATION']['GLOBAL']['TOP_P'])
+    llm_top_k = kwargs.get('llm_top_k', cfg['TEXT-GENERATION']['GLOBAL']['TOP_K'])
+    max_new_tokens = kwargs.get('max_new_tokens', cfg['TEXT-GENERATION']['GLOBAL']['MAX_NEW_TOKENS'])
     print(f"Using {model_id} for text generation with temperature={temperature}, top_p={top_p}, top_k={llm_top_k}, max_new_tokens={max_new_tokens}")
 
     ### Image Generation Parameters
     image_size = cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['IMAGE_SIZE']
-    if kwargs.get('NUM_INFERENCE_STEPS'):
-        n_infer_step = kwargs['NUM_INFERENCE_STEPS']
-    else:
-        n_infer_step = cfg['IMAGE-GENERATION']['GLOBAL']['NUM_INFERENCE_STEPS']
-    if kwargs.get('IMAGE_GUIDANCE_SCALE'):
-        image_guidance_scale = kwargs['IMAGE_GUIDANCE_SCALE']
-    else:
-        image_guidance_scale = cfg['IMAGE-GENERATION']['GLOBAL']['IMAGE_GUIDANCE_SCALE']
-    if kwargs.get('GUIDANCE_SCALE'):
-        guidance_scale = kwargs['GUIDANCE_SCALE']
-    else:
-        guidance_scale = cfg['IMAGE-GENERATION']['GLOBAL']['GUIDANCE_SCALE']
-    if kwargs.get('USE_LLM'):
-        use_llm = kwargs['USE_LLM']
-    else:
-        use_llm = cfg['GENERAL']['USE_LLM']
+    n_infer_step = kwargs.get('n_infer_step', cfg['IMAGE-GENERATION']['GLOBAL']['NUM_INFERENCE_STEPS'])
+    image_guidance_scale = kwargs.get('image_guidance_scale', cfg['IMAGE-GENERATION']['GLOBAL']['IMAGE_GUIDANCE_SCALE'])
+    guidance_scale = kwargs.get('guidance_scale', cfg['IMAGE-GENERATION']['GLOBAL']['GUIDANCE_SCALE'])
+    use_llm = kwargs.get('use_llm', cfg['GENERAL']['USE_LLM'])
 
     feature_extraction_model, img_preprocess, tokenizer = get_feature_extractor(cfg, 
                                                                                 extractor=extractor, 
@@ -100,7 +53,7 @@ def main(cfg, **kwargs):
 
     if task.startswith('img2'):
         img_transform_for_generation = transform_image(image_size)
-        generator = torch.Generator(device="cuda").manual_seed(cfg['GENERAL']['SEED'])
+        generator = torch.Generator(device="cuda").manual_seed(seed)
         image_generation_model=StableDiffusionXLInstructPix2PixPipeline.from_pretrained(cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['MODEL_NAME'], 
                                                                                   torch_dtype=torch.float16).to(device)
         print(f"Using {image_generation_model.__class__.__name__} with params: n_infer_step={n_infer_step}, image_guidance_scale={image_guidance_scale}, guidance_scale={guidance_scale}")
@@ -309,7 +262,8 @@ def main(cfg, **kwargs):
     print(f"{'*'*20}Completed{'*'*20}")
 def launch(**kwargs):
     cfg = get_default_config("config.yaml")
-    set_seed(cfg['GENERAL']['SEED'])
+    seed = kwargs.get('seed', cfg['GENERAL']['SEED'])
+    set_seed(seed)
     main(cfg, **kwargs)
 
 if __name__ == "__main__":
