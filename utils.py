@@ -2,6 +2,7 @@ import base64
 import io
 import PIL
 import torch
+import gc
 import torchvision.transforms.functional as F
 
 from torchvision.transforms import Compose, CenterCrop, ToTensor, Normalize, Resize, Lambda, InterpolationMode
@@ -75,3 +76,9 @@ def transform_image(image_size, IMAGENET_MEAN=None, IMAGENET_STD=None):
         Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD) if IMAGENET_MEAN is not None and IMAGENET_STD is not None else Lambda(lambda x: x)
     ])
     return img_transform
+
+def delete_models(*models):
+    for model in models:
+        del model
+    gc.collect()
+    torch.cuda.empty_cache()
