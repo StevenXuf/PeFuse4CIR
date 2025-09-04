@@ -71,7 +71,7 @@ def main(cfg, **kwargs):
     text_generation_model = Qwen2_5_VLForConditionalGeneration.from_pretrained(model_id, 
                                                                             torch_dtype=torch.bfloat16, 
                                                                             device_map={"": device}, 
-                                                                            attn_implementation='flash_attention_2'
+                                                                            # attn_implementation='flash_attention_2'
                                                                             ).to(device)
     text_generation_model.eval()
     print(f"Using {text_generation_model.__class__.__name__} for text generation with temperature={temperature}, top_p={top_p}, top_k={llm_top_k}, max_new_tokens={max_new_tokens}")

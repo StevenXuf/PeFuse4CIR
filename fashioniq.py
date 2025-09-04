@@ -141,6 +141,7 @@ def get_fashioniq_loader(data_path, batch_size=16, split='val', num_workers=0, m
                         batch_size=batch_size, 
                         num_workers=num_workers,
                         shuffle=False,
+                        pin_memory=True,
                         collate_fn=collate_fn
     )
     return loader

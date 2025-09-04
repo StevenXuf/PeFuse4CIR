@@ -169,6 +169,7 @@ def get_circo_loader(data_path, batch_size=16, split='val', mode='relative', num
         loader = DataLoader(dataset, 
                             batch_size=batch_size, 
                             shuffle=False, 
+                            pin_memory=True,
                             num_workers=num_workers,
                             collate_fn=test_collate_fn if split == 'test' else val_collate_fn
         )

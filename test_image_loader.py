@@ -45,8 +45,11 @@ def get_test_image_loader(dataset_name, batch_size=16, transform=None, num_worke
     Load all test images from the dataset.
     """
     dataset = TestImageDataset(data_name=dataset_name)
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False,
-                            num_workers=num_workers, pin_memory=True,
+    dataloader = DataLoader(dataset, 
+                            batch_size=batch_size, 
+                            shuffle=False,
+                            num_workers=num_workers,
+                            pin_memory=True,
                             collate_fn=lambda batch:{
                                 "target_img": torch.stack([transform(item["target_image"]) if transform else item["target_image"] for item in batch]),
                                 "target_pil": [item["target_image"] for item in batch],
