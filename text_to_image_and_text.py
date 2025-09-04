@@ -20,6 +20,7 @@ def fashioniq_eval(dataloader, generated_target_features, target_features, groun
     tar_start = 0
     all_recall = []
     for j, (n, c) in enumerate(zip(dataloader.dataset.length, dataloader.dataset.candidate_length)):
+        print(f"Evaluating {clothes[j]} with {n} queries and {c} candidates.")
         vals, ids = pairwise_cosine_similarity(generated_target_features[truth_start:truth_start+n, :], target_features[tar_start:tar_start+c, :]).topk(k=k, dim=1)
         total_recall=0.0
         for i in range(n):
@@ -95,7 +96,10 @@ def extract_image_features(pil, extractor, feature_extraction_model, img_preproc
 
     return img_feat
 
-def store_top_k(cfg, task, query_ids, target_ids, description_feat, tar_tensor_feat, dataset_name, extractor, cutoff=50, **kwargs):
+def store_top_k(cfg, query_ids, target_ids, description_feat, tar_tensor_feat, cutoff=50, **kwargs):
+    task = kwargs.get('task', cfg['GENERAL']['TASK'])
+    extractor = kwargs.get('extractor', cfg['GENERAL']['EXTRACTOR'])
+    dataset_name = kwargs.get('dataset', cfg['GENERAL']['DATASET'])
     if cutoff == 3:
         start=0
         res = {'version': 'rc2', 'metric': 'recall_subset'}
@@ -115,90 +119,36 @@ def store_top_k(cfg, task, query_ids, target_ids, description_feat, tar_tensor_f
             res={str(item[0]): item[1].tolist() for item in zip(query_ids, predicted)}
             res['version'] = 'rc2'
             res['metric'] = 'recall'
-    if task == 'img2txt' or task == 'img2img':
-        if kwargs.get('NUM_INFERENCE_STEPS'):
-            num_inference_steps = kwargs['NUM_INFERENCE_STEPS']
-        else:
-            num_inference_steps = cfg['IMAGE-GENERATION']['GLOBAL']['NUM_INFERENCE_STEPS']
-        if kwargs.get('GUIDANCE_SCALE'):
-            guidance_scale = kwargs['GUIDANCE_SCALE']
-        else:
-            guidance_scale = cfg['IMAGE-GENERATION']['GLOBAL']['GUIDANCE_SCALE']
-        if kwargs.get('IMAGE_GUIDANCE_SCALE'):
-            image_guidance_scale = kwargs['IMAGE_GUIDANCE_SCALE']
-        else:
-            image_guidance_scale = cfg['IMAGE-GENERATION']['GLOBAL']['IMAGE_GUIDANCE_SCALE'] 
+    if task.startswith('img2'):
+        num_inference_steps = kwargs.get('n_infer_steps', cfg['IMAGE-GENERATION']['GLOBAL']['NUM_INFERENCE_STEPS'])
+        guidance_scale = kwargs.get('guidance_scale', cfg['IMAGE-GENERATION']['GLOBAL']['GUIDANCE_SCALE'])
+        image_guidance_scale = kwargs.get('image_guidance_scale', cfg['IMAGE-GENERATION']['GLOBAL']['IMAGE_GUIDANCE_SCALE'])
         json.dump(res, open(f"{task}_{dataset_name}_{extractor}_{num_inference_steps}_{image_guidance_scale}_{guidance_scale}_top{cutoff}_results.json", "w"))
-    elif task == 'txt2img' or task == 'txt2txt':
-        if kwargs.get('TEMPERATURE'):
-            temperature= kwargs['TEMPERATURE']
-        else:
-            temperature = cfg['TEXT-GENERATION']['GLOBAL']['TEMPERATURE']
-        if kwargs.get('TOP_P'):
-            top_p = kwargs['TOP_P']
-        else:
-            top_p = cfg['TEXT-GENERATION']['GLOBAL']['TOP_P']
-        if kwargs.get('TOP_K'):
-            llm_top_k = kwargs['TOP_K']
-        else:
-            llm_top_k = cfg['TEXT-GENERATION']['GLOBAL']['TOP_K']
+    elif task.startswith('txt2'):
+        temperature = kwargs.get('temperature', cfg['TEXT-GENERATION']['GLOBAL']['TEMPERATURE'])
+        top_p = kwargs.get('top_p', cfg['TEXT-GENERATION']['GLOBAL']['TOP_P'])
+        llm_top_k = kwargs.get('llm_top_k', cfg['TEXT-GENERATION']['GLOBAL']['TOP_K'])
         json.dump(res, open(f"{task}_{dataset_name}_{extractor}_{temperature}_{top_p}_{llm_top_k}_top{cutoff}_results.json", "w"))
-        print('Predictions saved.')
+    print('Predictions saved.')
 
 def main(cfg, **kwargs):
     model_id = cfg['TEXT-GENERATION']['MODEL_NAME']
     top_k = cfg['GENERAL']['TOP_K']
 
-    if kwargs.get('TASK'):
-        task = kwargs['TASK']
-    else:
-        task = cfg['GENERAL']['TASK']
-    if kwargs.get('DEVICE') is not None:
-        device = torch.device(f"cuda:{kwargs['DEVICE']}")
-    else:
-        device = torch.device(f"cuda:{cfg['GENERAL']['DEVICE']}" if torch.cuda.is_available() else "cpu")
-    if kwargs.get('TEMPERATURE'):
-        temperature = kwargs['TEMPERATURE']
-    else:
-        temperature = cfg['TEXT-GENERATION']['GLOBAL']['TEMPERATURE']
-    if kwargs.get('TOP_P'):
-        top_p = kwargs['TOP_P']
-    else:
-        top_p = cfg['TEXT-GENERATION']['GLOBAL']['TOP_P']
-    if kwargs.get('TOP_K'):
-        llm_top_k = kwargs['TOP_K']
-    else:
-        llm_top_k = cfg['TEXT-GENERATION']['GLOBAL']['TOP_K']
-    if kwargs.get('MAX_NEW_TOKENS'):
-        max_new_tokens = kwargs['MAX_NEW_TOKENS']
-    else:
-        max_new_tokens = cfg['TEXT-GENERATION']['GLOBAL']['MAX_NEW_TOKENS']
+    task = kwargs.get('task', cfg['GENERAL']['TASK'])
+    device = torch.device(f"cuda:{kwargs['device']}") if kwargs.get('device') is not None else torch.device(f"cuda" if torch.cuda.is_available() else "cpu")
+    temperature = kwargs.get('temperature', cfg['TEXT-GENERATION']['GLOBAL']['TEMPERATURE'])
+    top_p = kwargs.get('top_p', cfg['TEXT-GENERATION']['GLOBAL']['TOP_P'])
+    llm_top_k = kwargs.get('llm_top_k', cfg['TEXT-GENERATION']['GLOBAL']['TOP_K'])
+    max_new_tokens = kwargs.get('max_new_tokens', cfg['TEXT-GENERATION']['GLOBAL']['MAX_NEW_TOKENS'])
     print(f"Using {model_id} for text generation with temperature={temperature}, top_p={top_p}, top_k={llm_top_k}, max_new_tokens={max_new_tokens}")
 
-    if kwargs.get('BATCH_SIZE'):
-        batch_size = kwargs['BATCH_SIZE']
-    else:
-        batch_size = cfg['GENERAL']['BATCH_SIZE']
-    if kwargs.get('EXTRACTOR'):
-        extractor = kwargs['EXTRACTOR']
-    else:
-        extractor = cfg['GENERAL']['EXTRACTOR']
-    if kwargs.get('EXTRACTOR_ID'):
-        extractor_id = kwargs['EXTRACTOR_ID']
-    else:
-        extractor_id = None
-    if kwargs.get('PRETRAINED'):
-        pretrained = kwargs['PRETRAINED']
-    else:
-        pretrained = cfg[extractor]['PRETRAINED']
-    if kwargs.get('DATASET'):
-        dataset_name = kwargs['DATASET']
-    else:
-        dataset_name = cfg['GENERAL']['DATASET']
-    if kwargs.get('SPLIT'):
-        split = kwargs['SPLIT']
-    else:
-        split = cfg['GENERAL']['SPLIT']
+    batch_size = kwargs.get('batch_size', cfg['GENERAL']['BATCH_SIZE'])
+    extractor = kwargs.get('extractor', cfg['GENERAL']['EXTRACTOR'])
+    extractor_id = kwargs.get('extractor_id', None)
+    pretrained = kwargs.get('pretrained', cfg[extractor]['PRETRAINED'])
+    dataset_name = kwargs.get('dataset', None)
+    split = kwargs.get('split', cfg['GENERAL']['SPLIT'])
     print(f"Using {extractor} for feature extraction on {dataset_name} ({split})")
 
     feature_extraction_model, img_preprocess, tokenizer = get_feature_extractor(cfg, extractor=extractor, extractor_id=extractor_id, pretrained=pretrained)

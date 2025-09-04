@@ -11,7 +11,7 @@ from feature_extraction import get_feature_extractor, get_metrics
 from dataloaders import get_dataloader
 from text_to_image_and_text import fashioniq_eval, generate_texts, extract_text_features, extract_image_features, store_top_k
 from prompts import get_composed_prompts, get_target_prompts
-from utils import get_default_config, convert_pil_to_tensor, resize_crop_normalize, transform_image, delete_models
+from utils import get_default_config, convert_pil_to_tensor, transform_image, delete_models
 
 def main(cfg, **kwargs):
     ### General Parameters
@@ -22,7 +22,7 @@ def main(cfg, **kwargs):
     extractor = kwargs.get('extractor', cfg['GENERAL']['EXTRACTOR'])
     extractor_id = kwargs.get('extractor_id', None)
     pretrained = kwargs.get('pretrained', cfg[extractor]['PRETRAINED'])
-    dataset_name = kwargs.get('dataset_name', cfg['GENERAL']['DATASET'])
+    dataset_name = kwargs.get('dataset', cfg['GENERAL']['DATASET'])
     split = kwargs.get('split', cfg['GENERAL']['SPLIT'])
     print(f"Using {extractor} for feature extraction on {dataset_name} ({split})")
 
@@ -54,8 +54,8 @@ def main(cfg, **kwargs):
         generator = torch.Generator(device="cuda").manual_seed(seed)
         image_generation_model=StableDiffusionXLInstructPix2PixPipeline.from_pretrained(cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['MODEL_NAME'], 
                                                                                   torch_dtype=torch.float16).to(device)
-        image_generation_model.eval()
         image_generation_model.enable_xformers_memory_efficient_attention()
+        image_generation_model.enable_attention_slicing()
         print(f"Using {image_generation_model.__class__.__name__} with params: n_infer_step={n_infer_step}, image_guidance_scale={image_guidance_scale}, guidance_scale={guidance_scale}")
 
         store_path = os.path.join(cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['OUTPUT_DIR'], f'Qwen_{use_llm}_{dataset_name}_{extractor}_{n_infer_step}_{image_guidance_scale}_{guidance_scale}')
@@ -190,7 +190,6 @@ def main(cfg, **kwargs):
             else:
                 raise ValueError(f"Unsupported task: {task}. Should be one of ['txt2img', 'txt2txt', 'img2img', 'img2txt']")
             
-            print(f'Batch {i+1} finished.')
         print(f"Finished extracting query features for {task} on {dataset_name}.".upper())
 
         if task.endswith('2img'):
@@ -241,12 +240,13 @@ def main(cfg, **kwargs):
             
     query_feat = torch.cat(query_feat, dim=0)  
     target_feat = torch.cat(target_feat, dim=0)
-
+    print(query_feat.shape, target_feat.shape)
+    
     if dataset_name.lower() == 'circo' and split.lower() == 'test':
-        store_top_k(cfg, task, query_ids, target_ids, query_feat, target_feat, dataset_name, extractor, **kwargs)
+        store_top_k(cfg, query_ids, target_ids, query_feat, target_feat, **kwargs)
     elif dataset_name.lower() == 'cirr' and split.lower() == 'test':
-        store_top_k(cfg, task, query_ids, target_ids, query_feat, target_feat, dataset_name, extractor, **kwargs)
-        store_top_k(cfg, task, query_ids, img_subset_ids, query_feat, img_subset_feat, dataset_name, extractor, cutoff=3, **kwargs)
+        store_top_k(cfg, query_ids, target_ids, query_feat, target_feat, **kwargs)
+        store_top_k(cfg, query_ids, img_subset_ids, query_feat, img_subset_feat, cutoff=3, **kwargs)
     elif dataset_name.lower() == 'fashioniq' and split.lower() == 'val':
         for k in top_k:
             fashioniq_eval(dataloader, query_feat, target_feat, fashioniq_ground_truth, target_ids, k)
