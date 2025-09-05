@@ -100,6 +100,9 @@ def store_top_k(cfg, query_ids, target_ids, description_feat, tar_tensor_feat, c
     task = kwargs.get('task', cfg['GENERAL']['TASK'])
     extractor = kwargs.get('extractor', cfg['GENERAL']['EXTRACTOR'])
     dataset_name = kwargs.get('dataset', cfg['GENERAL']['DATASET'])
+    if kwargs.get('extractor').lower() == 'openclip':
+            if kwargs.get('extractor_id').split('-')[1] != 'B':
+                extractor += f"_{kwargs.get('extractor_id').split('-')[1]}"
     if cutoff == 3:
         start=0
         res = {'version': 'rc2', 'metric': 'recall_subset'}

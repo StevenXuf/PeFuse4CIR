@@ -13,6 +13,56 @@ from text_to_image_and_text import fashioniq_eval, generate_texts, extract_text_
 from prompts import get_composed_prompts, get_target_prompts
 from utils import get_default_config, convert_pil_to_tensor, transform_image, delete_models
 
+
+def get_test_loader(cfg, dataset_name, split, extractor, img_batch_size):
+    if dataset_name.lower() == 'cirr':
+        if split.lower() == 'test':
+            test_loader = get_dataloader(cfg, 
+                                         mode='classic',
+                                         dataset_name=dataset_name, 
+                                         batch_size=img_batch_size, 
+                                         extractor_name=extractor
+                                         )
+        elif split.lower() == 'train' or split.lower() == 'val':
+            test_loader = get_dataloader(cfg, 
+                                         dataset_name=dataset_name, 
+                                         split=split.lower(),
+                                         mode='relative',
+                                         batch_size=img_batch_size, 
+                                         extractor_name=extractor
+                                         )
+        else:
+            raise ValueError(f"Unsupported split: {split} for dataset: {dataset_name}")
+    elif dataset_name.lower() == 'circo':
+        if split.lower() == 'test':
+            test_loader = get_dataloader(cfg, 
+                                         mode='classic',
+                                         dataset_name=dataset_name, 
+                                         batch_size=img_batch_size, 
+                                         extractor_name=extractor
+                                         )
+        elif split.lower() == 'val':
+            test_loader = get_dataloader(cfg, 
+                                         dataset_name=dataset_name, 
+                                         split='val', 
+                                         mode='relative',
+                                         batch_size=img_batch_size, 
+                                         extractor_name=extractor
+                                         )
+        else:
+            raise ValueError(f"Unsupported split: {split} for dataset: {dataset_name}")
+    elif dataset_name.lower() == 'fashioniq':
+        if split.lower() == 'val' or split.lower() == 'train':
+            test_loader = get_dataloader(cfg, 
+                                         dataset_name=dataset_name, 
+                                         split=split.lower(), 
+                                         mode='classic',
+                                         batch_size=img_batch_size, 
+                                         extractor_name=extractor,
+                                         )
+        else:
+            raise ValueError(f"Unsupported split: {split} for dataset: {dataset_name}")
+    return test_loader
 def main(cfg, **kwargs):
     ### General Parameters
     top_k = kwargs.get('top_k', cfg['GENERAL']['TOP_K'])
@@ -88,55 +138,8 @@ def main(cfg, **kwargs):
                                 transform=img_transform_for_generation if task.startswith('img2') else None
                                 )
     
-    img_batch_size = 1024 if task.endswith('2img') else batch_size
-    if dataset_name.lower() == 'cirr':
-        if split.lower() == 'test':
-            test_loader = get_dataloader(cfg, 
-                                         mode='classic',
-                                         dataset_name=dataset_name, 
-                                         batch_size=img_batch_size, 
-                                         extractor_name=extractor
-                                         )
-        elif split.lower() == 'train' or split.lower() == 'val':
-            test_loader = get_dataloader(cfg, 
-                                         dataset_name=dataset_name, 
-                                         split=split.lower(),
-                                         mode='relative',
-                                         batch_size=img_batch_size, 
-                                         extractor_name=extractor
-                                         )
-        else:
-            raise ValueError(f"Unsupported split: {split} for dataset: {dataset_name}")
-    elif dataset_name.lower() == 'circo':
-        if split.lower() == 'test':
-            test_loader = get_dataloader(cfg, 
-                                         mode='classic',
-                                         dataset_name=dataset_name, 
-                                         batch_size=img_batch_size, 
-                                         extractor_name=extractor
-                                         )
-        elif split.lower() == 'val':
-            test_loader = get_dataloader(cfg, 
-                                         dataset_name=dataset_name, 
-                                         split='val', 
-                                         mode='relative',
-                                         batch_size=img_batch_size, 
-                                         extractor_name=extractor
-                                         )
-        else:
-            raise ValueError(f"Unsupported split: {split} for dataset: {dataset_name}")
-    elif dataset_name.lower() == 'fashioniq':
-        if split.lower() == 'val' or split.lower() == 'train':
-            test_loader = get_dataloader(cfg, 
-                                         dataset_name=dataset_name, 
-                                         split=split.lower(), 
-                                         mode='classic',
-                                         batch_size=img_batch_size, 
-                                         extractor_name=extractor,
-                                         )
-        else:
-            raise ValueError(f"Unsupported split: {split} for dataset: {dataset_name}")
-            
+    img_batch_size = 256 if task.endswith('2img') else batch_size
+
     query_feat = []
     query_ids = []
     target_feat = []
@@ -191,7 +194,8 @@ def main(cfg, **kwargs):
                 raise ValueError(f"Unsupported task: {task}. Should be one of ['txt2img', 'txt2txt', 'img2img', 'img2txt']")
             
         print(f"Finished extracting query features for {task} on {dataset_name}.".upper())
-
+        
+        test_loader = get_test_loader(cfg, dataset_name, split, extractor, img_batch_size)
         if task.endswith('2img'):
             delete_models(text_generation_model)
             if task == 'img2img':
