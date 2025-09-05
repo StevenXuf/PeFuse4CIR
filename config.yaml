@@ -14,24 +14,24 @@ GENERAL:
 
 ## datset information ##
 RefinedFashionIQ:
-    IMAGE_URL_FOLDER: '/project/home/p200630/Data/RefinedFashionIQ/image_url'
+    IMAGE_URL_FOLDER: '/data/data_fxu/RefinedFashionIQ/image_url'
     IMAGE_SIZE: 224
-    IMAGE_FOLDER: '/project/home/p200630/Data/RefinedFashionIQ/downloaded_images'
-    CAPTION_FOLDER: '/project/home/p200630/Data/RefinedFashionIQ/captions'
+    IMAGE_FOLDER: '/data/data_fxu/RefinedFashionIQ/downloaded_images'
+    CAPTION_FOLDER: '/data/data_fxu/RefinedFashionIQ/captions'
     SPLIT: 'val' # test set is not available
 
 FashionIQ:
-    IMAGE_FOLDER: '/project/home/p200630/Data/RefinedFashionIQ' #shared same images with refined-fashioniq
+    IMAGE_FOLDER: '/data/data_fxu/RefinedFashionIQ' #shared same images with refined-fashioniq
     IMAGE_SIZE: 224
     SPLIT: 'val' # test set is not usable!
 
 CIRCO:
-    IMAGE_FOLDER: '/project/home/p200630/Data/CIRCO'
+    IMAGE_FOLDER: '/data/data_fxu/CIRCO'
     IMAGE_SIZE: 224
     SPLIT: 'val'
 
 CIRR:
-    IMAGE_FOLDER: '/project/home/p200630/Data/CIRR'
+    IMAGE_FOLDER: '/data/data_fxu/CIRR'
     IMAGE_SIZE: 224
     SPLIT: 'val' # alternative train, test1
 
@@ -85,11 +85,11 @@ IMAGE-GENERATION:
     SDXL-INSTRUCTPIX2PIX:
         MODEL_NAME: "diffusers/sdxl-instructpix2pix-768"
         IMAGE_SIZE: 768
-        OUTPUT_DIR: '/project/home/p200630/Data/sdxl_instructpix2pix_output'
+        OUTPUT_DIR: '/data/data_fxu/sdxl_instructpix2pix_output'
     SDXL-TURBO: # much faster than SDXL-INSTRUCTPIX2PIX
         MODEL_NAME: "stabilityai/sdxl-turbo"
         IMAGE_SIZE: 512
-        OUTPUT_DIR: '/project/home/p200630/Data/sdxl_turbo_output'
+        OUTPUT_DIR: '/data/data_fxu/sdxl_turbo_output'
 
 ## text generation config ##
 TEXT-GENERATION:
