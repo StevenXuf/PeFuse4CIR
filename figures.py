@@ -30,3 +30,33 @@ def show_tensor_images(images_tensor, num_images=8, file_path="output_image_grid
     plt.tight_layout()
     plt.savefig(file_path)
     plt.close()
+
+def plot_ablation_metrics(res_dict, xlabels=['Temperature', 'Top-p', 'Top-k'], ylabels=['mAP']*3, file_path="llm_ablation.pdf"):
+    fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+    new_xlabels = [xlabel.replace(' ', '_') if ' ' in xlabel else xlabel for xlabel in xlabels]
+    markers = ['o', 's', '^']
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
+    for i in range(len(axes)):
+        x_vals = res_dict[f'res_{new_xlabels[i].lower()}_keys']
+        metric_vals = res_dict[f'res_{new_xlabels[i].lower()}_vals']
+        axes[i].plot(x_vals, metric_vals, marker=markers[i], color=colors[i])
+        axes[i].set_xticks(x_vals)
+        axes[i].set_yticks(metric_vals)
+        axes[i].set_xlabel(xlabels[i])
+        axes[i].set_ylabel(ylabels[i])
+        axes[i].grid(True)
+    plt.tight_layout()
+    plt.savefig(file_path)
+    plt.close()
+
+if __name__ == "__main__":
+    res = {
+        'res_guidance_scale_keys': [7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0],
+        'res_guidance_scale_vals': [0.1 * i for i in range(1, 8)],
+        'res_num_infer_steps_keys': [10, 20, 30, 50, 100],
+        'res_num_infer_steps_vals': [0.2 * i for i in range(1, 6)],
+        'res_image_guidance_scale_keys': [1.0, 1.3, 1.7, 2.0, 3.0, 4.0, 5.0],
+        'res_image_guidance_scale_vals': [0.3 * i for i in range(1, 8)]
+    }
+    plot_ablation_metrics(res, xlabels=['Guidance Scale', 'Num Infer Steps', 'Image Guidance Scale'], ylabels=['mAP']*3, file_path="df_ablation.pdf")
+    

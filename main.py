@@ -1,12 +1,13 @@
 import torch
 import fire
 import os
+import json
 
 from tqdm import tqdm
 from diffusers import StableDiffusionXLInstructPix2PixPipeline
 from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor, GenerationConfig, set_seed
 
-from figures import show_tensor_images
+from figures import show_tensor_images, plot_ablation_metrics
 from feature_extraction import get_feature_extractor, get_metrics
 from dataloaders import get_dataloader
 from text_to_image_and_text import fashioniq_eval, generate_texts, extract_text_features, extract_image_features, store_top_k
@@ -95,7 +96,7 @@ def main(cfg, **kwargs):
         ### Image Generation Parameters
         seed = kwargs.get('seed', cfg['GENERAL']['SEED'])
         image_size = cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['IMAGE_SIZE']
-        n_infer_step = kwargs.get('n_infer_step', cfg['IMAGE-GENERATION']['GLOBAL']['NUM_INFERENCE_STEPS'])
+        n_infer_steps = kwargs.get('n_infer_steps', cfg['IMAGE-GENERATION']['GLOBAL']['NUM_INFERENCE_STEPS'])
         image_guidance_scale = kwargs.get('image_guidance_scale', cfg['IMAGE-GENERATION']['GLOBAL']['IMAGE_GUIDANCE_SCALE'])
         guidance_scale = kwargs.get('guidance_scale', cfg['IMAGE-GENERATION']['GLOBAL']['GUIDANCE_SCALE'])
         use_llm = kwargs.get('use_llm', cfg['GENERAL']['USE_LLM'])
@@ -106,9 +107,9 @@ def main(cfg, **kwargs):
                                                                                   torch_dtype=torch.float16).to(device)
         image_generation_model.enable_xformers_memory_efficient_attention()
         image_generation_model.enable_attention_slicing()
-        print(f"Using {image_generation_model.__class__.__name__} with params: n_infer_step={n_infer_step}, image_guidance_scale={image_guidance_scale}, guidance_scale={guidance_scale}")
+        print(f"Using {image_generation_model.__class__.__name__} with params: n_infer_steps={n_infer_steps}, image_guidance_scale={image_guidance_scale}, guidance_scale={guidance_scale}")
 
-        store_path = os.path.join(cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['OUTPUT_DIR'], f'Qwen_{use_llm}_{dataset_name}_{extractor}_{n_infer_step}_{image_guidance_scale}_{guidance_scale}')
+        store_path = os.path.join(cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['OUTPUT_DIR'], f'Qwen_{use_llm}_{dataset_name}_{extractor}_{n_infer_steps}_{image_guidance_scale}_{guidance_scale}')
         if not os.path.exists(store_path):
             os.makedirs(store_path)
 
@@ -175,7 +176,7 @@ def main(cfg, **kwargs):
                     image=reference_img.to(device),
                     width=image_size,
                     height=image_size,
-                    num_inference_steps=n_infer_step,
+                    num_inference_steps=n_infer_steps,
                     image_guidance_scale=image_guidance_scale,
                     guidance_scale=guidance_scale,
                     generator=generator
@@ -256,6 +257,7 @@ def main(cfg, **kwargs):
             fashioniq_eval(dataloader, query_feat, target_feat, fashioniq_ground_truth, target_ids, k)
     else:
         metric = 'map' if dataset_name.lower() == 'circo' else 'recall' ######modify here!!!!!
+        res = []
         for k in top_k:
             metric_val = get_metrics(query_feat,
                                       target_feat,
@@ -264,6 +266,8 @@ def main(cfg, **kwargs):
                                       metrics=metric
                                     )
             print(f'{metric.upper()}@{k}: {metric_val:.2f}% when using generated description ---> target images\n')
+            res.append(metric_val.item())
+        return sum(res)/len(res)
 
     print(f"{'*'*20}Completed{'*'*20}")
 def launch(**kwargs):
@@ -271,6 +275,7 @@ def launch(**kwargs):
     seed = kwargs.get('seed', cfg['GENERAL']['SEED'])
     set_seed(seed)
     main(cfg, **kwargs)
+
 
 if __name__ == "__main__":
     fire.Fire(launch)
