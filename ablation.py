@@ -11,7 +11,7 @@ from figures import plot_ablation_metrics
 def ablate_llm(**kwargs):
     cfg = get_default_config("config.yaml")
     set_seed(cfg['GENERAL']['SEED'])
-    if kwargs.get('dataset') == 'circo' and kwargs.get('split') == 'val':
+    if kwargs.get('dataset').lower() == 'circo' and kwargs.get('split').lower() == 'val':
         res_file ='./ablation_llm_results.json'
         if not os.path.exists(res_file):
             res = {
@@ -47,7 +47,7 @@ def ablate_df(**kwargs):
     cfg = get_default_config("config.yaml")
     set_seed(cfg['GENERAL']['SEED'])
     use_llm = kwargs.get('use_llm', cfg['GENERAL']['USE_LLM'])
-    if kwargs.get('dataset') == 'circo' and kwargs.get('split') == 'val':
+    if kwargs.get('dataset').lower() == 'circo' and kwargs.get('split').lower() == 'val':
         res_file = f'./ablation_df_{use_llm}_results.json'
         if not os.path.exists(res_file):
             res = {
