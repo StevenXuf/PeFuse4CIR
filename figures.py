@@ -41,9 +41,8 @@ def plot_ablation_metrics(res_dict, xlabels=['Temperature', 'Top-p', 'Top-k'], y
         metric_vals = res_dict[f'res_{new_xlabels[i].lower()}_vals']
         axes[i].plot(x_vals, metric_vals, marker=markers[i], color=colors[i])
         axes[i].set_xticks(x_vals)
-        axes[i].set_yticks(metric_vals)
-        axes[i].set_xlabel(xlabels[i])
-        axes[i].set_ylabel(ylabels[i])
+        axes[i].set_xlabel(xlabels[i], fontsize=12)
+        axes[i].set_ylabel(ylabels[i], fontsize=12)
         axes[i].grid(True)
     plt.tight_layout()
     plt.savefig(file_path)

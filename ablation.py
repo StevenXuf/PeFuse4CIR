@@ -54,18 +54,18 @@ def ablate_df(**kwargs):
                 'res_guidance_scale_vals': [],
                 'res_num_infer_steps_keys': [10, 20, 30, 50, 100],
                 'res_num_infer_steps_vals': [],
-                'res_image_guidance_scale_keys': [1.0, 1.3, 1.7, 2.0, 3.0, 4.0, 5.0],
+                'res_image_guidance_scale_keys': [1.0, 1.3, 1.7, 2.0, 3.0, 4.0, 5.0, 10.0],
                 'res_image_guidance_scale_vals': []
             }
             for guidance_scale in res['res_guidance_scale_keys']:
                 kwargs['guidance_scale'] = guidance_scale
                 kwargs['n_infer_steps'] = 30
-                kwargs['image_guidance_scale'] = 1.3
+                kwargs['image_guidance_scale'] = 3.0
                 res['res_guidance_scale_vals'].append(main(cfg, **kwargs))
             for num_infer_steps in res['res_num_infer_steps_keys']:
                 kwargs['guidance_scale'] = 7.5
                 kwargs['n_infer_steps'] = num_infer_steps
-                kwargs['image_guidance_scale'] = 1.3
+                kwargs['image_guidance_scale'] = 3.0
                 res['res_num_infer_steps_vals'].append(main(cfg, **kwargs))
             for image_guidance_scale in res['res_image_guidance_scale_keys']:
                 kwargs['guidance_scale'] = 7.5
