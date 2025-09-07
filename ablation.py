@@ -38,16 +38,17 @@ def ablate_llm(**kwargs):
                 kwargs['llm_top_k'] = top_k
                 res['res_top-k_vals'].append(main(cfg, **kwargs))
             json.dump(res, open(f"./ablation_llm_results.json", "w"))
-            plot_ablation_metrics(res, xlabels=['Temperature', 'Top-p', 'Top-k'], ylabels=['mAP']*3, file_path="llm_ablation.pdf")
         else:
             res = json.load(open(res_file, "r"))
-            plot_ablation_metrics(res, xlabels=['Temperature', 'Top-p', 'Top-k'], ylabels=['mAP']*3, file_path="llm_ablation.pdf")
+            
+        plot_ablation_metrics(res, xlabels=['Temperature', 'Top-p', 'Top-k'], ylabels=['mAP']*3, file_path="llm_ablation.pdf")
 
 def ablate_df(**kwargs):
     cfg = get_default_config("config.yaml")
     set_seed(cfg['GENERAL']['SEED'])
+    use_llm = kwargs.get('use_llm', cfg['GENERAL']['USE_LLM'])
     if kwargs.get('dataset') == 'circo' and kwargs.get('split') == 'val':
-        res_file ='./ablation_df_results.json'
+        res_file = f'./ablation_df_{use_llm}_results.json'
         if not os.path.exists(res_file):
             res = {
                 'res_guidance_scale_keys': [7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0],
@@ -72,11 +73,11 @@ def ablate_df(**kwargs):
                 kwargs['n_infer_steps'] = 30
                 kwargs['image_guidance_scale'] = image_guidance_scale
                 res['res_image_guidance_scale_vals'].append(main(cfg, **kwargs))
-            json.dump(res, open(f"./ablation_df_results.json", "w"))
-            plot_ablation_metrics(res, xlabels=['Guidance Scale', 'Num Infer Steps', 'Image Guidance Scale'], ylabels=['mAP']*3, file_path="df_ablation.pdf")
+            json.dump(res, open(res_file, "w"))
         else:
             res = json.load(open(res_file, "r"))
-            plot_ablation_metrics(res, xlabels=['Guidance Scale', 'Num Infer Steps', 'Image Guidance Scale'], ylabels=['mAP']*3, file_path="df_ablation.pdf")
+        
+        plot_ablation_metrics(res, xlabels=['Guidance Scale', 'Num Infer Steps', 'Image Guidance Scale'], ylabels=['mAP']*3, file_path=f"df_ablation_{use_llm}.pdf")
 
 if __name__ == '__main__':
     fire.Fire(ablate_df)

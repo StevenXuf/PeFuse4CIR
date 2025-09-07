@@ -109,7 +109,7 @@ def main(cfg, **kwargs):
         image_generation_model.enable_attention_slicing()
         print(f"Using {image_generation_model.__class__.__name__} with params: n_infer_steps={n_infer_steps}, image_guidance_scale={image_guidance_scale}, guidance_scale={guidance_scale}")
 
-        store_path = os.path.join(cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['OUTPUT_DIR'], f'Qwen_{use_llm}_{dataset_name}_{extractor}_{n_infer_steps}_{image_guidance_scale}_{guidance_scale}')
+        store_path = os.path.join(cfg['IMAGE-GENERATION']['SDXL-INSTRUCTPIX2PIX']['OUTPUT_DIR'], f'Qwen_{use_llm}_{dataset_name}_{split}_{extractor}_{n_infer_steps}_{image_guidance_scale}_{guidance_scale}')
         if not os.path.exists(store_path):
             os.makedirs(store_path)
 
