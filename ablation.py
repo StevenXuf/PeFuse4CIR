@@ -89,5 +89,14 @@ def ablate_df(**kwargs):
 
     # plot_df_ablation_metrics(res, xlabels=['Guidance Scale', 'Num Infer Steps', 'Image Guidance Scale'], ylabels=['mAP']*3, file_path=f"sdxl_ablation_{task}_{dataset}_{split}_{extractor}_{use_llm}_{seed}.pdf")
 
+def ablate(**kwargs):
+    if kwargs.get('task').lower() == 'txt2img': 
+        ablate_llm(**kwargs)
+    elif kwargs.get('task').lower() == 'img2img':
+        ablate_df(**kwargs)
+    else:
+        raise ValueError('Invalid task')
+
+
 if __name__ == '__main__':
-    fire.Fire(ablate_df)
+    fire.Fire(ablate)
