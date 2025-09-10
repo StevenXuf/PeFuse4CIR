@@ -17,7 +17,7 @@ def ablate_llm(**kwargs):
     split = kwargs.get('split', cfg['GENERAL']['SPLIT']).lower()
     extractor = kwargs.get('extractor', cfg['GENERAL']['EXTRACTOR']).lower()
     # if kwargs.get('dataset').lower() == 'circo' and kwargs.get('split').lower() == 'val':
-    res_file = f'./ablation_llm_{task}_{dataset}_{split}_{extractor}_results_{seed}.json'
+    res_file = f'./ablation_qwen_{task}_{dataset}_{split}_{extractor}_results_{seed}.json'
     if not os.path.exists(res_file):
         res = {
             'res_temperature_keys': [x/10.0 for x in range(1, 10)],
