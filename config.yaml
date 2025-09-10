@@ -98,4 +98,7 @@ TEXT-GENERATION:
         TEMPERATURE: 0.1
         TOP_P: 0.9
         TOP_K: 50
-    MODEL_NAME: "Qwen/Qwen2.5-VL-7B-Instruct"
+    QWEN:
+        MODEL_NAME: "Qwen/Qwen2.5-VL-7B-Instruct"
+    DEEPSEEK:
+        MODEL_NAME: "deepseek-ai/deepseek-vl-7b-base"

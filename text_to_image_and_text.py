@@ -34,6 +34,7 @@ def fashioniq_eval(dataloader, generated_target_features, target_features, groun
         tar_start += c
 
     print(f'Recall@{k}: {np.mean(all_recall):.2f}% for all categories')
+    return np.mean(all_recall)
 
 def generate_texts(messages, gen_config, processor, text_generation_model):
     texts = [

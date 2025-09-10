@@ -1,4 +1,6 @@
 import torchvision
+import json
+import numpy as np
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -31,31 +33,74 @@ def show_tensor_images(images_tensor, num_images=8, file_path="output_image_grid
     plt.savefig(file_path)
     plt.close()
 
-def plot_ablation_metrics(res_dict, xlabels=['Temperature', 'Top-p', 'Top-k'], ylabels=['mAP']*3, file_path="llm_ablation.pdf"):
-    fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+def plot_llm_ablation_metrics(res_list_of_dict, xlabels=['Temperature', 'Top-p', 'Top-k'], ylabels=['mAP']*3, file_path="llm_ablation.pdf"):
+    fig, axes = plt.subplots(1, len(xlabels), figsize=(len(xlabels)*5, 4),sharey=True)
     new_xlabels = [xlabel.replace(' ', '_') if ' ' in xlabel else xlabel for xlabel in xlabels]
     markers = ['o', 's', '^']
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
     for i in range(len(axes)):
-        x_vals = res_dict[f'res_{new_xlabels[i].lower()}_keys']
-        metric_vals = res_dict[f'res_{new_xlabels[i].lower()}_vals']
+        x_vals = res_list_of_dict[0][f'res_{new_xlabels[i].lower()}_keys']
+        metric_vals = sum([np.array(res_list_of_dict[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_list_of_dict))]) / len(res_list_of_dict)
         axes[i].plot(x_vals, metric_vals, marker=markers[i], color=colors[i])
-        axes[i].set_xticks(x_vals)
         axes[i].set_xlabel(xlabels[i], fontsize=12)
         axes[i].set_ylabel(ylabels[i], fontsize=12)
-        axes[i].grid(True)
+        axes[i].grid(True, alpha=0.2)
     plt.tight_layout()
     plt.savefig(file_path)
     plt.close()
 
+
+def plot_df_ablation_metrics(res_yes, res_no, xlabels, ylabels, file_path):
+    fig, axes = plt.subplots(1, len(xlabels), figsize=(5*len(xlabels), 4), sharey=True)
+    new_xlabels = [xlabel.replace(' ', '_') if ' ' in xlabel else xlabel for xlabel in xlabels]
+    markers = ['o', 's', '^']
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
+    for i in range(len(axes)):
+        x_vals_yes = res_yes[0][f'res_{new_xlabels[i].lower()}_keys']
+        metric_vals_yes = sum([np.array(res_yes[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_yes))]) / len(res_yes)
+        axes[i].plot(x_vals_yes, metric_vals_yes, marker=markers[i], color=colors[i], label='W/ MLLM')
+
+        x_vals_no = res_no[0][f'res_{new_xlabels[i].lower()}_keys']
+        metric_vals_no = sum([np.array(res_no[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_no))]) / len(res_no)
+        axes[i].plot(x_vals_no, metric_vals_no, marker=markers[i], color=colors[i+3], linestyle='--', label='W/o MLLM')
+        axes[i].set_xlabel(xlabels[i], fontsize=12)
+        axes[i].set_ylabel(ylabels[i], fontsize=12)
+        axes[i].grid(True, alpha=0.2)
+        axes[i].legend()
+    plt.tight_layout()
+    plt.savefig(file_path)
+    plt.close()
+
+
 if __name__ == "__main__":
-    res = {
-        'res_guidance_scale_keys': [7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0],
-        'res_guidance_scale_vals': [0.1 * i for i in range(1, 8)],
-        'res_num_infer_steps_keys': [10, 20, 30, 50, 100],
-        'res_num_infer_steps_vals': [0.2 * i for i in range(1, 6)],
-        'res_image_guidance_scale_keys': [1.0, 1.3, 1.7, 2.0, 3.0, 4.0, 5.0],
-        'res_image_guidance_scale_vals': [0.3 * i for i in range(1, 8)]
-    }
-    plot_ablation_metrics(res, xlabels=['Guidance Scale', 'Num Infer Steps', 'Image Guidance Scale'], ylabels=['mAP']*3, file_path="df_ablation.pdf")
-    
+    # with open('ablation_df_yes_results.json', 'r') as f:
+    #     df_yes = json.load(f)
+    # with open('ablation_df_no_results.json', 'r') as f:
+    #     df_no = json.load(f)
+    # ylabels=['mAP']*3
+    # file_path="df_ablation.pdf"
+
+    ##plot df ablation with multiple seeds for CIRCO
+    res_df_circo_yes = []
+    res_df_circo_no = []
+    for seed in [42]:
+        with open(f'ablation_sdxl_img2img_circo_val_openclip_yes_results_{seed}.json', 'r') as f:
+            res_df_circo_yes.append(json.load(f))
+        with open(f'ablation_sdxl_img2img_circo_val_openclip_no_results_{seed}.json', 'r') as f:
+            res_df_circo_no.append(json.load(f))
+    file_path=f"sdxl_ablation_img2img_circo_val_openclip.pdf"
+    plot_df_ablation_metrics(res_df_circo_yes, res_df_circo_no, ['Guidance Scale', 'Num Infer Steps', 'Image Guidance Scale'], ['mAP','',''], file_path)
+
+    ##plot llm ablation with multiple seeds for FASHIONIQ
+    res_list_fashioniq = []
+    for seed in [0, 10, 42]:
+        with open(f'ablation_qwen_txt2img_fashioniq_val_openclip_results_{seed}.json', 'r') as f:
+            res_list_fashioniq.append(json.load(f))
+    plot_llm_ablation_metrics(res_list_fashioniq, xlabels=['Temperature', 'Top-p', 'Top-k'], ylabels=['mAP','',''], file_path="llm_ablation_txt2img_fashioniq_val_openclip.pdf")
+
+    ##plot llm ablation with multiple seeds for CIRCO
+    res_list_circo = []
+    for seed in [0, 10, 42]:
+        with open(f'ablation_qwen_txt2img_circo_val_openclip_results_{seed}.json', 'r') as f:
+            res_list_circo.append(json.load(f))
+    plot_llm_ablation_metrics(res_list_circo, xlabels=['Temperature', 'Top-p', 'Top-k'], ylabels=['mAP','',''], file_path="llm_ablation_txt2img_circo_val_openclip.pdf")

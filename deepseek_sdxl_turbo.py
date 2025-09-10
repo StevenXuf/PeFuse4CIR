@@ -2,18 +2,55 @@ import torch
 import fire
 import os
 import json
+import sys
 
 from tqdm import tqdm
 from diffusers import StableDiffusionXLInstructPix2PixPipeline
-from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor, GenerationConfig, set_seed
+from transformers import Qwen2_5_VLForConditionalGeneration, AutoModelForCausalLM, AutoProcessor, GenerationConfig, set_seed
+
+sys.path.append('/home/fxu/DeepSeek-VL')
+from deepseek_vl.models import VLChatProcessor, MultiModalityCausalLM
+from deepseek_vl.utils.io import load_pil_images
 
 from figures import show_tensor_images, plot_ablation_metrics
 from feature_extraction import get_feature_extractor, get_metrics
 from dataloaders import get_dataloader
 from text_to_image_and_text import fashioniq_eval, generate_texts, extract_text_features, extract_image_features, store_top_k
 from prompts import get_composed_prompts, get_target_prompts
+from deepseek_prompts import get_composed_prompts_ds, get_target_prompts_ds
 from utils import get_default_config, convert_pil_to_tensor, transform_image, delete_models
 
+
+def generate_texts_ds(composed_messages, gen_config, processor, text_generation_model):
+    res=[]
+    for msg in composed_messages:
+        pil_images = load_pil_images(msg)
+        prepare_inputs = processor(
+            conversations=msg,
+            images=pil_images,
+            force_batchify=True
+        ).to(text_generation_model.device)
+
+        inputs_embeds = text_generation_model.prepare_inputs_embeds(**prepare_inputs)
+
+        # run the model to get the response
+        outputs = text_generation_model.language_model.generate(
+            inputs_embeds=inputs_embeds,
+            attention_mask=prepare_inputs.attention_mask,
+            pad_token_id=processor.tokenizer.eos_token_id,
+            bos_token_id=processor.tokenizer.bos_token_id,
+            eos_token_id=processor.tokenizer.eos_token_id,
+            max_new_tokens=128,
+            do_sample=True,
+            use_cache=True,
+            # top_p=gen_config.get('top_p', 0.9),
+            # temperature=gen_config.get('temperature', 1.0),
+            # top_k=gen_config.get('top_k', 50)
+        )
+
+        answer = processor.tokenizer.decode(outputs[0].cpu().tolist(), skip_special_tokens=True)
+    res.append(answer)
+    return res
 
 def get_test_loader(cfg, dataset_name, split, extractor, img_batch_size):
     if dataset_name.lower() == 'cirr':
@@ -76,14 +113,7 @@ def main(cfg, **kwargs):
     dataset_name = kwargs.get('dataset', cfg['GENERAL']['DATASET'])
     split = kwargs.get('split', cfg['GENERAL']['SPLIT'])
     print(f"Using {extractor} for feature extraction on {dataset_name} ({split})")
-
-    ### Text Generation Parameters
-    model_id = cfg['TEXT-GENERATION']['QWEN']['MODEL_NAME']
-    temperature = kwargs.get('temperature', cfg['TEXT-GENERATION']['GLOBAL']['TEMPERATURE'])
-    top_p = kwargs.get('top_p', cfg['TEXT-GENERATION']['GLOBAL']['TOP_P'])
-    llm_top_k = kwargs.get('llm_top_k', cfg['TEXT-GENERATION']['GLOBAL']['TOP_K'])
-    max_new_tokens = kwargs.get('max_new_tokens', cfg['TEXT-GENERATION']['GLOBAL']['MAX_NEW_TOKENS'])
-
+    
     feature_extraction_model, img_preprocess, tokenizer = get_feature_extractor(cfg, 
                                                                                 extractor=extractor, 
                                                                                 extractor_id=extractor_id, 
@@ -91,6 +121,42 @@ def main(cfg, **kwargs):
                                                                                 )
     feature_extraction_model.to(device)
     feature_extraction_model.eval()
+
+    ### Text Generation Parameters
+    text_model = kwargs.get('text_model')
+    if text_model.lower() == 'deepseek':
+        model_id = cfg['TEXT-GENERATION']['DEEPSEEK']['MODEL_NAME']
+    elif text_model.lower() == 'qwen' or text_model is None:
+        model_id = cfg['TEXT-GENERATION']['QWEN']['MODEL_NAME']
+    else:
+        raise ValueError(f"Unsupported text generation model: {kwargs.get('text_model')}. Should be one of ['deepseek', 'qwen']")
+    temperature = kwargs.get('temperature', cfg['TEXT-GENERATION']['GLOBAL']['TEMPERATURE'])
+    top_p = kwargs.get('top_p', cfg['TEXT-GENERATION']['GLOBAL']['TOP_P'])
+    llm_top_k = kwargs.get('llm_top_k', cfg['TEXT-GENERATION']['GLOBAL']['TOP_K'])
+    max_new_tokens = kwargs.get('max_new_tokens', cfg['TEXT-GENERATION']['GLOBAL']['MAX_NEW_TOKENS'])
+
+    gen_config = GenerationConfig(do_sample=True,
+                                    temperature=temperature,
+                                    top_p=top_p,
+                                    top_k=llm_top_k,
+                                    max_new_tokens=max_new_tokens
+                                )
+    
+    if text_model.lower() == 'qwen':
+        text_generation_model = Qwen2_5_VLForConditionalGeneration.from_pretrained(model_id, 
+                                                                                torch_dtype=torch.bfloat16, 
+                                                                                device_map={"": device}, 
+                                                                                # attn_implementation='flash_attention_2'
+                                                                                ).to(device)
+        text_generation_model.eval()
+        processor = AutoProcessor.from_pretrained(model_id, 
+                                            padding_side='left', 
+                                            use_fast=True
+                                            )
+    elif text_model.lower() == 'deepseek':
+        processor = VLChatProcessor.from_pretrained(model_id)
+        text_generation_model = AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True).to(torch.bfloat16).to(device).eval()
+    print(f"Using {text_generation_model.__class__.__name__} for text generation with temperature={temperature}, top_p={top_p}, top_k={llm_top_k}, max_new_tokens={max_new_tokens}")
 
     if task.startswith('img2'):
         ### Image Generation Parameters
@@ -113,23 +179,6 @@ def main(cfg, **kwargs):
         if not os.path.exists(store_path):
             os.makedirs(store_path)
 
-    gen_config = GenerationConfig(do_sample=True,
-                                    temperature=temperature,
-                                    top_p=top_p,
-                                    top_k=llm_top_k,
-                                    max_new_tokens=max_new_tokens
-                                )
-    text_generation_model = Qwen2_5_VLForConditionalGeneration.from_pretrained(model_id, 
-                                                                            torch_dtype=torch.bfloat16, 
-                                                                            device_map={"": device}, 
-                                                                            # attn_implementation='flash_attention_2'
-                                                                            ).to(device)
-    text_generation_model.eval()
-    print(f"Using {text_generation_model.__class__.__name__} for text generation with temperature={temperature}, top_p={top_p}, top_k={llm_top_k}, max_new_tokens={max_new_tokens}")
-    processor = AutoProcessor.from_pretrained(model_id, 
-                                            padding_side='left', 
-                                            use_fast=True
-                                            )
     dataloader = get_dataloader(cfg, 
                                 split=split.lower(), 
                                 mode='relative',
@@ -165,8 +214,14 @@ def main(cfg, **kwargs):
             if task.startswith('img2'):
                 reference_img = batch['reference_img']
                 if use_llm == 'yes':
-                    composed_messages = list(map(lambda x: get_composed_prompts(dataset_name, *x),zip(reference_pil, caption)))
-                    caption = generate_texts(composed_messages, gen_config, processor, text_generation_model)
+                    if text_model.lower() == 'qwen':
+                        composed_messages = list(map(lambda x: get_composed_prompts(dataset_name, *x),zip(reference_pil, caption)))
+                        caption = generate_texts(composed_messages, gen_config, processor, text_generation_model)
+                    elif text_model.lower() == 'deepseek':
+                        composed_messages = list(map(lambda x: get_composed_prompts_ds(dataset_name, *x),zip(reference_pil, caption)))
+                        caption = generate_texts_ds(composed_messages, gen_config, processor, text_generation_model)
+                    else:
+                        raise ValueError(f"Unsupported text generation model: {text_generation_model}. Should be one of ['deepseek', 'qwen']")
                     print(caption)
 
                 show_tensor_images(reference_img, num_images=reference_img.size(0), file_path=os.path.join(store_path,f"reference_image_grid_{i}.png"))
@@ -187,8 +242,12 @@ def main(cfg, **kwargs):
                 query_feat.append(extract_image_features(generated_target_images, extractor, feature_extraction_model, img_preprocess))
 
             elif task.startswith('txt2'):
-                composed_messages = list(map(lambda x: get_composed_prompts(dataset_name, *x),zip(reference_pil, caption)))
-                composed_descriptions = generate_texts(composed_messages, gen_config, processor, text_generation_model)
+                if text_model.lower() == 'qwen':
+                    composed_messages = list(map(lambda x: get_composed_prompts(dataset_name, *x),zip(reference_pil, caption)))
+                    composed_descriptions = generate_texts(composed_messages, gen_config, processor, text_generation_model)
+                elif text_model.lower() == 'deepseek':
+                    composed_messages = list(map(lambda x: get_composed_prompts_ds(dataset_name, *x),zip(reference_pil, caption)))
+                    composed_descriptions = generate_texts_ds(composed_messages, gen_config, processor, text_generation_model)
                 print(composed_descriptions)
                 query_feat.append(extract_text_features(composed_descriptions, extractor, tokenizer, feature_extraction_model))
             else:
@@ -253,11 +312,8 @@ def main(cfg, **kwargs):
         store_top_k(cfg, query_ids, target_ids, query_feat, target_feat, **kwargs)
         store_top_k(cfg, query_ids, img_subset_ids, query_feat, img_subset_feat, cutoff=3, **kwargs)
     elif dataset_name.lower() == 'fashioniq' and split.lower() == 'val':
-        res = []
         for k in top_k:
-            recall = fashioniq_eval(dataloader, query_feat, target_feat, fashioniq_ground_truth, target_ids, k)
-            res.append(recall)
-        return sum(res)/len(res)
+            fashioniq_eval(dataloader, query_feat, target_feat, fashioniq_ground_truth, target_ids, k)
     else:
         metric = 'map' if dataset_name.lower() == 'circo' else 'recall' ######modify here!!!!!
         res = []
