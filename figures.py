@@ -96,7 +96,7 @@ if __name__ == "__main__":
     for seed in [0, 10, 42]:
         with open(f'ablation_qwen_txt2img_fashioniq_val_openclip_results_{seed}.json', 'r') as f:
             res_list_fashioniq.append(json.load(f))
-    plot_llm_ablation_metrics(res_list_fashioniq, xlabels=['Temperature', 'Top-p', 'Top-k'], ylabels=['mAP','',''], file_path="llm_ablation_txt2img_fashioniq_val_openclip.pdf")
+    plot_llm_ablation_metrics(res_list_fashioniq, xlabels=['Temperature', 'Top-p', 'Top-k'], ylabels=['Recall','',''], file_path="llm_ablation_txt2img_fashioniq_val_openclip.pdf")
 
     ##plot llm ablation with multiple seeds for CIRCO
     res_list_circo = []

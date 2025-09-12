@@ -1,0 +1,291 @@
+Using OPENCLIP for feature extraction on CIRCO (val)
+Using pretrained model: laion2b_s34b_b79k
+Using OpenCLIP for feature extraction
+Loading pipeline components...:   0%|          | 0/7 [00:00<?, ?it/s]Loading pipeline components...:  43%|████▎     | 3/7 [00:00<00:00, 23.63it/s]Loading pipeline components...:  86%|████████▌ | 6/7 [00:01<00:00,  4.50it/s]Loading pipeline components...: 100%|██████████| 7/7 [00:01<00:00,  5.08it/s]
+Using StableDiffusionXLInstructPix2PixPipeline with params: n_infer_steps=30, image_guidance_scale=3.0, guidance_scale=7.0
+Loading checkpoint shards:   0%|          | 0/5 [00:00<?, ?it/s]Loading checkpoint shards:  20%|██        | 1/5 [00:00<00:02,  1.59it/s]Loading checkpoint shards:  40%|████      | 2/5 [00:01<00:01,  1.73it/s]Loading checkpoint shards:  60%|██████    | 3/5 [00:01<00:01,  1.78it/s]Loading checkpoint shards:  80%|████████  | 4/5 [00:02<00:00,  1.80it/s]Loading checkpoint shards: 100%|██████████| 5/5 [00:02<00:00,  2.44it/s]Loading checkpoint shards: 100%|██████████| 5/5 [00:02<00:00,  2.07it/s]
+Using Qwen2_5_VLForConditionalGeneration for text generation with temperature=0.1, top_p=0.9, top_k=50, max_new_tokens=128
+You have video processor config saved in `preprocessor.json` file which is deprecated. Video processor configs should be saved in their own `video_preprocessor.json` file. You can rename the file or load and save the processor back which renames it automatically. Loading from `preprocessor.json` will be removed in v5.0.
+Using transform:
+ Compose(
+    Resize(size=(768, 768), interpolation=bicubic, max_size=None, antialias=True)
+    CenterCrop(size=(768, 768))
+    ToTensor()
+    Lambda()
+)
+CIRCODataset val dataset in relative mode initialized
+ON RELATIVE MODE.
+CIRCO VAL LOADED SUCCESSFULLY.
+220 ITEMS IN DATALOADER.
+Extracting query features for img2img:   0%|          | 0/28 [00:00<?, ?it/s]['The final image shows two people, with one holding a traditional Chinese umbrella, and the background is more colorful, featuring vibrant hues and possibly some decorative elements.', 'The final image shows a dog of a different breed, wearing a red hat with a jolly roger design, sitting in a shopping cart.', 'The image now shows a person using a hairdressing comb and scissors, with the comb and scissors placed on a pink towel. The background remains consistent with the previous image, featuring a neutral surface.', 'The modified scene shows a toilet placed outdoors with plants instead of plungers inside it. The lid is open, revealing the plants, and the background includes grass and a clear sky.', 'The final image is shot from the front, presented in greyscale, and features a small boat tied up on a sandy shore. The background includes a body of water and some vegetation, but the overall scene is monochromatic.', 'The final image shows only one person wearing a white shirt and a red tie, standing in a room with a white background. The photo is zoomed in, focusing closely on the individual, and the background is minimal, with no other people or objects visible.', 'The final image shows a person sitting at a desk, actively using a computer with a monitor, keyboard, and mouse. The desk is more organized, with fewer items scattered around, and the workspace includes a keyboard and a screen, as specified in the instructions.', 'The motorbike is carrying a large load of fruit, and there is a rider on the back. The load appears to be wrapped in a protective covering, and the rider is wearing a helmet. The background shows a street scene with some buildings and a few other vehicles visible.']
+Generating target images for batch 1
+
+  0%|          | 0/30 [00:00<?, ?it/s][A
+  3%|▎         | 1/30 [00:02<00:58,  2.02s/it][A
+  7%|▋         | 2/30 [00:03<00:52,  1.88s/it][A
+ 10%|█         | 3/30 [00:05<00:52,  1.93s/it][A
+ 13%|█▎        | 4/30 [00:07<00:50,  1.96s/it][A
+ 17%|█▋        | 5/30 [00:09<00:49,  1.97s/it][A
+ 20%|██        | 6/30 [00:11<00:47,  1.98s/it][A
+ 23%|██▎       | 7/30 [00:13<00:45,  1.99s/it][A
+ 27%|██▋       | 8/30 [00:15<00:43,  2.00s/it][A
+ 30%|███       | 9/30 [00:17<00:42,  2.00s/it][A
+ 33%|███▎      | 10/30 [00:19<00:40,  2.01s/it][A
+ 37%|███▋      | 11/30 [00:21<00:38,  2.01s/it][A
+ 40%|████      | 12/30 [00:23<00:36,  2.02s/it][A
+ 43%|████▎     | 13/30 [00:25<00:34,  2.02s/it][A
+ 47%|████▋     | 14/30 [00:27<00:32,  2.02s/it][A
+ 50%|█████     | 15/30 [00:29<00:30,  2.03s/it][A
+ 53%|█████▎    | 16/30 [00:32<00:28,  2.03s/it][A
+ 57%|█████▋    | 17/30 [00:34<00:26,  2.03s/it][A
+ 60%|██████    | 18/30 [00:36<00:24,  2.04s/it][A
+ 63%|██████▎   | 19/30 [00:38<00:22,  2.04s/it][A
+ 67%|██████▋   | 20/30 [00:40<00:20,  2.04s/it][A
+ 70%|███████   | 21/30 [00:42<00:18,  2.05s/it][A
+ 73%|███████▎  | 22/30 [00:44<00:16,  2.05s/it][A
+ 77%|███████▋  | 23/30 [00:46<00:14,  2.05s/it][A
+ 80%|████████  | 24/30 [00:48<00:12,  2.05s/it][A
+ 83%|████████▎ | 25/30 [00:50<00:10,  2.06s/it][A
+ 87%|████████▋ | 26/30 [00:52<00:08,  2.06s/it][A
+ 90%|█████████ | 27/30 [00:54<00:06,  2.06s/it][A
+ 93%|█████████▎| 28/30 [00:56<00:04,  2.06s/it][A
+ 97%|█████████▋| 29/30 [00:58<00:02,  2.07s/it][A
+100%|██████████| 30/30 [01:00<00:00,  2.07s/it][A100%|██████████| 30/30 [01:00<00:00,  2.03s/it]
+Extracting query features for img2img:   4%|▎         | 1/28 [01:14<33:38, 74.77s/it]['The final image shows an old man sitting on a bench in a park, with the entire scene rendered in greyscale. He is wearing a hat and a coat, and the background features trees and a grassy area, maintaining the original setting but with a monochromatic color scheme.', 'The final image is a greyscale photograph of a bathroom, featuring a toilet and a sink. The scene is devoid of any color, with the tiles and fixtures rendered in shades of gray, emphasizing the stark contrast and simplicity of the space.', 'In the modified scene, a lighthouse stands prominently in the foreground, casting a warm glow over the ocean. The vast expanse of the sea stretches out, with gentle waves lapping at the shore. In the background, a large cruise ship is anchored, its imposing structure contrasting with the serene waters. The sky above is clear, adding to the tranquil atmosphere of the coastal setting.', 'The scene is shot in greyscale, maintaining the same style as the original, with most of the benches being empty and arranged in rows.', 'The final image shows a group of skiers standing on a snowy slope, with fewer people visible compared to the original scene. The skiers are equipped with ski poles and are dressed in winter gear, ready to ski. The background features a clear blue sky and a snow-covered mountain, with no other people in sight.', 'The final image shows a little girl sitting on a chair, holding a teddy bear. The teddy bear is light brown with a red bow around its neck and pink accents on its paws and nose. The background includes a pillow and a piece of furniture, likely a bed or a couch, with a striped pattern.', 'The rider is on a track, with the front wheel lifted off the ground, indicating a high-speed maneuver. The motorbike is a racing model, and the rider is wearing a helmet and racing suit, with the number 41 prominently displayed on the bike. The perspective is from the front, providing a clear view of the rider and the front part of the motorcycle.', 'The final image shows no phone, with birds visible in the background, and a person standing on top of a cliff, gazing out at the sea.']
+Generating target images for batch 2
+Token indices sequence length is longer than the specified maximum sequence length for this model (78 > 77). Running this sequence through the model will result in indexing errors
+The following part of your input was truncated because CLIP can only handle sequences up to 77 tokens: ['<|endoftext|><|endoftext|>', '<|endoftext|><|endoftext|>', '. <|endoftext|>', '<|endoftext|><|endoftext|>', '<|endoftext|><|endoftext|>', '<|endoftext|><|endoftext|>', 'motorcycle.', '<|endoftext|><|endoftext|>']
+Token indices sequence length is longer than the specified maximum sequence length for this model (78 > 77). Running this sequence through the model will result in indexing errors
+The following part of your input was truncated because CLIP can only handle sequences up to 77 tokens: ['!!', '!!', '. <|endoftext|>', '!!', '!!', '!!', 'motorcycle.', '!!']
+
+  0%|          | 0/30 [00:00<?, ?it/s][A
+  3%|▎         | 1/30 [00:01<00:53,  1.86s/it][A
+  7%|▋         | 2/30 [00:03<00:55,  1.98s/it][A
+ 10%|█         | 3/30 [00:06<00:54,  2.02s/it][A
+ 13%|█▎        | 4/30 [00:08<00:53,  2.05s/it][A
+ 17%|█▋        | 5/30 [00:10<00:51,  2.06s/it][A
+ 20%|██        | 6/30 [00:12<00:49,  2.07s/it][A
+ 23%|██▎       | 7/30 [00:14<00:47,  2.08s/it][A
+ 27%|██▋       | 8/30 [00:16<00:45,  2.08s/it][A
+ 30%|███       | 9/30 [00:18<00:43,  2.09s/it][A
+ 33%|███▎      | 10/30 [00:20<00:41,  2.09s/it][A
+ 37%|███▋      | 11/30 [00:22<00:39,  2.10s/it][A
+ 40%|████      | 12/30 [00:24<00:37,  2.10s/it][A
+ 43%|████▎     | 13/30 [00:26<00:35,  2.10s/it][A
+ 47%|████▋     | 14/30 [00:29<00:33,  2.10s/it][A
+ 50%|█████     | 15/30 [00:31<00:31,  2.11s/it][A
+ 53%|█████▎    | 16/30 [00:33<00:29,  2.11s/it][A
+ 57%|█████▋    | 17/30 [00:35<00:27,  2.11s/it][A
+ 60%|██████    | 18/30 [00:37<00:25,  2.11s/it][A
+ 63%|██████▎   | 19/30 [00:39<00:23,  2.12s/it][A
+ 67%|██████▋   | 20/30 [00:41<00:21,  2.12s/it][A
+ 70%|███████   | 21/30 [00:43<00:19,  2.12s/it][A
+ 73%|███████▎  | 22/30 [00:46<00:16,  2.12s/it][A
+ 77%|███████▋  | 23/30 [00:48<00:14,  2.12s/it][A
+ 80%|████████  | 24/30 [00:50<00:12,  2.12s/it][A
+ 83%|████████▎ | 25/30 [00:52<00:10,  2.12s/it][A
+ 87%|████████▋ | 26/30 [00:54<00:08,  2.12s/it][A
+ 90%|█████████ | 27/30 [00:56<00:06,  2.12s/it][A
+ 93%|█████████▎| 28/30 [00:58<00:04,  2.12s/it][A
+ 97%|█████████▋| 29/30 [01:00<00:02,  2.13s/it][A
+100%|██████████| 30/30 [01:03<00:00,  2.13s/it][A100%|██████████| 30/30 [01:03<00:00,  2.10s/it]
+Extracting query features for img2img:   7%|▋         | 2/28 [02:28<32:05, 74.07s/it]['In the modified scene, a clock is visible in the background, and a man is taking a selfie in a mirror, which is now part of the image. The man is still holding a phone, and the setting remains indoors with a window in the background.', 'The final scene shows a table with two teddy bears, each holding a filled glass, and a vase of yellow flowers in the background. The glasses are filled with a dark liquid, likely beer, instead of the original soda. The setting appears to be indoors, with a window and wooden paneling in the background.', 'The final image shows a pizza in a pizza box, with the pizza box placed on a grassy area, and there are additional pizza boxes scattered around the grass.', 'The final image shows a woman walking a dog, with the woman holding the leash in one hand and talking on a phone with the other. The photo is brighter, and the woman is the only person in the frame, with no other individuals visible. The background includes a building and a fire hydrant, but the focus is on the woman and her dog.', 'The final image shows a woman holding an umbrella, with a baby in her arms. The woman is smiling, and the umbrella is open, providing shade. The background includes some greenery with white flowers.', "The final image shows a hand holding a bottle of Mrs. Griffin's Original Barbecue Sauce, resting on a table. Instead of a burger, there is a hot dog on a plate with a yellow bun and a brown sauce drizzled over it. The background remains unchanged, with the focus on the table and the food items.", 'The final image shows a different angle of the bathroom, with the sink no longer visible. The bathroom is neglected, featuring squared green tiles on the walls and floor, and the person is still sitting on the bathtub, wearing striped stockings and red shoes.', 'The plate now features a redder salmon slice, with more garnishes, including fresh herbs and possibly a sprinkle of spices, enhancing the visual appeal. The salmon is presented on a white plate, which contrasts nicely with the vibrant red of the salmon and the green garnishes.']
+Generating target images for batch 3
+
+  0%|          | 0/30 [00:00<?, ?it/s][A
+  3%|▎         | 1/30 [00:01<00:54,  1.88s/it][A
+  7%|▋         | 2/30 [00:03<00:56,  2.02s/it][A
+ 10%|█         | 3/30 [00:06<00:55,  2.06s/it][A
+ 13%|█▎        | 4/30 [00:08<00:54,  2.08s/it][A
+ 17%|█▋        | 5/30 [00:10<00:52,  2.10s/it][A
+ 20%|██        | 6/30 [00:12<00:50,  2.11s/it][A
+ 23%|██▎       | 7/30 [00:14<00:48,  2.11s/it][A
+ 27%|██▋       | 8/30 [00:16<00:46,  2.11s/it][A
+ 30%|███       | 9/30 [00:18<00:44,  2.11s/it][A
+ 33%|███▎      | 10/30 [00:20<00:42,  2.11s/it][A
+ 37%|███▋      | 11/30 [00:23<00:40,  2.12s/it][A
+ 40%|████      | 12/30 [00:25<00:38,  2.12s/it][A
+ 43%|████▎     | 13/30 [00:27<00:36,  2.12s/it][A
+ 47%|████▋     | 14/30 [00:29<00:34,  2.13s/it][A
+ 50%|█████     | 15/30 [00:31<00:31,  2.13s/it][A
+ 53%|█████▎    | 16/30 [00:33<00:29,  2.13s/it][A
+ 57%|█████▋    | 17/30 [00:35<00:27,  2.13s/it][A
+ 60%|██████    | 18/30 [00:37<00:25,  2.13s/it][A
+ 63%|██████▎   | 19/30 [00:40<00:23,  2.13s/it][A
+ 67%|██████▋   | 20/30 [00:42<00:21,  2.13s/it][A
+ 70%|███████   | 21/30 [00:44<00:19,  2.13s/it][A
+ 73%|███████▎  | 22/30 [00:46<00:17,  2.13s/it][A
+ 77%|███████▋  | 23/30 [00:48<00:14,  2.13s/it][A
+ 80%|████████  | 24/30 [00:50<00:12,  2.13s/it][A
+ 83%|████████▎ | 25/30 [00:52<00:10,  2.12s/it][A
+ 87%|████████▋ | 26/30 [00:55<00:08,  2.13s/it][A
+ 90%|█████████ | 27/30 [00:57<00:06,  2.13s/it][A
+ 93%|█████████▎| 28/30 [00:59<00:04,  2.13s/it][A
+ 97%|█████████▋| 29/30 [01:01<00:02,  2.13s/it][A
+100%|██████████| 30/30 [01:03<00:00,  2.13s/it][A100%|██████████| 30/30 [01:03<00:00,  2.12s/it]
+Extracting query features for img2img:  11%|█         | 3/28 [03:42<30:48, 73.92s/it]['The bananas are fewer in number and are placed on a scale, with a plain background behind them.', "The final image is shot from the same angle as the original, but it is brighter, with a larger window that now features a bathtub positioned directly behind it. The window reveals a view of a tree outside, and the room's background includes a clear blue sky.", 'The final image shows a close-up view of a white refrigerator with a potted plant placed on top of it. The kitchen setting remains the same, with the refrigerator as the central focus, and the background includes typical kitchen elements like a sink, cabinets, and a window with a view of the outside.', 'The final image shows a red fire hydrant next to a mailbox, with the same red color as the hydrant. The scene remains outdoors, with a street and some trees in the background, but the fire hydrant is now positioned closer to the mailbox, and the mailbox is clearly visible next to it.', 'The scene now features a bench next to a basket of vegetables, replacing the previous fruits. A cat is positioned next to the basket, sitting on the ground. The background remains a textured stone wall, and the overall setting is unchanged in terms of lighting and atmosphere.', 'The final image shows an empty refrigerator with its lights off, positioned in the foreground. The refrigerator door is open, revealing an empty interior with no food or beverages inside.', 'The final image shows a pan filled with chopped carrots, viewed from a close distance, with no omelet present. The pan is positioned on a dark surface, and the carrots are scattered inside, with no other food items visible.', 'The final image shows a smaller frying pan containing a mixture of sliced carrots, broccoli, and green beans, all cooked together.']
+Generating target images for batch 4
+
+  0%|          | 0/30 [00:00<?, ?it/s][A
+  3%|▎         | 1/30 [00:01<00:54,  1.88s/it][A
+  7%|▋         | 2/30 [00:03<00:56,  2.01s/it][A
+ 10%|█         | 3/30 [00:06<00:55,  2.05s/it][A
+ 13%|█▎        | 4/30 [00:08<00:53,  2.07s/it][A
+ 17%|█▋        | 5/30 [00:10<00:51,  2.08s/it][A
+ 20%|██        | 6/30 [00:12<00:49,  2.08s/it][A
+ 23%|██▎       | 7/30 [00:14<00:47,  2.09s/it][A
+ 27%|██▋       | 8/30 [00:16<00:45,  2.09s/it][A
+ 30%|███       | 9/30 [00:18<00:43,  2.09s/it][A
+ 33%|███▎      | 10/30 [00:20<00:41,  2.09s/it][A
+ 37%|███▋      | 11/30 [00:22<00:39,  2.09s/it][A
+ 40%|████      | 12/30 [00:24<00:37,  2.09s/it][A
+ 43%|████▎     | 13/30 [00:26<00:35,  2.09s/it][A
+ 47%|████▋     | 14/30 [00:29<00:33,  2.09s/it][A
+ 50%|█████     | 15/30 [00:31<00:31,  2.09s/it][A
+ 53%|█████▎    | 16/30 [00:33<00:29,  2.09s/it][A
+ 57%|█████▋    | 17/30 [00:35<00:27,  2.09s/it][A
+ 60%|██████    | 18/30 [00:37<00:25,  2.09s/it][A
+ 63%|██████▎   | 19/30 [00:39<00:22,  2.08s/it][A
+ 67%|██████▋   | 20/30 [00:41<00:20,  2.08s/it][A
+ 70%|███████   | 21/30 [00:43<00:18,  2.08s/it][A
+ 73%|███████▎  | 22/30 [00:45<00:16,  2.08s/it][A
+ 77%|███████▋  | 23/30 [00:47<00:14,  2.08s/it][A
+ 80%|████████  | 24/30 [00:49<00:12,  2.08s/it][A
+ 83%|████████▎ | 25/30 [00:51<00:10,  2.08s/it][A
+ 87%|████████▋ | 26/30 [00:54<00:08,  2.08s/it][A
+ 90%|█████████ | 27/30 [00:56<00:06,  2.08s/it][A
+ 93%|█████████▎| 28/30 [00:58<00:04,  2.08s/it][A
+ 97%|█████████▋| 29/30 [01:00<00:02,  2.08s/it][A
+100%|██████████| 30/30 [01:02<00:00,  2.08s/it][A100%|██████████| 30/30 [01:02<00:00,  2.08s/it]
+Extracting query features for img2img:  14%|█▍        | 4/28 [04:53<29:12, 73.01s/it]["The scene is taken from the interior of a car, showing two horses standing in a grassy field with a mountainous background. The horses are positioned side by side, and the car's interior is visible in the foreground, framing the view of the horses and the landscape outside.", "The child in the image is now wearing a chef's hat and is actively engaged in cooking in a kitchen setting. The scene includes a kitchen counter with a bowl and a cake, suggesting the child is preparing or decorating the cake.", 'The final image shows a different angle of a park scene, where a man is seated on a bench surrounded by pigeons. The bench is positioned in the foreground, with the man sitting on it, and the pigeons are scattered around him on the grass. The background includes trees and a signboard, and the overall setting appears to be a calm, outdoor park environment.', 'The child is now standing on a snowboard indoors, wearing a helmet and a red shirt, with their arms outstretched for balance. The background includes a door and some furniture, indicating an indoor setting.', 'The final image shows four people riding horses in the shallows, with the horses standing still. The scene is set in a natural environment with trees in the background, and the riders are positioned close to each other, each on a different colored horse.', 'The final image shows a wooden bench placed on a patch of grass, with a single cat lying down on it. The bench is surrounded by lush greenery and trees, creating a serene natural setting.', 'The image shows a clock tower with a cross on the roof, viewed from the front. The tower is part of a larger building with a traditional architectural style, and the sky is clear and blue.', 'The final image shows a bathroom with a boiler installed in the corner, more decorations adorning the walls, a single light fixture above the sink, and no bathtub present. The sink is a standard white porcelain model with a mirror above it, and the background includes a shower curtain and a light switch on the wall.']
+Generating target images for batch 5
+
+  0%|          | 0/30 [00:00<?, ?it/s][A
+  3%|▎         | 1/30 [00:01<00:53,  1.86s/it][A
+  7%|▋         | 2/30 [00:03<00:55,  1.98s/it][A
+ 10%|█         | 3/30 [00:05<00:54,  2.02s/it][A
+ 13%|█▎        | 4/30 [00:08<00:53,  2.04s/it][A
+ 17%|█▋        | 5/30 [00:10<00:51,  2.05s/it][A
+ 20%|██        | 6/30 [00:12<00:49,  2.06s/it][A
+ 23%|██▎       | 7/30 [00:14<00:47,  2.06s/it][A
+ 27%|██▋       | 8/30 [00:16<00:45,  2.06s/it][A
+ 30%|███       | 9/30 [00:18<00:43,  2.07s/it][A
+ 33%|███▎      | 10/30 [00:20<00:41,  2.07s/it][A
+ 37%|███▋      | 11/30 [00:22<00:39,  2.07s/it][A
+ 40%|████      | 12/30 [00:24<00:37,  2.07s/it][A
+ 43%|████▎     | 13/30 [00:26<00:35,  2.07s/it][A
+ 47%|████▋     | 14/30 [00:28<00:33,  2.07s/it][A
+ 50%|█████     | 15/30 [00:30<00:31,  2.07s/it][A
+ 53%|█████▎    | 16/30 [00:32<00:28,  2.07s/it][A
+ 57%|█████▋    | 17/30 [00:34<00:26,  2.07s/it][A
+ 60%|██████    | 18/30 [00:37<00:24,  2.07s/it][A
+ 63%|██████▎   | 19/30 [00:39<00:22,  2.07s/it][A
+ 67%|██████▋   | 20/30 [00:41<00:20,  2.07s/it][A
+ 70%|███████   | 21/30 [00:43<00:18,  2.07s/it][A
+ 73%|███████▎  | 22/30 [00:45<00:16,  2.07s/it][A
+ 77%|███████▋  | 23/30 [00:47<00:14,  2.07s/it][A
+ 80%|████████  | 24/30 [00:49<00:12,  2.07s/it][A
+ 83%|████████▎ | 25/30 [00:51<00:10,  2.07s/it][A
+ 87%|████████▋ | 26/30 [00:53<00:08,  2.07s/it][A
+ 90%|█████████ | 27/30 [00:55<00:06,  2.07s/it][A
+ 93%|█████████▎| 28/30 [00:57<00:04,  2.07s/it][A
+ 97%|█████████▋| 29/30 [00:59<00:02,  2.07s/it][A
+100%|██████████| 30/30 [01:01<00:00,  2.07s/it][A100%|██████████| 30/30 [01:01<00:00,  2.06s/it]
+Extracting query features for img2img:  18%|█▊        | 5/28 [06:05<27:52, 72.70s/it]['The final image shows a person wearing a white shirt with a tie that is a different color than red, possibly blue or green. The photo is taken outdoors, with no other people visible, and the background includes a clear sky and some trees.', 'The final image is a color photograph of a flying biplane, showcasing a clear sky and a detailed view of the aircraft in flight.', 'The final image shows a woman holding a transparent umbrella outdoors. The background is clear, suggesting a sunny day with no visible clouds.', "The giraffe is looking directly at the camera, and there is a person standing in the foreground, partially visible. The giraffe's head is slightly tilted, and its distinctive pattern of brown spots on a lighter background is clearly visible. The background appears to be a wooden structure, possibly a barn or enclosure.", 'The image now depicts a scene with multiple horses ridden by people, interspersed with a flock of sheep grazing in the foreground. The background remains consistent with the original image, featuring a barn and some trees, but the addition of the horses and riders introduces a new dynamic to the pastoral setting.', 'The final image shows an octagonal stop sign with Arabic writing on it, maintaining the same shape as the original stop sign. The photo is taken at night, with the stop sign illuminated, and the background is dark, contrasting with the clear sky in the original image.', 'The kitchen has been updated to a more modern style, featuring sleek, white cabinetry and a matching island. The island, now a central focal point, is painted in the same pristine white as the rest of the kitchen, creating a cohesive and contemporary look.', 'The person in the image is now holding a microphone, and the photo is taken from the same angle as before. The individual is facing the camera, and they are positioned next to a DJ console and a laptop, which are clearly visible in the foreground. The background remains unchanged, maintaining the same warm lighting and setting.']
+Generating target images for batch 6
+
+  0%|          | 0/30 [00:00<?, ?it/s][A
+  3%|▎         | 1/30 [00:01<00:53,  1.86s/it][A
+  7%|▋         | 2/30 [00:03<00:55,  1.98s/it][A
+ 10%|█         | 3/30 [00:05<00:54,  2.02s/it][A
+ 13%|█▎        | 4/30 [00:08<00:53,  2.04s/it][A
+ 17%|█▋        | 5/30 [00:10<00:51,  2.05s/it][A
+ 20%|██        | 6/30 [00:12<00:49,  2.06s/it][A
+ 23%|██▎       | 7/30 [00:14<00:47,  2.06s/it][A
+ 27%|██▋       | 8/30 [00:16<00:45,  2.06s/it][A
+ 30%|███       | 9/30 [00:18<00:43,  2.07s/it][A
+ 33%|███▎      | 10/30 [00:20<00:41,  2.07s/it][A
+ 37%|███▋      | 11/30 [00:22<00:39,  2.07s/it][A
+ 40%|████      | 12/30 [00:24<00:37,  2.07s/it][A
+ 43%|████▎     | 13/30 [00:26<00:35,  2.07s/it][A
+ 47%|████▋     | 14/30 [00:28<00:33,  2.07s/it][A
+ 50%|█████     | 15/30 [00:30<00:31,  2.07s/it][A
+ 53%|█████▎    | 16/30 [00:32<00:28,  2.07s/it][A
+ 57%|█████▋    | 17/30 [00:34<00:26,  2.07s/it][A
+ 60%|██████    | 18/30 [00:37<00:24,  2.07s/it][A
+ 63%|██████▎   | 19/30 [00:39<00:22,  2.07s/it][A
+ 67%|██████▋   | 20/30 [00:41<00:20,  2.07s/it][A
+ 70%|███████   | 21/30 [00:43<00:18,  2.07s/it][A
+ 73%|███████▎  | 22/30 [00:45<00:16,  2.07s/it][A
+ 77%|███████▋  | 23/30 [00:47<00:14,  2.07s/it][A
+ 80%|████████  | 24/30 [00:49<00:12,  2.07s/it][A
+ 83%|████████▎ | 25/30 [00:51<00:10,  2.07s/it][A
+ 87%|████████▋ | 26/30 [00:53<00:08,  2.07s/it][A
+ 90%|█████████ | 27/30 [00:55<00:06,  2.07s/it][A
+ 93%|█████████▎| 28/30 [00:57<00:04,  2.07s/it][A
+ 97%|█████████▋| 29/30 [00:59<00:02,  2.07s/it][A
+100%|██████████| 30/30 [01:01<00:00,  2.07s/it][A100%|██████████| 30/30 [01:01<00:00,  2.06s/it]
+Extracting query features for img2img:  21%|██▏       | 6/28 [07:17<26:28, 72.20s/it]['The final image shows a group of pedestrians crossing on a crosswalk, with the photo taken from an elevated perspective. Several individuals are holding umbrellas, suggesting it might be raining. The background includes a mix of urban elements, such as parked cars, a bicycle, and a building with large windows.', 'The final image shows a close-up of a bottle of red wine with a cork on a table, placed next to a filled wine glass. The background is more everyday, with a simple, uncluttered setting that includes a few everyday objects, such as a plate and a small vase with flowers. The focus is sharp on the wine bottle and glass, emphasizing their details and the rich color of the wine.', 'The final image shows a man with dreadlocks in the foreground, wearing a white shirt and a backpack, standing in a garden with blue flowers. The perspective is from the front, and the man is skateboarding, as indicated by the skateboard visible beneath his feet. The background includes trees and a building, providing a natural and urban setting.', 'The final image shows a single person walking away from the camera in the snow, holding an umbrella. The background consists of snow-covered trees and a clear sky.', 'The trunk is more filled with various pieces of luggage, including a large yellow bag and a black suitcase, and the scene is viewed from the same angle as the original image, with the open trunk prominently displayed from behind.', 'The final image is in color, featuring a more natural background with visible trees and a clear sky. Two elephants are positioned facing each other, standing on a wooden platform with a wire fence in the foreground.', 'The image is shot from a different angle, showing two white horses with mounted policemen riding them down a street. The background includes buildings and a traffic light, and the scene is well-lit, suggesting it is daytime.', 'The final image shows a shirtless man surfing on a wave, with a darker background and shot from a closer distance. The surfer is positioned in the center of the frame, actively riding the wave, and the background appears more subdued, possibly due to overcast weather or a darker filter applied to the photo.']
+Generating target images for batch 7
+The following part of your input was truncated because CLIP can only handle sequences up to 77 tokens: ['<|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|>', 'details and the rich color of the wine.', '<|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|>', '<|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|>', '<|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|>', '<|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|>', '<|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|>', '<|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|>']
+The following part of your input was truncated because CLIP can only handle sequences up to 77 tokens: ['!!!!!!!!!', 'details and the rich color of the wine.', '!!!!!!!!!', '!!!!!!!!!', '!!!!!!!!!', '!!!!!!!!!', '!!!!!!!!!', '!!!!!!!!!']
+
+  0%|          | 0/30 [00:00<?, ?it/s][A
+  3%|▎         | 1/30 [00:01<00:53,  1.86s/it][A
+  7%|▋         | 2/30 [00:03<00:55,  1.98s/it][A
+ 10%|█         | 3/30 [00:05<00:54,  2.02s/it][A
+ 13%|█▎        | 4/30 [00:08<00:53,  2.04s/it][A
+ 17%|█▋        | 5/30 [00:10<00:51,  2.05s/it][A
+ 20%|██        | 6/30 [00:12<00:49,  2.06s/it][A
+ 23%|██▎       | 7/30 [00:14<00:47,  2.06s/it][A
+ 27%|██▋       | 8/30 [00:16<00:45,  2.06s/it][A
+ 30%|███       | 9/30 [00:18<00:43,  2.07s/it][A
+ 33%|███▎      | 10/30 [00:20<00:41,  2.07s/it][A
+ 37%|███▋      | 11/30 [00:22<00:39,  2.07s/it][A
+ 40%|████      | 12/30 [00:24<00:37,  2.07s/it][A
+ 43%|████▎     | 13/30 [00:26<00:35,  2.07s/it][A
+ 47%|████▋     | 14/30 [00:28<00:33,  2.07s/it][A
+ 50%|█████     | 15/30 [00:30<00:31,  2.07s/it][A
+ 53%|█████▎    | 16/30 [00:32<00:29,  2.07s/it][A
+ 57%|█████▋    | 17/30 [00:34<00:26,  2.07s/it][A
+ 60%|██████    | 18/30 [00:37<00:24,  2.07s/it][A
+ 63%|██████▎   | 19/30 [00:39<00:22,  2.07s/it][A
+ 67%|██████▋   | 20/30 [00:41<00:20,  2.07s/it][A
+ 70%|███████   | 21/30 [00:43<00:18,  2.07s/it][A
+ 73%|███████▎  | 22/30 [00:45<00:16,  2.07s/it][A
+ 77%|███████▋  | 23/30 [00:47<00:14,  2.07s/it][A
+ 80%|████████  | 24/30 [00:49<00:12,  2.07s/it][A
+ 83%|████████▎ | 25/30 [00:51<00:10,  2.07s/it][A
+ 87%|████████▋ | 26/30 [00:53<00:08,  2.07s/it][A
+ 90%|█████████ | 27/30 [00:55<00:06,  2.08s/it][A
+ 93%|█████████▎| 28/30 [00:57<00:04,  2.07s/it][A
+ 97%|█████████▋| 29/30 [00:59<00:02,  2.07s/it][A
+100%|██████████| 30/30 [01:01<00:00,  2.08s/it][A100%|██████████| 30/30 [01:01<00:00,  2.07s/it]
+Extracting query features for img2img:  25%|██▌       | 7/28 [08:30<25:21, 72.45s/it]['The final image shows a smaller room with more people seated at desks, each with multiple computer screens arranged next to each other. The room has a more confined layout compared to the original, with the desks and chairs closely packed together.', 'The final image shows a man giving a thumbs up, dressed in a more casual outfit with a white shirt and a dark tie, seated at a table with a pizza in front of him. The photo is taken from the same angle as the original, maintaining the same background and perspective.', 'The parking meter is now green with a different shape, and the image is taken from a closer distance, showing the parking meter from the front.', 'The person in the hospital bed now has a laptop placed in front of them, and the scene remains in the same hospital room with the same background elements.', 'The final image shows a single heron with a red color, standing on a grassy area with rocks visible in the background.', 'The final image shows a white refrigerator positioned behind a store window, with the same color as the original refrigerator in the reference image. The background remains consistent with the original scene, maintaining the wooden structure and the open door.', 'The rowboat has a different color, possibly green instead of white, and contains fewer people, with only one person and a dog present. The person is seated, and the dog is lying down in the boat.', 'In the final image, the woman is now fixing the tie of the man, and the roles have been switched. The setting remains the same, with the man wearing a brown vest and the woman in a white dress, but their actions have been reversed.']
+Generating target images for batch 8
+
+  0%|          | 0/30 [00:00<?, ?it/s][A
+  3%|▎         | 1/30 [00:01<00:54,  1.87s/it][A
+  7%|▋         | 2/30 [00:03<00:55,  1.99s/it][A
+ 10%|█         | 3/30 [00:06<00:54,  2.02s/it][A
+ 13%|█▎        | 4/30 [00:08<00:53,  2.04s/it][A
+ 17%|█▋        | 5/30 [00:10<00:51,  2.05s/it][A
+ 20%|██        | 6/30 [00:12<00:49,  2.06s/it][A
+ 23%|██▎       | 7/30 [00:14<00:47,  2.06s/it][A
+ 27%|██▋       | 8/30 [00:16<00:45,  2.07s/it][A
+ 30%|███       | 9/30 [00:18<00:43,  2.07s/it][A
+ 33%|███▎      | 10/30 [00:20<00:41,  2.07s/it][A
+ 37%|███▋      | 11/30 [00:22<00:39,  2.07s/it][A
+ 40%|████      | 12/30 [00:24<00:37,  2.07s/it][A
+ 43%|████▎     | 13/30 [00:26<00:35,  2.07s/it][A
+ 47%|████▋     | 14/30 [00:28<00:33,  2.07s/it][A
+ 50%|█████     | 15/30 [00:30<00:31,  2.07s/it][A
+ 53%|█████▎    | 16/30 [00:32<00:29,  2.07s/it][A
+ 57%|█████▋    | 17/30 [00:35<00:26,  2.07s/it][A
+ 60%|██████    | 18/30 [00:37<00:24,  2.07s/it][A
+ 63%|██████▎   | 19/30 [00:39<00:22,  2.07s/it][A
+ 67%|██████▋   | 20/30 [00:41<00:20,  2.07s/it][A
+ 70%|███████   | 21/30 [00:43<00:18,  2.07s/it][A
+ 73%|███████▎  | 22/30 [00:45<00:16,  2.07s/it][A
+ 77%|███████▋  | 23/30 [00:47<00:14,  2.07s/it][A
+ 80%|████████  | 24/30 [00:49<00:12,  2.07s/it][A

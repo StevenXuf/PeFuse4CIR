@@ -1,13 +1,12 @@
 import torch
 import fire
 import os
-import json
 
 from tqdm import tqdm
 from diffusers import StableDiffusionXLInstructPix2PixPipeline
 from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor, GenerationConfig, set_seed
 
-from figures import show_tensor_images, plot_ablation_metrics
+from figures import show_tensor_images
 from feature_extraction import get_feature_extractor, get_metrics
 from dataloaders import get_dataloader
 from text_to_image_and_text import fashioniq_eval, generate_texts, extract_text_features, extract_image_features, store_top_k
@@ -216,7 +215,8 @@ def main(cfg, **kwargs):
                     img_subset_feat.append(extract_image_features(img_subset[i*img_batch_size:(i+1)*img_batch_size], extractor, feature_extraction_model, img_preprocess))
                 img_subset_feat = torch.cat(img_subset_feat, dim=0)
                 print("Finished extracting subset image features")
-
+                
+            delete_models(feature_extraction_model)
         elif task.endswith('2txt'):
             if task == 'img2txt':
                 delete_models(image_generation_model)
@@ -242,7 +242,7 @@ def main(cfg, **kwargs):
             delete_models(feature_extraction_model, text_generation_model)
         else:
             raise ValueError(f"Unsupported task: {task}")
-            
+        
     query_feat = torch.cat(query_feat, dim=0)  
     target_feat = torch.cat(target_feat, dim=0)
     print(query_feat.shape, target_feat.shape)

@@ -1,40 +1,0 @@
-/home/fxu/my-env/lib/python3.10/site-packages/transformers/models/auto/image_processing_auto.py:625: FutureWarning: The image_processor_class argument is deprecated and will be removed in v4.42. Please use `slow_image_processor_class`, or `fast_image_processor_class` instead
-  warnings.warn(
-Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
-You are using the default legacy behaviour of the <class 'transformers.models.llama.tokenization_llama_fast.LlamaTokenizerFast'>. This is expected, and simply means that the `legacy` (previous) behavior will be used so nothing changes for you. If you want to use the new behaviour, set `legacy=False`. This should only be set if you understand what it means, and thoroughly read the reason why this was added as explained in https://github.com/huggingface/transformers/pull/24565 - if you loaded a llama tokenizer from a GGUF file you can ignore this message.
-Python version is above 3.10, patching the collections module.
-Using OPENCLIP for feature extraction on CIRCO (val)
-Using pretrained model: laion2b_s34b_b79k
-Using OpenCLIP for feature extraction
-Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards:  33%|███▎      | 1/3 [00:00<00:01,  1.33it/s]Loading checkpoint shards:  67%|██████▋   | 2/3 [00:01<00:00,  1.50it/s]Loading checkpoint shards: 100%|██████████| 3/3 [00:02<00:00,  1.01s/it]Loading checkpoint shards: 100%|██████████| 3/3 [00:02<00:00,  1.08it/s]
-Using MultiModalityCausalLM for text generation with temperature=0.1, top_p=0.9, top_k=50, max_new_tokens=128
-Using transform:
- Compose(
-    Resize(size=(224, 224), interpolation=bicubic, max_size=None, antialias=True)
-    CenterCrop(size=(224, 224))
-    ToTensor()
-    Normalize(mean=[0.48145466, 0.4578275, 0.40821073], std=[0.26862954, 0.26130258, 0.27577711])
-)
-CIRCODataset val dataset in relative mode initialized
-ON RELATIVE MODE.
-CIRCO VAL LOADED SUCCESSFULLY.
-220 ITEMS IN DATALOADER.
-Extracting query features for txt2img:   0%|          | 0/7 [00:00<?, ?it/s]Extracting query features for txt2img:   0%|          | 0/7 [00:02<?, ?it/s]
-Traceback (most recent call last):
-  File "/home/fxu/MultimodalQuery/CIR/deepseek_sdxl_turbo.py", line 340, in <module>
-    fire.Fire(launch)
-  File "/home/fxu/my-env/lib/python3.10/site-packages/fire/core.py", line 135, in Fire
-    component_trace = _Fire(component, args, parsed_flag_args, context, name)
-  File "/home/fxu/my-env/lib/python3.10/site-packages/fire/core.py", line 468, in _Fire
-    component, remaining_args = _CallAndUpdateTrace(
-  File "/home/fxu/my-env/lib/python3.10/site-packages/fire/core.py", line 684, in _CallAndUpdateTrace
-    component = fn(*varargs, **kwargs)
-  File "/home/fxu/MultimodalQuery/CIR/deepseek_sdxl_turbo.py", line 336, in launch
-    main(cfg, **kwargs)
-  File "/home/fxu/MultimodalQuery/CIR/deepseek_sdxl_turbo.py", line 250, in main
-    composed_descriptions = generate_texts_ds(composed_messages, gen_config, processor, text_generation_model)
-  File "/home/fxu/MultimodalQuery/CIR/deepseek_sdxl_turbo.py", line 34, in generate_texts_ds
-    inputs_embeds = text_generation_model.prepare_inputs_embeds(**prepare_inputs)
-  File "/home/fxu/DeepSeek-VL/deepseek_vl/models/modeling_vlm.py", line 162, in prepare_inputs_embeds
-    inputs_embeds[images_seq_mask] = images_embeds[images_emb_mask]
-RuntimeError: Index put requires the source and destination dtypes match, got BFloat16 for the destination and Half for the source.
