@@ -14,6 +14,20 @@ from feature_extraction import get_feature_extractor, get_metrics
 from dataloaders import get_dataloader
 from prompts import get_composed_prompts, get_target_prompts
 
+def genecis_eval(query_feat, target_feat, target_length, k):
+    sim = pairwise_cosine_similarity(query_feat, target_feat)
+    start = 0
+    recall = 0.0
+    for i in tqdm(range(query_feat.size(0))):
+        _, ids = sim[i,start:start+target_length[i]].topk(k=k, dim=-1)
+        if 0 in ids.tolist():
+            recall += 1.0
+        start += target_length[i]
+    res = recall/query_feat.size(0)*100
+    print(f"Recall@{k}: {res:.2f}%")
+
+    return res
+
 def fashioniq_eval(dataloader, generated_target_features, target_features, ground_truth, target_id, k):
     clothes = ['shirt', 'dress', 'toptee']
     truth_start = 0
@@ -102,8 +116,9 @@ def store_top_k(cfg, query_ids, target_ids, description_feat, tar_tensor_feat, c
     extractor = kwargs.get('extractor', cfg['GENERAL']['EXTRACTOR'])
     dataset_name = kwargs.get('dataset', cfg['GENERAL']['DATASET'])
     if kwargs.get('extractor').lower() == 'openclip':
-            if kwargs.get('extractor_id').split('-')[1] != 'B':
-                extractor += f"_{kwargs.get('extractor_id').split('-')[1]}"
+            if kwargs.get('extractor_id') is not None:
+                if kwargs.get('extractor_id').split('-')[1] != 'B':
+                    extractor += f"_{kwargs.get('extractor_id').split('-')[1]}"
     if cutoff == 3:
         start=0
         res = {'version': 'rc2', 'metric': 'recall_subset'}
@@ -333,7 +348,14 @@ def launch(**kwargs):
     main(cfg, **kwargs)
 
 if __name__ == "__main__":
-    fire.Fire(launch)
+    # fire.Fire(launch)
+    query_feat = torch.randn(10,256)
+    target_feat = torch.randn(100,256)
+    target_length = [10]*10
+    for k in [1,2,3]:
+        res = genecis_eval(query_feat, target_feat, target_length, k)
+        print(res)
+
 
 
 ####use targetpad to improve CLIP/OpenCLIP

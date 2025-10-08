@@ -42,9 +42,12 @@ def plot_llm_ablation_metrics(res_list_of_dict, xlabels=['Temperature', 'Top-p',
         x_vals = res_list_of_dict[0][f'res_{new_xlabels[i].lower()}_keys']
         metric_vals = sum([np.array(res_list_of_dict[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_list_of_dict))]) / len(res_list_of_dict)
         axes[i].plot(x_vals, metric_vals, marker=markers[i], color=colors[i])
-        axes[i].set_xlabel(xlabels[i], fontsize=12)
-        axes[i].set_ylabel(ylabels[i], fontsize=12)
+        axes[i].set_xlabel(xlabels[i], fontsize=12, weight='bold')
+        axes[i].set_ylabel(ylabels[i], fontsize=12, weight='bold')
         axes[i].grid(True, alpha=0.2)
+
+        std = np.std(np.array([np.array(res_list_of_dict[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_list_of_dict))]), axis=0)
+        axes[i].fill_between(x_vals, metric_vals - std, metric_vals + std, alpha=0.2, color=colors[i])
     plt.tight_layout()
     plt.savefig(file_path)
     plt.close()
@@ -59,13 +62,21 @@ def plot_df_ablation_metrics(res_yes, res_no, xlabels, ylabels, file_path):
         x_vals_yes = res_yes[0][f'res_{new_xlabels[i].lower()}_keys']
         metric_vals_yes = sum([np.array(res_yes[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_yes))]) / len(res_yes)
         axes[i].plot(x_vals_yes, metric_vals_yes, marker=markers[i], color=colors[i], label='W/ MLLM')
+        std_yes = np.std(np.array([np.array(res_yes[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_yes))]), axis=0)
+        axes[i].fill_between(x_vals_yes, metric_vals_yes - std_yes, metric_vals_yes + std_yes, alpha=0.2, color=colors[i])
 
         x_vals_no = res_no[0][f'res_{new_xlabels[i].lower()}_keys']
         metric_vals_no = sum([np.array(res_no[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_no))]) / len(res_no)
         axes[i].plot(x_vals_no, metric_vals_no, marker=markers[i], color=colors[i+3], linestyle='--', label='W/o MLLM')
-        axes[i].set_xlabel(xlabels[i], fontsize=12)
-        axes[i].set_ylabel(ylabels[i], fontsize=12)
+        std_no = np.std(np.array([np.array(res_no[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_no))]), axis=0)
+        print(metric_vals_no)
+        print(std_no)
+        axes[i].fill_between(x_vals_no, metric_vals_no - std_no, metric_vals_no + std_no, alpha=0.2, color=colors[i+3])
+
+        axes[i].set_xlabel(xlabels[i], fontsize=12, weight='bold')
+        axes[i].set_ylabel(ylabels[i], fontsize=12, weight='bold')
         axes[i].grid(True, alpha=0.2)
+
         axes[i].legend()
     plt.tight_layout()
     plt.savefig(file_path)
@@ -83,7 +94,7 @@ if __name__ == "__main__":
     ##plot df ablation with multiple seeds for CIRCO
     res_df_circo_yes = []
     res_df_circo_no = []
-    for seed in [42]:
+    for seed in [0, 10, 42]:
         with open(f'ablation_sdxl_img2img_circo_val_openclip_yes_results_{seed}.json', 'r') as f:
             res_df_circo_yes.append(json.load(f))
         with open(f'ablation_sdxl_img2img_circo_val_openclip_no_results_{seed}.json', 'r') as f:

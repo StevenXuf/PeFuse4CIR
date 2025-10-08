@@ -10,7 +10,7 @@ GENERAL:
     SPLIT: "val" 
     TASK: "txt2img" # options: txt2img, txt2txt
     MODE: "relative" # options: relative, classic
-    USE_LLM: "no" # whether to use raw caption without any prompt engineering
+    USE_LLM: "yes" # whether to use raw caption without any prompt engineering
 
 ## datset information ##
 RefinedFashionIQ:
@@ -34,6 +34,13 @@ CIRR:
     IMAGE_FOLDER: '/data/data_fxu/CIRR'
     IMAGE_SIZE: 224
     SPLIT: 'val' # alternative train, test1
+
+GeneCIS:
+    VG_FOLDER: '/data/data_fxu/GeneCIS/VG_100K'
+    COCO_FOLDER: '/data/data_fxu/COCO/images/val2017'
+    GENECIS_ROOT: '/data/data_fxu/GeneCIS/genecis/genecis'                       # Path to GeneCIS templates (/project/dir/genecis)
+    SPLIT: 'test'
+    IMAGE_SIZE: 224
 
 ## feature extractor config ##
 CLIP:

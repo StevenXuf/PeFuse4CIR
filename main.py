@@ -9,7 +9,7 @@ from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor, Gene
 from figures import show_tensor_images
 from feature_extraction import get_feature_extractor, get_metrics
 from dataloaders import get_dataloader
-from text_to_image_and_text import fashioniq_eval, generate_texts, extract_text_features, extract_image_features, store_top_k
+from text_to_image_and_text import fashioniq_eval, genecis_eval, generate_texts, extract_text_features, extract_image_features, store_top_k
 from prompts import get_composed_prompts, get_target_prompts
 from utils import get_default_config, convert_pil_to_tensor, transform_image, delete_models
 
@@ -62,7 +62,15 @@ def get_test_loader(cfg, dataset_name, split, extractor, img_batch_size):
                                          )
         else:
             raise ValueError(f"Unsupported split: {split} for dataset: {dataset_name}")
+    elif dataset_name.lower() == 'change_attribute' or dataset_name.lower() == 'focus_attribute' or dataset_name.lower() == 'change_object' or dataset_name.lower() == 'focus_object':
+        test_loader = get_dataloader(
+            cfg,
+            dataset_name=dataset_name,
+            extractor_name=extractor,
+            batch_size=img_batch_size
+        )
     return test_loader
+
 def main(cfg, **kwargs):
     ### General Parameters
     top_k = kwargs.get('top_k', cfg['GENERAL']['TOP_K'])
@@ -256,6 +264,12 @@ def main(cfg, **kwargs):
         res = []
         for k in top_k:
             recall = fashioniq_eval(dataloader, query_feat, target_feat, fashioniq_ground_truth, target_ids, k)
+            res.append(recall)
+        return sum(res)/len(res)
+    elif dataset_name.lower() == 'change_attribute' or dataset_name.lower() == 'change_object' or dataset_name.lower() == 'focus_attribute' or dataset_name.lower() == 'focus_object':
+        res = []
+        for k in [1, 2, 3]:
+            recall = genecis_eval(query_feat, target_feat, target_length, k)
             res.append(recall)
         return sum(res)/len(res)
     else:

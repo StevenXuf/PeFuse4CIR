@@ -1,0 +1,107 @@
+/home/fxu/my-env/lib/python3.10/site-packages/torch/cuda/__init__.py:789: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+Using OPENCLIP for feature extraction on CIRR (test)
+Using pretrained model: laion2b_s34b_b79k
+Using OpenCLIP for feature extraction
+Loading pipeline components...:   0%|          | 0/7 [00:00<?, ?it/s]Loading pipeline components...:  29%|██▊       | 2/7 [00:00<00:02,  2.05it/s]Loading pipeline components...:  71%|███████▏  | 5/7 [00:01<00:00,  5.61it/s]Loading pipeline components...: 100%|██████████| 7/7 [00:01<00:00,  6.96it/s]Loading pipeline components...: 100%|██████████| 7/7 [00:01<00:00,  5.56it/s]
+Using StableDiffusionXLInstructPix2PixPipeline with params: n_infer_steps=30, image_guidance_scale=3.0, guidance_scale=7.5
+Loading checkpoint shards:   0%|          | 0/5 [00:00<?, ?it/s]Loading checkpoint shards:  20%|██        | 1/5 [00:00<00:02,  1.56it/s]Loading checkpoint shards:  40%|████      | 2/5 [00:01<00:01,  1.70it/s]Loading checkpoint shards:  60%|██████    | 3/5 [00:01<00:01,  1.73it/s]Loading checkpoint shards:  80%|████████  | 4/5 [00:02<00:00,  1.77it/s]Loading checkpoint shards: 100%|██████████| 5/5 [00:02<00:00,  2.40it/s]Loading checkpoint shards: 100%|██████████| 5/5 [00:02<00:00,  2.03it/s]
+You have video processor config saved in `preprocessor.json` file which is deprecated. Video processor configs should be saved in their own `video_preprocessor.json` file. You can rename the file or load and save the processor back which renames it automatically. Loading from `preprocessor.json` will be removed in v5.0.
+Using Qwen2_5_VLForConditionalGeneration for text generation with temperature=0.1, top_p=0.9, top_k=50, max_new_tokens=128
+Using transform:
+ Compose(
+    Resize(size=(768, 768), interpolation=bicubic, max_size=None, antialias=True)
+    CenterCrop(size=(768, 768))
+    ToTensor()
+    Lambda()
+)
+Number of valid caption entries: 4148
+Number of valid extended captions: 4148
+ON RELATIVE MODE.
+CIRR TEST LOADED SUCCESSFULLY.
+4148 ITEMS IN DATALOADER.
+Extracting query features for img2img:   0%|          | 0/346 [00:00<?, ?it/s]['The final image shows a single dog lying on the snow, with a woman hugging it. The background has been changed to grass, and there is a larger dog added to the scene, focusing more on the hugging interaction.', 'The image is mirrored horizontally, showing the woman and dog from a different perspective, with the woman on the right and the dog on the left. The sky in the background is slightly cloudy, adding a soft, diffused light to the scene.', 'The image now shows two dogs eating, with one dog being a different breed and the other being the original dog from the reference image. The setting has been changed to a room with tile floors, and a kitchen is added in the background.', 'The image now shows a man standing and a girl sitting on a bike, with the background changed to a forest.', 'The final image shows glass doors with a set of stairs positioned in front of them, and the armchair has been removed. The background remains a snowy outdoor scene, and the overall setting is indoors with a minimalist design.', 'The image now shows a dog sleeping with a puppy, with a dog bed placed nearby. The camera is closer to the animals, and the wooden floor has been changed to a tile one.', 'The two skunks are sitting on a wooden floor, each with a towel draped over them, and the background has been changed to a clear sky.', 'The image now shows two brown ferrets and a white ferret on a wooden floor, with some towels placed beneath the animals. Additionally, there are two brown ferrets and a white cable visible in the background, along with a brown piece of furniture.', 'The final image shows two puppies resting on a wooden floor, with a teddy bear placed nearby. The background features a wooden wall, and the focus is entirely on the animals, with no other elements in the frame.', 'The vending machine is now black with a front angle shot, and the background is white. The machine is filled with colorful drink and snack packages, creating a vibrant contrast against the black machine and white background.', "The scene is now outside, with a green bin placed next to a vending machine. A large Pocky box stands prominently in front of the vending machine, and the vending machine displays the maker's name on its side. There are multiple vending machines visible in the background, each with different designs and colors.", 'The final image shows a street scene with a linear display of beverage vending machines in a row, evenly spaced and of the same size, with no trashcan or dispensers present. There are consumers interacting with the vending machines, each in a different location along the street. The background remains a clear view of the street, with buildings and a blue sky above.']
+Generating target images for batch 1
+
+  0%|          | 0/30 [00:00<?, ?it/s][A
+  3%|▎         | 1/30 [00:03<01:28,  3.06s/it][A
+  7%|▋         | 2/30 [00:05<01:20,  2.87s/it][A
+ 10%|█         | 3/30 [00:08<01:19,  2.94s/it][A
+ 13%|█▎        | 4/30 [00:11<01:17,  2.97s/it][A
+ 17%|█▋        | 5/30 [00:14<01:14,  2.99s/it][A
+ 20%|██        | 6/30 [00:17<01:12,  3.00s/it][A
+ 23%|██▎       | 7/30 [00:20<01:09,  3.01s/it][A
+ 27%|██▋       | 8/30 [00:23<01:06,  3.02s/it][A
+ 30%|███       | 9/30 [00:27<01:03,  3.03s/it][A
+ 33%|███▎      | 10/30 [00:30<01:00,  3.04s/it][A
+ 37%|███▋      | 11/30 [00:33<00:57,  3.04s/it][A
+ 40%|████      | 12/30 [00:36<00:54,  3.05s/it][A
+ 43%|████▎     | 13/30 [00:39<00:51,  3.05s/it][A
+ 47%|████▋     | 14/30 [00:42<00:48,  3.06s/it][A
+ 50%|█████     | 15/30 [00:45<00:45,  3.06s/it][A
+ 53%|█████▎    | 16/30 [00:48<00:42,  3.07s/it][A
+ 57%|█████▋    | 17/30 [00:51<00:39,  3.07s/it][A
+ 60%|██████    | 18/30 [00:54<00:36,  3.08s/it][A
+ 63%|██████▎   | 19/30 [00:57<00:33,  3.08s/it][A
+ 67%|██████▋   | 20/30 [01:00<00:30,  3.08s/it][A
+ 70%|███████   | 21/30 [01:03<00:27,  3.08s/it][A
+ 73%|███████▎  | 22/30 [01:06<00:24,  3.09s/it][A
+ 77%|███████▋  | 23/30 [01:10<00:21,  3.09s/it][A
+ 80%|████████  | 24/30 [01:13<00:18,  3.09s/it][A
+ 83%|████████▎ | 25/30 [01:16<00:15,  3.09s/it][A
+ 87%|████████▋ | 26/30 [01:19<00:12,  3.10s/it][A
+ 90%|█████████ | 27/30 [01:22<00:09,  3.10s/it][A
+ 93%|█████████▎| 28/30 [01:25<00:06,  3.10s/it][A
+ 97%|█████████▋| 29/30 [01:28<00:03,  3.10s/it][A
+100%|██████████| 30/30 [01:31<00:00,  3.10s/it][A100%|██████████| 30/30 [01:31<00:00,  3.06s/it]
+Extracting query features for img2img:   0%|          | 0/346 [01:46<?, ?it/s]
+Traceback (most recent call last):
+  File "/home/fxu/MultimodalQuery/CIR/main.py", line 284, in <module>
+    fire.Fire(launch)
+  File "/home/fxu/my-env/lib/python3.10/site-packages/fire/core.py", line 135, in Fire
+    component_trace = _Fire(component, args, parsed_flag_args, context, name)
+  File "/home/fxu/my-env/lib/python3.10/site-packages/fire/core.py", line 468, in _Fire
+    component, remaining_args = _CallAndUpdateTrace(
+  File "/home/fxu/my-env/lib/python3.10/site-packages/fire/core.py", line 684, in _CallAndUpdateTrace
+    component = fn(*varargs, **kwargs)
+  File "/home/fxu/MultimodalQuery/CIR/main.py", line 280, in launch
+    main(cfg, **kwargs)
+  File "/home/fxu/MultimodalQuery/CIR/main.py", line 173, in main
+    generated_target_images = image_generation_model(
+  File "/home/fxu/my-env/lib/python3.10/site-packages/torch/utils/_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/fxu/my-env/lib/python3.10/site-packages/diffusers/pipelines/stable_diffusion_xl/pipeline_stable_diffusion_xl_instruct_pix2pix.py", line 980, in __call__
+    image = self.vae.decode(latents, return_dict=False)[0]
+  File "/home/fxu/my-env/lib/python3.10/site-packages/diffusers/utils/accelerate_utils.py", line 46, in wrapper
+    return method(self, *args, **kwargs)
+  File "/home/fxu/my-env/lib/python3.10/site-packages/diffusers/models/autoencoders/autoencoder_kl.py", line 323, in decode
+    decoded = self._decode(z).sample
+  File "/home/fxu/my-env/lib/python3.10/site-packages/diffusers/models/autoencoders/autoencoder_kl.py", line 294, in _decode
+    dec = self.decoder(z)
+  File "/home/fxu/my-env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/fxu/my-env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/fxu/my-env/lib/python3.10/site-packages/diffusers/models/autoencoders/vae.py", line 305, in forward
+    sample = up_block(sample, latent_embeds)
+  File "/home/fxu/my-env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/fxu/my-env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/fxu/my-env/lib/python3.10/site-packages/diffusers/models/unets/unet_2d_blocks.py", line 2643, in forward
+    hidden_states = upsampler(hidden_states)
+  File "/home/fxu/my-env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/fxu/my-env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/fxu/my-env/lib/python3.10/site-packages/diffusers/models/upsampling.py", line 188, in forward
+    hidden_states = self.conv(hidden_states)
+  File "/home/fxu/my-env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/fxu/my-env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/fxu/my-env/lib/python3.10/site-packages/torch/nn/modules/conv.py", line 554, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+  File "/home/fxu/my-env/lib/python3.10/site-packages/torch/nn/modules/conv.py", line 549, in _conv_forward
+    return F.conv2d(
+RuntimeError: NVML_SUCCESS == DriverAPI::get()->nvmlInit_v2_() INTERNAL ASSERT FAILED at "/pytorch/c10/cuda/CUDACachingAllocator.cpp":983, please report a bug to PyTorch. 

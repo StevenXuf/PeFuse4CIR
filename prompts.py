@@ -231,6 +231,81 @@ def generate_target_description_for_circo(target_image):
     ]
     return target_description
 
+###################################
+#Prompts for GeneCIS dataset
+###################################
+def generate_composed_description_for_genecis(reference_image, caption, dataset_name):
+    if dataset_name.lower() == 'change_attribute':
+        caption = f'change the attribute to {caption}'
+    elif dataset_name.lower() == 'change_object':
+        caption = f'change the object to {caption}'
+    elif dataset_name.lower() == 'focus_attribute':
+        caption = f'focus on {caption} of the object'
+    elif dataset_name.lower() == 'focus_object':
+        caption = f'focus on {caption} in a similar setting'
+    else:
+        raise ValueError(f"Unsupported dataset: {dataset_name} for GeneCIS")
+
+    target_description = [
+        {
+            "role": "system", 
+            "content":
+            """
+                    You are an expert at visual imagination of real-world scenes. 
+                    Given a reference image and modification instructions, you should distinguish the objects and their attributes from the reference image, abd then mentally apply the modifications to the reference image, and describe the objects and their attributes in the final image after the changes. 
+                    Write 1 to 3 coherent sentences in clear English.
+                """
+        },
+        {
+            "role": "user",
+            "content": [
+                {"type": "image", "image": "data:image;base64," + convert_pil_to_base64(reference_image)},
+                {
+                    "type": "text", 
+                    "text": 
+                    f"""
+                        Here are the modification instructions: {caption}.\n\n
+                        Avoid imaginary details not supported by the reference image or the modification. 
+                        Write 1 to 3 complete and coherent sentences so that I can find targeting images based on your description solely without knowing the reference image or modification instructions.
+                        Now, describe the objects and their attributes after applying the modification.
+                    """
+                }
+            ],
+        }
+    ]
+    return target_description
+
+def generate_target_description_for_genecis(target_image):
+    target_description = [
+        {
+            "role": "system", 
+            "content": """
+                    You are an expert at visual scene perception. 
+                    Given an image, describe the scene in accurate, detailed, and complete English. 
+                    Focus on visible objects, and attributes (color, size, shape, material, quantity). 
+                    Be specific rather than ambiguous. 
+                    Be objective rather than subjective. 
+                    Be sure to include all relevant details.
+                    Avoid unnecessary repetition or imaginary things.
+                    Write 1 to 3 coherent sentences in clear English so that I can find similar images based on your description without seeing the given image.
+                    """
+        },
+        {
+            "role": "user",
+            "content": [
+                {"type": "image", "image": "data:image;base64," + convert_pil_to_base64(target_image)},
+                {
+                    "type": "text", 
+                    "text": (
+                        "Now, describe the scene from the given image. "
+                        "Write 1 to 3 complete and coherent sentences in English."
+                    )
+                }
+            ],
+        }
+    ]
+    return target_description
+
 
 ####################################
 # Prompts redirection
@@ -242,6 +317,8 @@ def get_composed_prompts(dataset_name, reference_image, caption):
         composed_description = generate_composed_description_for_cirr(reference_image, caption)
     elif dataset_name.lower() == "fashioniq" or dataset_name.lower() == "refinedfashioniq":
         composed_description = generate_composed_description_for_fashioniq(reference_image, caption)
+    elif dataset_name.lower() == "focus_attribute" or dataset_name.lower() == "change_attribute" or dataset_name.lower() == "focus_object" or dataset_name.lower() == "change_object":
+        composed_description = generate_composed_description_for_genecis(reference_image, caption, dataset_name)
     else:
         raise ValueError(f"Unsupported dataset: {dataset_name}")
     return composed_description
@@ -254,6 +331,8 @@ def get_target_prompts(dataset_name, target_image):
         target_description = generate_target_description_for_cirr(target_image)
     elif dataset_name.lower() == "fashioniq" or dataset_name.lower() == "refinedfashioniq":
         target_description = generate_target_description_for_fashioniq(target_image)
+    elif dataset_name.lower() == "focus_attribute" or dataset_name.lower() == "change_attribute" or dataset_name.lower() == "focus_object" or dataset_name.lower() == "change_object":
+        target_description = generate_target_description_for_genecis(target_image)
     else:
         raise ValueError(f"Unsupported dataset: {dataset_name}")
     return target_description
