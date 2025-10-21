@@ -1,3 +1,4 @@
+from scipy import stats
 import torchvision
 import json
 import numpy as np
@@ -46,8 +47,8 @@ def plot_llm_ablation_metrics(res_list_of_dict, xlabels=['Temperature', 'Top-p',
         axes[i].set_ylabel(ylabels[i], fontsize=12, weight='bold')
         axes[i].grid(True, alpha=0.2)
 
-        std = np.std(np.array([np.array(res_list_of_dict[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_list_of_dict))]), axis=0)
-        axes[i].fill_between(x_vals, metric_vals - std, metric_vals + std, alpha=0.2, color=colors[i])
+        ci = stats.sem(np.array([np.array(res_list_of_dict[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_list_of_dict))]), axis=0)
+        axes[i].fill_between(x_vals, metric_vals - ci, metric_vals + ci, alpha=0.2, color=colors[i], label='95% CI')
     plt.tight_layout()
     plt.savefig(file_path)
     plt.close()
@@ -62,16 +63,16 @@ def plot_df_ablation_metrics(res_yes, res_no, xlabels, ylabels, file_path):
         x_vals_yes = res_yes[0][f'res_{new_xlabels[i].lower()}_keys']
         metric_vals_yes = sum([np.array(res_yes[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_yes))]) / len(res_yes)
         axes[i].plot(x_vals_yes, metric_vals_yes, marker=markers[i], color=colors[i], label='W/ MLLM')
-        std_yes = np.std(np.array([np.array(res_yes[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_yes))]), axis=0)
-        axes[i].fill_between(x_vals_yes, metric_vals_yes - std_yes, metric_vals_yes + std_yes, alpha=0.2, color=colors[i])
+        ci_yes = stats.sem(np.array([np.array(res_yes[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_yes))]), axis=0)
+        axes[i].fill_between(x_vals_yes, metric_vals_yes - ci_yes, metric_vals_yes + ci_yes, alpha=0.2, color=colors[i])
 
         x_vals_no = res_no[0][f'res_{new_xlabels[i].lower()}_keys']
         metric_vals_no = sum([np.array(res_no[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_no))]) / len(res_no)
         axes[i].plot(x_vals_no, metric_vals_no, marker=markers[i], color=colors[i+3], linestyle='--', label='W/o MLLM')
-        std_no = np.std(np.array([np.array(res_no[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_no))]), axis=0)
+        ci_no = stats.sem(np.array([np.array(res_no[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_no))]), axis=0)
         print(metric_vals_no)
-        print(std_no)
-        axes[i].fill_between(x_vals_no, metric_vals_no - std_no, metric_vals_no + std_no, alpha=0.2, color=colors[i+3])
+        print(ci_no)
+        axes[i].fill_between(x_vals_no, metric_vals_no - ci_no, metric_vals_no + ci_no, alpha=0.2, color=colors[i+3])
 
         axes[i].set_xlabel(xlabels[i], fontsize=12, weight='bold')
         axes[i].set_ylabel(ylabels[i], fontsize=12, weight='bold')

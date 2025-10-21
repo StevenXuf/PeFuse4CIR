@@ -149,5 +149,5 @@ if __name__ == '__main__':
     print(len(loader.dataset))
     for batch in loader:
         print(batch["reference_img"].shape, batch["target_img"].shape)
-        print(batch["caption"])
+        print(len(batch["target_pil"]))
         break

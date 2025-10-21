@@ -9,7 +9,7 @@ from utils import transform_image, get_default_config
 class FashionIQDataset(Dataset):
     def __init__(self, data_path, split='val', caption_folder='captions', split_folder='image_splits', mode='relative', transform=None):
         self.data_path = data_path
-        self.image_path = os.path.join(data_path, "downloaded_images")
+        self.image_path = os.path.join(data_path, "images")
         self.split = split
         self.mode = mode
         self.caption_folder = os.path.join(data_path, caption_folder)

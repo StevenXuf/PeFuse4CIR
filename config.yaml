@@ -16,7 +16,7 @@ GENERAL:
 RefinedFashionIQ:
     IMAGE_URL_FOLDER: '/data/data_fxu/RefinedFashionIQ/image_url'
     IMAGE_SIZE: 224
-    IMAGE_FOLDER: '/data/data_fxu/RefinedFashionIQ/downloaded_images'
+    IMAGE_FOLDER: '/data/data_fxu/RefinedFashionIQ/images'
     CAPTION_FOLDER: '/data/data_fxu/RefinedFashionIQ/captions'
     SPLIT: 'val' # test set is not available
 

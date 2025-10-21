@@ -236,7 +236,7 @@ def generate_target_description_for_circo(target_image):
 ###################################
 def generate_composed_description_for_genecis(reference_image, caption, dataset_name):
     if dataset_name.lower() == 'change_attribute':
-        caption = f'change the attribute to {caption}'
+        caption = f'change the attribute of the object to {caption}'
     elif dataset_name.lower() == 'change_object':
         caption = f'change the object to {caption}'
     elif dataset_name.lower() == 'focus_attribute':
