@@ -4,7 +4,7 @@ import os
 
 from transformers import set_seed
 
-from main import main
+from retrieval import main
 from utils import get_default_config
 from figures import plot_df_ablation_metrics, plot_llm_ablation_metrics
 

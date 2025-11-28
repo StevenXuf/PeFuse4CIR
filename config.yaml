@@ -1,6 +1,6 @@
 ## global config ##
 GENERAL:
-    BATCH_SIZE: 16 ## batch size should be lower for CIRR images as they are larger
+    BATCH_SIZE: 8 ## batch size should be lower for CIRR images as they are larger
     NUM_WORKERS: 8
     DEVICE: 1
     SEED: 42
@@ -8,9 +8,11 @@ GENERAL:
     DATASET: "CIRCO"
     TOP_K: [1, 5, 10, 25, 50]
     SPLIT: "val" 
-    TASK: "txt2img" # options: txt2img, txt2txt
+    TASK: "img2img" # options: txt2img, txt2txt
     MODE: "relative" # options: relative, classic
-    USE_LLM: "yes" # whether to use raw caption without any prompt engineering
+    USE_MLLM: "yes" # whether to use raw caption without any prompt engineering
+    IMAGE_GEN_MODEL: "SDXL-INSTRUCTPIX2PIX" # options: SDXL-INSTRUCTPIX2PIX, SDXL-TURBO
+    MLLM: "QWEN-7B" # options: QWEN-7B, QWEN-3B, DEEPSEEK, LLAVA
 
 ## datset information ##
 RefinedFashionIQ:
@@ -85,16 +87,18 @@ OPENVISION:
 
 ## image generation config ##
 IMAGE-GENERATION:
-    GLOBAL:
+    SDXL-INSTRUCTPIX2PIX:
+        MODEL_NAME: "diffusers/sdxl-instructpix2pix-768"
         NUM_INFERENCE_STEPS: 30
         IMAGE_GUIDANCE_SCALE: 3.0
         GUIDANCE_SCALE: 7.5
-    SDXL-INSTRUCTPIX2PIX:
-        MODEL_NAME: "diffusers/sdxl-instructpix2pix-768"
         IMAGE_SIZE: 768
         OUTPUT_DIR: '/data/data_fxu/sdxl_instructpix2pix_output'
     SDXL-TURBO: # much faster than SDXL-INSTRUCTPIX2PIX
         MODEL_NAME: "stabilityai/sdxl-turbo"
+        NUM_INFERENCE_STEPS: 60
+        IMAGE_GUIDANCE_SCALE: 0.5
+        GUIDANCE_SCALE: 0.0
         IMAGE_SIZE: 512
         OUTPUT_DIR: '/data/data_fxu/sdxl_turbo_output'
 
@@ -105,7 +109,11 @@ TEXT-GENERATION:
         TEMPERATURE: 0.1
         TOP_P: 0.9
         TOP_K: 50
-    QWEN:
+    QWEN-7B:
         MODEL_NAME: "Qwen/Qwen2.5-VL-7B-Instruct"
+    QWEN-3B:
+        MODEL_NAME: "Qwen/Qwen2.5-VL-3B-Instruct"
+    LLAVA:
+        MODEL_NAME: "llava-hf/llava-1.5-7b-hf"
     DEEPSEEK:
-        MODEL_NAME: "deepseek-ai/deepseek-vl-7b-base"
+        MODEL_NAME: "deepseek-community/deepseek-vl-1.3b-chat"

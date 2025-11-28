@@ -89,3 +89,7 @@ def delete_models(*models):
         del model
     gc.collect()
     torch.cuda.empty_cache()
+
+def get_gpu_memory(device):
+    torch.cuda.synchronize(device)
+    return torch.cuda.memory_allocated(device)

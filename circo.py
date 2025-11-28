@@ -2,6 +2,8 @@ import torch
 import json
 import os
 from PIL import Image
+import numpy as np
+
 
 from pathlib import Path
 from typing import Union, List, Dict, Literal
@@ -186,19 +188,16 @@ def get_circo_loader(data_path, batch_size=16, split='val', mode='relative', num
 if __name__ == "__main__":
     cfg = get_default_config("config.yaml")
     img_transform = transform_image(
-        cfg['CLIP']['IMAGE_SIZE'],
-        cfg['CLIP']['IMAGE_MEAN'],
-        cfg['CLIP']['IMAGE_STD']
+        512
     )
     circo_loader = get_circo_loader(cfg['CIRCO']['IMAGE_FOLDER'], 
                                     batch_size=cfg['GENERAL']['BATCH_SIZE'], 
-                                    split='test', 
-                                    mode='classic',
+                                    split='val', 
+                                    mode='relative',
                                     num_workers=cfg['GENERAL']['NUM_WORKERS'], 
                                     transform=img_transform)
     print(len(circo_loader.dataset))
     for batch in circo_loader:
         ref_pil = batch['reference_img']
-        print(batch['caption'])
-        break
+        # break
         # Just to test the loader

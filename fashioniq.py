@@ -155,10 +155,20 @@ if __name__ == "__main__":
         cfg['CLIP']['IMAGE_MEAN'],
         cfg['CLIP']['IMAGE_STD']
     )
-    loader = get_fashioniq_loader(cfg['FashionIQ']['IMAGE_FOLDER'], transform=img_transform, split='val', mode='classic')
+    loader = get_fashioniq_loader(cfg['FashionIQ']['IMAGE_FOLDER'], transform=img_transform, split='train', mode='relative')
     print(loader.dataset.length)
     print(loader.dataset.candidate_length)
     for batch in loader:
-        print(batch["target_id"])
-        print(batch["target_img"].size())
+        # print(batch["target_id"])
+        # print(batch["target_img"].size())
+
+        import matplotlib.pyplot as plt
+        imgs = [batch["target_pil"][0], batch["reference_pil"][0]]
+        typ = ['target', 'reference']
+        print(batch["caption"][0])
+        for i in range(len(imgs)):
+            plt.imshow(imgs[i])
+            plt.axis('off')
+            plt.tight_layout()
+            plt.savefig(f'fashioniq_{typ[i]}.png', bbox_inches='tight', pad_inches=0)
         break

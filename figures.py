@@ -47,7 +47,7 @@ def plot_llm_ablation_metrics(res_list_of_dict, xlabels=['Temperature', 'Top-p',
         axes[i].set_ylabel(ylabels[i], fontsize=12, weight='bold')
         axes[i].grid(True, alpha=0.2)
 
-        ci = stats.sem(np.array([np.array(res_list_of_dict[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_list_of_dict))]), axis=0)
+        ci = np.std(np.array([np.array(res_list_of_dict[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_list_of_dict))]), axis=0)
         axes[i].fill_between(x_vals, metric_vals - ci, metric_vals + ci, alpha=0.2, color=colors[i], label='95% CI')
     plt.tight_layout()
     plt.savefig(file_path)
@@ -63,13 +63,13 @@ def plot_df_ablation_metrics(res_yes, res_no, xlabels, ylabels, file_path):
         x_vals_yes = res_yes[0][f'res_{new_xlabels[i].lower()}_keys']
         metric_vals_yes = sum([np.array(res_yes[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_yes))]) / len(res_yes)
         axes[i].plot(x_vals_yes, metric_vals_yes, marker=markers[i], color=colors[i], label='W/ MLLM')
-        ci_yes = stats.sem(np.array([np.array(res_yes[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_yes))]), axis=0)
+        ci_yes = np.std(np.array([np.array(res_yes[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_yes))]), axis=0)
         axes[i].fill_between(x_vals_yes, metric_vals_yes - ci_yes, metric_vals_yes + ci_yes, alpha=0.2, color=colors[i])
 
         x_vals_no = res_no[0][f'res_{new_xlabels[i].lower()}_keys']
         metric_vals_no = sum([np.array(res_no[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_no))]) / len(res_no)
         axes[i].plot(x_vals_no, metric_vals_no, marker=markers[i], color=colors[i+3], linestyle='--', label='W/o MLLM')
-        ci_no = stats.sem(np.array([np.array(res_no[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_no))]), axis=0)
+        ci_no = np.std(np.array([np.array(res_no[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_no))]), axis=0)
         print(metric_vals_no)
         print(ci_no)
         axes[i].fill_between(x_vals_no, metric_vals_no - ci_no, metric_vals_no + ci_no, alpha=0.2, color=colors[i+3])
@@ -96,9 +96,9 @@ if __name__ == "__main__":
     res_df_circo_yes = []
     res_df_circo_no = []
     for seed in [0, 10, 42]:
-        with open(f'ablation_sdxl_img2img_circo_val_openclip_yes_results_{seed}.json', 'r') as f:
+        with open(f'./data/ablation_sdxl_img2img_circo_val_openclip_yes_results_{seed}.json', 'r') as f:
             res_df_circo_yes.append(json.load(f))
-        with open(f'ablation_sdxl_img2img_circo_val_openclip_no_results_{seed}.json', 'r') as f:
+        with open(f'./data/ablation_sdxl_img2img_circo_val_openclip_no_results_{seed}.json', 'r') as f:
             res_df_circo_no.append(json.load(f))
     file_path=f"sdxl_ablation_img2img_circo_val_openclip.pdf"
     plot_df_ablation_metrics(res_df_circo_yes, res_df_circo_no, ['Guidance Scale', 'Num Infer Steps', 'Image Guidance Scale'], ['mAP','',''], file_path)
@@ -106,13 +106,13 @@ if __name__ == "__main__":
     ##plot llm ablation with multiple seeds for FASHIONIQ
     res_list_fashioniq = []
     for seed in [0, 10, 42]:
-        with open(f'ablation_qwen_txt2img_fashioniq_val_openclip_results_{seed}.json', 'r') as f:
+        with open(f'./data/ablation_qwen_txt2img_fashioniq_val_openclip_results_{seed}.json', 'r') as f:
             res_list_fashioniq.append(json.load(f))
     plot_llm_ablation_metrics(res_list_fashioniq, xlabels=['Temperature', 'Top-p', 'Top-k'], ylabels=['Recall','',''], file_path="llm_ablation_txt2img_fashioniq_val_openclip.pdf")
 
     ##plot llm ablation with multiple seeds for CIRCO
     res_list_circo = []
     for seed in [0, 10, 42]:
-        with open(f'ablation_qwen_txt2img_circo_val_openclip_results_{seed}.json', 'r') as f:
+        with open(f'./data/ablation_qwen_txt2img_circo_val_openclip_results_{seed}.json', 'r') as f:
             res_list_circo.append(json.load(f))
     plot_llm_ablation_metrics(res_list_circo, xlabels=['Temperature', 'Top-p', 'Top-k'], ylabels=['mAP','',''], file_path="llm_ablation_txt2img_circo_val_openclip.pdf")
