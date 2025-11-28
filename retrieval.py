@@ -375,7 +375,9 @@ def main(cfg, **kwargs):
             print(f'{metric.upper()}@{k}: {metric_val:.2f}% when using generated description ---> target images\n')
             
             res.append(metric_val.item())
-        return sum(res)/len(res)
+        avg = sum(res)/len(res)
+        print(f"Averge mAP: {avg:.2f}")
+        return avg
 
     print(f"{'*'*20}Completed{'*'*20}")
 def launch(**kwargs):
