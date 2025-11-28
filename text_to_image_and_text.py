@@ -53,20 +53,51 @@ def fashioniq_eval(dataloader, generated_target_features, target_features, groun
 def generate_texts(messages, gen_config, processor, text_generation_model):
     texts = [
         processor.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
-        for msg in messages
+        for msg in messages['texts']
     ]
-    image_inputs, video_inputs = process_vision_info(messages)
+    if len(messages['images']) == 0:
+        image_inputs, video_inputs = process_vision_info(messages['texts'])
+        inputs = processor(
+            text=texts,
+            images=image_inputs,
+            videos=video_inputs,
+            padding=True,
+            return_tensors="pt",
+            padding_side='left'
+        )
+    else:
+        inputs = processor(
+            text=texts,
+            images=messages['images'],
+            padding=True,
+            return_tensors="pt",
+            padding_side='left'
+        )
+    inputs = inputs.to(text_generation_model.device)
+
+    # Batch Inference
+    generated_ids = text_generation_model.generate(**inputs,
+                                                generation_config=gen_config
+                                                )
+    generated_ids_trimmed = [
+        out_ids[len(in_ids):] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+    ]
+    output_texts = processor.batch_decode(
+        generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
+    )
+    return output_texts
+
+def generate_texts_other_mllm(composed_messages, reference_pil, gen_config, processor, text_generation_model):
+    texts = processor.apply_chat_template(composed_messages,
+                                          add_generation_prompt=True)
     inputs = processor(
         text=texts,
-        images=image_inputs,
-        videos=video_inputs,
+        images=reference_pil,
         padding=True,
         return_tensors="pt",
         padding_side='left'
     )
     inputs = inputs.to(text_generation_model.device)
-
-    # Batch Inference
     generated_ids = text_generation_model.generate(**inputs,
                                                 generation_config=gen_config
                                                 )
@@ -266,7 +297,7 @@ def main(cfg, **kwargs):
 
             composed_messages = list(map(lambda x: get_composed_prompts(dataset_name, *x),zip(reference_pil, caption)))
 
-            composed_descriptions = generate_texts(composed_messages, gen_config, processor, text_generation_model)
+            composed_descriptions = generate_texts_qwen(composed_messages, gen_config, processor, text_generation_model)
             print(composed_descriptions)
             gen_feat = extract_text_features(composed_descriptions, extractor, tokenizer, feature_extraction_model)
             description_feat.append(gen_feat)
@@ -298,7 +329,7 @@ def main(cfg, **kwargs):
                 target_ids.extend(test_batch['target_id'])
                 target_length.extend(test_batch['target_length'])
                 target_messages = list(map(lambda x: get_target_prompts(dataset_name, x), pil))
-                target_description = generate_texts(target_messages, gen_config, processor, text_generation_model)
+                target_description = generate_texts_qwen(target_messages, gen_config, processor, text_generation_model)
                 print(target_description)
                 tar_tensor_feat.append(extract_text_features(target_description, extractor, tokenizer, feature_extraction_model))
             print("Finished generating target descriptions and extracting features")
@@ -307,7 +338,7 @@ def main(cfg, **kwargs):
                 n_iters = len(img_subset)//32 + 1 if len(img_subset)%32 != 0 else len(img_subset)//32
                 for i in range(n_iters):
                     target_messages = list(map(lambda x: get_target_prompts(dataset_name, x), img_subset[i*32:(i+1)*32]))
-                    target_description = generate_texts(target_messages, gen_config, processor, text_generation_model)
+                    target_description = generate_texts_qwen(target_messages, gen_config, processor, text_generation_model)
                     img_subset_feat.append(extract_text_features(target_description, extractor, tokenizer, feature_extraction_model))
                 img_subset_feat = torch.cat(img_subset_feat, dim=0)
                 print("Finished extracting subset image features")
