@@ -5,7 +5,7 @@ import time
 
 from tqdm import tqdm
 from diffusers import StableDiffusionXLInstructPix2PixPipeline, AutoPipelineForImage2Image, AutoPipelineForText2Image
-from transformers import Qwen2_5_VLForConditionalGeneration, LlavaForConditionalGeneration, DeepseekVLForConditionalGeneration, AutoProcessor, GenerationConfig, set_seed
+from transformers import Qwen2_5_VLForConditionalGeneration, LlavaForConditionalGeneration, AutoProcessor, GenerationConfig, set_seed #DeepseekVLForConditionalGeneration,
 
 from figures import show_tensor_images
 from feature_extraction import get_feature_extractor, get_metrics
@@ -80,7 +80,7 @@ def load_mllm(cfg, **kwargs):
     llm_top_k = kwargs.get('llm_top_k', cfg['TEXT-GENERATION']['GLOBAL']['TOP_K'])
     max_new_tokens = kwargs.get('max_new_tokens', cfg['TEXT-GENERATION']['GLOBAL']['MAX_NEW_TOKENS'])
 
-    device = torch.device(f"cuda:{kwargs['device']}") if kwargs.get('device') is not None else torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device(f"cuda") if kwargs.get('device') is not None else torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     gen_config = GenerationConfig(do_sample=True,
                                     temperature=temperature,
@@ -104,12 +104,12 @@ def load_mllm(cfg, **kwargs):
                                                                             torch_dtype=torch.bfloat16, 
                                                                             device_map={"": device}
                                                                             ).to(device)
-    elif mllm == 'DEEPSEEK':
-        model_id = cfg['TEXT-GENERATION']['DEEPSEEK']['MODEL_NAME']
-        text_generation_model = DeepseekVLForConditionalGeneration.from_pretrained(model_id, 
-                                                                            torch_dtype=torch.bfloat16, 
-                                                                            device_map={"": device}
-                                                                            ).to(device)
+    # elif mllm == 'DEEPSEEK':
+    #     model_id = cfg['TEXT-GENERATION']['DEEPSEEK']['MODEL_NAME']
+    #     text_generation_model = DeepseekVLForConditionalGeneration.from_pretrained(model_id, 
+    #                                                                         torch_dtype=torch.bfloat16, 
+    #                                                                         device_map={"": device}
+    #                                                                         ).to(device)
     else:
         raise ValueError(f"Unsupported MLLM: {mllm}. Should be one of ['QWEN', 'LLAVA', 'DEEPSEEK']")
     after = get_gpu_memory(device)
@@ -124,9 +124,10 @@ def load_mllm(cfg, **kwargs):
 
 def main(cfg, **kwargs):
     ### General Parameters
+    seed = kwargs.get('seed', cfg['GENERAL']['SEED'])
     top_k = kwargs.get('top_k', cfg['GENERAL']['TOP_K'])
     task = kwargs.get('task', cfg['GENERAL']['TASK'])
-    device = torch.device(f"cuda:{kwargs['device']}") if kwargs.get('device') is not None else torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device(f"cuda") if kwargs.get('device') is not None else torch.device("cuda" if torch.cuda.is_available() else "cpu")
     batch_size = kwargs.get('batch_size', cfg['GENERAL']['BATCH_SIZE'])
     extractor = kwargs.get('extractor', cfg['GENERAL']['EXTRACTOR'])
     extractor_id = kwargs.get('extractor_id', None)
@@ -146,7 +147,6 @@ def main(cfg, **kwargs):
 
     if task.startswith('img2'):
         ### Image Generation Parameters
-        seed = kwargs.get('seed', cfg['GENERAL']['SEED'])
         image_gen_model_name = kwargs.get('image_gen_model', cfg['GENERAL']['IMAGE_GEN_MODEL']).upper()
         image_size = cfg['IMAGE-GENERATION'][image_gen_model_name]['IMAGE_SIZE']
         n_infer_steps = kwargs.get('n_infer_steps', cfg['IMAGE-GENERATION'][image_gen_model_name]['NUM_INFERENCE_STEPS'])
@@ -174,7 +174,7 @@ def main(cfg, **kwargs):
         print(f"Using {image_generation_model.__class__.__name__} with params: n_infer_steps={n_infer_steps}, image_guidance_scale={image_guidance_scale}, guidance_scale={guidance_scale}")
 
         img_folder = f'{mllm}_{dataset_name}_{split}_{n_infer_steps}_{image_guidance_scale}_{guidance_scale}' if use_mllm.lower() == 'yes' else f'NoMLLM_{dataset_name}_{split}_{n_infer_steps}_{image_guidance_scale}_{guidance_scale}'
-        store_path = os.path.join(cfg['IMAGE-GENERATION'][image_gen_model_name]['OUTPUT_DIR'], img_folder)
+        store_path = os.path.join(cfg['IMAGE-GENERATION'][image_gen_model_name]['OUTPUT_DIR'], img_folder, str(seed))
         if not os.path.exists(store_path):
             os.makedirs(store_path)
 
@@ -282,9 +282,10 @@ def main(cfg, **kwargs):
                 query_feat.append(extract_text_features(composed_descriptions, extractor, tokenizer, feature_extraction_model))
             else:
                 raise ValueError(f"Unsupported task: {task}. Should be one of ['txt2img', 'txt2txt', 'img2img', 'img2txt']")
+        inference_time_per_sample = total_time_query/len(dataloader.dataset)
         print(f"Finished extracting query features for {task} on {dataset_name}.".upper())
         print("=" * 50)
-        print(f"Total time for extracting query features: {total_time_query: .2f} seconds\nPer sample time: {total_time_query/len(dataloader.dataset): .2f} seconds\n")
+        print(f"Total time for extracting query features: {total_time_query: .2f} seconds\nPer sample time: {inference_time_per_sample: .2f} seconds\n")
         print("=" * 50)
         
         test_loader = get_test_loader(cfg, dataset_name, split, extractor, img_batch_size)
@@ -377,19 +378,21 @@ def main(cfg, **kwargs):
             res.append(metric_val.item())
         avg = sum(res)/len(res)
         print(f"Averge mAP: {avg:.2f}")
-        return avg
+        return avg, inference_time_per_sample
 
     print(f"{'*'*20}Completed{'*'*20}")
+
 def launch(**kwargs):
     cfg = get_default_config("config.yaml")
     seed = kwargs.get('seed', cfg['GENERAL']['SEED'])
     set_seed(seed)
     start = time.time()
-    main(cfg, **kwargs)
+    avg_map, inference_time_per_sample = main(cfg, **kwargs)
     end = time.time()
     print("=" * 50)
-    print(f"Total execution time: {end - start:.2f} seconds")
+    print(f"Pipeline time: {end - start:.2f} seconds for seed: {seed}")
     print("=" * 50)
+    return avg_map, inference_time_per_sample, end - start
 
 
 if __name__ == "__main__":
