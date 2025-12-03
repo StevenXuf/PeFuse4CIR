@@ -215,6 +215,9 @@ def main(cfg, **kwargs):
 
             if task.startswith('img2'):
                 reference_img = batch['reference_img']
+                show_tensor_images(reference_img, num_images=reference_img.size(0), file_path=os.path.join(store_path,f"reference_image_grid_{i}.png"))
+                print(f"Generating target images for batch {i+1}")
+                start_time_batch = time.time()
                 if use_mllm == 'yes':
                     if mllm.lower() == 'qwen-3b' or mllm.lower() == 'qwen-7b':
                         composed_messages = {'texts':list(map(lambda x: get_composed_prompts(dataset_name, *x),zip(reference_pil, caption))),
@@ -227,11 +230,8 @@ def main(cfg, **kwargs):
                     else:
                         raise ValueError(f"Unsupported MLLM: {mllm}. Should be one of ['QWEN', 'LLAVA', 'DEEPSEEK']")
                     caption = generate_texts(composed_messages, gen_config, processor, text_generation_model)
-                    print(caption)
+                    # print(caption)
 
-                show_tensor_images(reference_img, num_images=reference_img.size(0), file_path=os.path.join(store_path,f"reference_image_grid_{i}.png"))
-                print(f"Generating target images for batch {i+1}")
-                start_time_batch = time.time()
                 if image_gen_model_name.upper() == 'SDXL-INSTRUCTPIX2PIX':
                     generated_target_images = image_generation_model(
                         prompt=caption,
