@@ -1,4 +1,3 @@
-import math
 import fire
 import json
 import numpy as np
