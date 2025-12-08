@@ -56,9 +56,9 @@ def ablate_df(**kwargs):
     dataset = kwargs.get('dataset', cfg['GENERAL']['DATASET']).lower()
     split = kwargs.get('split', cfg['GENERAL']['SPLIT']).lower()
     extractor = kwargs.get('extractor', cfg['GENERAL']['EXTRACTOR']).lower()
-    use_llm = kwargs.get('use_llm', cfg['GENERAL']['USE_LLM'])
+    use_mllm = kwargs.get('use_mllm', cfg['GENERAL']['USE_MLLM'])
     # if kwargs.get('dataset').lower() == 'circo' and kwargs.get('split').lower() == 'val':
-    res_file = f'./ablation_sdxl_{task}_{dataset}_{split}_{extractor}_{use_llm}_results_{seed}.json'
+    res_file = f'./ablation_sdxl_{task}_{dataset}_{split}_{extractor}_{use_mllm}_results_{seed}.json'
     if not os.path.exists(res_file):
         res = {
             'res_guidance_scale_keys': [7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0],
