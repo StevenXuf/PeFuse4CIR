@@ -2,11 +2,10 @@ import torch
 import json
 import os
 from PIL import Image
-import numpy as np
 
 
 from pathlib import Path
-from typing import Union, List, Dict, Literal
+from typing import Union, List, Literal
 from torch.utils.data import Dataset, DataLoader
 
 from utils import transform_image, get_default_config
