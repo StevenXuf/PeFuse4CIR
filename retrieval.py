@@ -46,7 +46,7 @@ def get_test_loader(cfg, dataset_name, split, extractor, img_batch_size):
             test_loader = get_dataloader(cfg, 
                                          dataset_name=dataset_name, 
                                          split='val', 
-                                         mode='relative',
+                                         mode='classic',
                                          batch_size=img_batch_size, 
                                          extractor_name=extractor
                                          )
@@ -130,7 +130,7 @@ def main(cfg, **kwargs):
     device = torch.device(f"cuda") if kwargs.get('device') is not None else torch.device("cuda" if torch.cuda.is_available() else "cpu")
     batch_size = kwargs.get('batch_size', cfg['GENERAL']['BATCH_SIZE'])
     extractor = kwargs.get('extractor', cfg['GENERAL']['EXTRACTOR'])
-    extractor_id = kwargs.get('extractor_id', None)
+    extractor_id = kwargs.get('extractor_id', cfg[extractor]['MODEL_NAME'])
     pretrained = kwargs.get('pretrained', cfg[extractor]['PRETRAINED'])
     dataset_name = kwargs.get('dataset', cfg['GENERAL']['DATASET'])
     split = kwargs.get('split', cfg['GENERAL']['SPLIT'])
@@ -189,7 +189,12 @@ def main(cfg, **kwargs):
                                 transform=img_transform_for_generation if task.startswith('img2') else None
                                 )
     
-    img_batch_size = 256 if task.endswith('2img') else batch_size
+    if task.endswith('2img') and "vit-bigg" not in extractor_id.lower():
+        img_batch_size = 2048
+    elif task.endswith('2img') and "vit-bigg" in extractor_id.lower():
+        img_batch_size = 256
+    else:
+        img_batch_size = batch_size
 
     query_feat = []
     query_ids = []
@@ -197,6 +202,9 @@ def main(cfg, **kwargs):
     target_ids = []
     target_length = []
     fashioniq_ground_truth = []
+
+    if dataset_name.lower() == 'circo' and split.lower() == 'val':
+        gt_img_ids = []
     if dataset_name.lower() == 'cirr' and split.lower() == 'test':
         img_subset = []
         img_subset_ids = []
@@ -212,6 +220,8 @@ def main(cfg, **kwargs):
             if dataset_name.lower() == 'cirr' and split.lower() == 'test':
                 img_subset.extend(batch['image_set'])
                 img_subset_ids.extend(batch['image_subset_ids'])
+            if dataset_name.lower() == 'circo' and split.lower() == 'val':
+                gt_img_ids.extend(batch['target_id'])
 
             if task.startswith('img2'):
                 reference_img = batch['reference_img']
@@ -264,7 +274,6 @@ def main(cfg, **kwargs):
 
             elif task.startswith('txt2'):
                 composed_messages = list(map(lambda x: get_composed_prompts(dataset_name, *x),zip(reference_pil, caption)))
-                start_time_batch = time.time()
                 if mllm.lower() == 'qwen-3b' or mllm.lower() == 'qwen-7b':
                     composed_messages = {'texts':list(map(lambda x: get_composed_prompts(dataset_name, *x),zip(reference_pil, caption))),
                                              'images':[]
@@ -275,10 +284,11 @@ def main(cfg, **kwargs):
                                         }
                 else:
                     raise ValueError(f"Unsupported MLLM: {mllm}. Should be one of ['QWEN', 'LLAVA', 'DEEPSEEK']")
+                start_time_batch = time.time()
                 composed_descriptions = generate_texts(composed_messages, gen_config, processor, text_generation_model)
                 end_time_batch = time.time()
                 total_time_query += end_time_batch - start_time_batch
-                print(composed_descriptions)
+                # print(composed_descriptions)
                 query_feat.append(extract_text_features(composed_descriptions, extractor, tokenizer, feature_extraction_model))
             else:
                 raise ValueError(f"Unsupported task: {task}. Should be one of ['txt2img', 'txt2txt', 'img2img', 'img2txt']")
@@ -363,14 +373,21 @@ def main(cfg, **kwargs):
             res.append(recall)
         return sum(res)/len(res)
     else:
-        metric = 'map' if dataset_name.lower() == 'circo' else 'recall' ######modify here!!!!!
+        metric = 'map' if dataset_name.lower() == 'circo' else 'recall'
+        if dataset_name.lower() == 'circo' and split.lower() == 'val':
+            id_to_index = {img_id: idx for idx, img_id in enumerate(target_ids)}
+            index= [[id_to_index[i.zfill(12)] for i in group] for group in gt_img_ids]
+        else:
+            index= None
+
         res = []
         for k in top_k:
             metric_val = get_metrics(query_feat,
                                       target_feat,
                                       k=k,
                                       target_length=target_length,
-                                      metrics=metric
+                                      metrics=metric,
+                                      gt_img_ids=index
                                     )
             print("=" * 50)
             print(f'{metric.upper()}@{k}: {metric_val:.2f}% when using generated description ---> target images\n')

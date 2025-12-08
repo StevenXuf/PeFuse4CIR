@@ -150,7 +150,7 @@ def get_circo_loader(data_path, batch_size=16, split='val', mode='relative', num
         'reference_id': [item['reference_img_id'] for item in batch],
         'target_img': torch.stack([transform(item) if transform is not None else item for sublist in batch for item in sublist['gt_img']]),
         'target_pil': [item for sublist in batch for item in sublist['gt_img']],
-        'target_id': [item for sublist in batch for item in sublist['gt_img_ids']],
+        'target_id': [item['gt_img_ids'] for item in batch],
         'caption': [f"{item['relative_caption']} and has {item['shared_concept']}." for item in batch],
         'concept': [item['shared_concept'] for item in batch],
         'target_length': list(map(len, [item['gt_img'] for item in batch])),
@@ -197,6 +197,7 @@ if __name__ == "__main__":
                                     transform=img_transform)
     print(len(circo_loader.dataset))
     for batch in circo_loader:
-        ref_pil = batch['reference_img']
-        # break
+        ref_pil = batch['target_id']
+        print(ref_pil)
+        break
         # Just to test the loader

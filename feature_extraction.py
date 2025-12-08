@@ -45,7 +45,7 @@ def get_feature_extractor(cfg, extractor=None, extractor_id=None, pretrained=Non
         raise ValueError(f"Unknown extractor: {extractor}")
     return feature_extraction_model, img_preprocess, tokenizer
 
-def get_metrics(feat1, feat2, k, target_length, metrics='recall'):
+def get_metrics(feat1, feat2, k, target_length, metrics='recall', gt_img_ids=None):
     if metrics == 'recall':
         compute = RetrievalRecall(top_k=k)
     elif metrics == 'precision':
@@ -54,14 +54,18 @@ def get_metrics(feat1, feat2, k, target_length, metrics='recall'):
         compute = RetrievalMAP(top_k=k)
 
     sim=pairwise_cosine_similarity(feat1, feat2)
+    indexes = torch.arange(sim.size(0), dtype=torch.long).unsqueeze(1).expand(*sim.size()).to(sim.device)
 
     targets = torch.zeros(sim.size(0), sim.size(1), dtype=torch.long).to(sim.device)
-    start = 0
-    for i, length in enumerate(target_length):
-        targets[i, start:start+length] = 1
-        start += length
+    if metrics == 'map' and gt_img_ids is not None:
+        for i in range(sim.size(0)):
+           targets[i, gt_img_ids[i]] = 1
+    else:
+        start = 0
+        for i, length in enumerate(target_length):
+            targets[i, start:start+length] = 1
+            start += length
 
-    indexes = torch.arange(sim.size(0), dtype=torch.long).unsqueeze(1).expand(*sim.size()).to(sim.device)
 
     res = compute(sim,targets,indexes=indexes)
 
