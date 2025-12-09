@@ -48,7 +48,7 @@ def plot_llm_ablation_metrics(res_list_of_dict, xlabels=['Temperature', 'Top-p',
         axes[i].grid(True, alpha=0.2)
 
         ci = np.std(np.array([np.array(res_list_of_dict[j][f'res_{new_xlabels[i].lower()}_vals']) for j in range(len(res_list_of_dict))]), axis=0)
-        axes[i].fill_between(x_vals, metric_vals - ci, metric_vals + ci, alpha=0.2, color=colors[i], label='95% CI')
+        axes[i].fill_between(x_vals, metric_vals - ci, metric_vals + ci, alpha=0.2, color=colors[i], label='std')
     plt.tight_layout()
     plt.savefig(file_path)
     plt.close()
@@ -104,11 +104,11 @@ if __name__ == "__main__":
     plot_df_ablation_metrics(res_df_circo_yes, res_df_circo_no, ['Guidance Scale', 'Num Infer Steps', 'Image Guidance Scale'], ['mAP','',''], file_path)
 
     ##plot llm ablation with multiple seeds for FASHIONIQ
-    res_list_fashioniq = []
-    for seed in [0, 10, 42]:
-        with open(f'./data/ablation_qwen_txt2img_fashioniq_val_openclip_results_{seed}.json', 'r') as f:
-            res_list_fashioniq.append(json.load(f))
-    plot_llm_ablation_metrics(res_list_fashioniq, xlabels=['Temperature', 'Top-p', 'Top-k'], ylabels=['Recall','',''], file_path="llm_ablation_txt2img_fashioniq_val_openclip.pdf")
+    # res_list_fashioniq = []
+    # for seed in [0, 10, 42]:
+    #     with open(f'./data/ablation_qwen_txt2img_fashioniq_val_openclip_results_{seed}.json', 'r') as f:
+    #         res_list_fashioniq.append(json.load(f))
+    # plot_llm_ablation_metrics(res_list_fashioniq, xlabels=['Temperature', 'Top-p', 'Top-k'], ylabels=['Recall','',''], file_path="llm_ablation_txt2img_fashioniq_val_openclip.pdf")
 
     ##plot llm ablation with multiple seeds for CIRCO
     res_list_circo = []
