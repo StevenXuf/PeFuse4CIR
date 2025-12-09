@@ -31,17 +31,17 @@ def ablate_llm(**kwargs):
             kwargs['temperature'] = temp
             kwargs['top_p'] = 0.9
             kwargs['llm_top_k'] = 50
-            res['res_temperature_vals'].append(main(cfg, **kwargs))
+            res['res_temperature_vals'].append(main(cfg, **kwargs)[0])
         for top_p in res['res_top-p_keys']:
             kwargs['temperature'] = 0.1
             kwargs['top_p'] = top_p
             kwargs['llm_top_k'] = 50
-            res['res_top-p_vals'].append(main(cfg, **kwargs))
+            res['res_top-p_vals'].append(main(cfg, **kwargs)[0])
         for top_k in res['res_top-k_keys']:
             kwargs['temperature'] = 0.1
             kwargs['top_p'] = 0.9
             kwargs['llm_top_k'] = top_k
-            res['res_top-k_vals'].append(main(cfg, **kwargs))
+            res['res_top-k_vals'].append(main(cfg, **kwargs)[0])
         json.dump(res, open(res_file, "w"))
     else:
         res = json.load(open(res_file, "r"))
@@ -72,17 +72,17 @@ def ablate_df(**kwargs):
             kwargs['guidance_scale'] = guidance_scale
             kwargs['n_infer_steps'] = 30
             kwargs['image_guidance_scale'] = 3.0
-            res['res_guidance_scale_vals'].append(main(cfg, **kwargs))
+            res['res_guidance_scale_vals'].append(main(cfg, **kwargs)[0])
         for num_infer_steps in res['res_num_infer_steps_keys']:
             kwargs['guidance_scale'] = 7.5
             kwargs['n_infer_steps'] = num_infer_steps
             kwargs['image_guidance_scale'] = 3.0
-            res['res_num_infer_steps_vals'].append(main(cfg, **kwargs))
+            res['res_num_infer_steps_vals'].append(main(cfg, **kwargs)[0])
         for image_guidance_scale in res['res_image_guidance_scale_keys']:
             kwargs['guidance_scale'] = 7.5
             kwargs['n_infer_steps'] = 30
             kwargs['image_guidance_scale'] = image_guidance_scale
-            res['res_image_guidance_scale_vals'].append(main(cfg, **kwargs))
+            res['res_image_guidance_scale_vals'].append(main(cfg, **kwargs)[0])
         json.dump(res, open(res_file, "w"))
     else:
         res = json.load(open(res_file, "r"))
