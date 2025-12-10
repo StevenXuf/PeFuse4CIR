@@ -7,12 +7,11 @@ from tqdm import tqdm
 from diffusers import StableDiffusionXLInstructPix2PixPipeline, AutoPipelineForImage2Image, AutoPipelineForText2Image
 from transformers import Qwen2_5_VLForConditionalGeneration, LlavaForConditionalGeneration, AutoProcessor, GenerationConfig, set_seed #DeepseekVLForConditionalGeneration,
 
-from figures import show_tensor_images
 from feature_extraction import get_feature_extractor, get_metrics
 from dataloaders import get_dataloader
 from text_to_image_and_text import fashioniq_eval, genecis_eval, generate_texts, extract_text_features, extract_image_features, store_top_k
 from prompts import get_composed_prompts, get_target_prompts, get_composed_prompts_other_mllm
-from utils import get_default_config, convert_pil_to_tensor, transform_image, delete_models, get_gpu_memory
+from utils import get_default_config, convert_pil_to_tensor, transform_image, delete_models, get_gpu_memory, show_tensor_images
 
 
 def get_test_loader(cfg, dataset_name, split, extractor, img_batch_size):
@@ -382,7 +381,7 @@ def main(cfg, **kwargs):
 
         res = []
         for k in top_k:
-            metric_val = get_metrics(query_feat,
+            metric_val, failure = get_metrics(query_feat,
                                       target_feat,
                                       k=k,
                                       target_length=target_length,
@@ -391,11 +390,14 @@ def main(cfg, **kwargs):
                                     )
             print("=" * 50)
             print(f'{metric.upper()}@{k}: {metric_val:.2f}% when using generated description ---> target images\n')
-            
             res.append(metric_val.item())
+
+            if k == 5:
+                failure_info = failure
         avg = sum(res)/len(res)
         print(f"Averge mAP: {avg:.2f}")
-        return avg, inference_time_per_sample
+
+        return avg, inference_time_per_sample, failure_info
 
     print(f"{'*'*20}Completed{'*'*20}")
 
@@ -404,7 +406,7 @@ def launch(**kwargs):
     seed = kwargs.get('seed', cfg['GENERAL']['SEED'])
     set_seed(seed)
     start = time.time()
-    avg_map, inference_time_per_sample = main(cfg, **kwargs)
+    avg_map, inference_time_per_sample, _ = main(cfg, **kwargs)
     end = time.time()
     print("=" * 50)
     print(f"Pipeline time: {end - start:.2f} seconds for seed: {seed}")

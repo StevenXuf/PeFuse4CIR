@@ -5,9 +5,26 @@ import torch
 import gc
 import torchvision.transforms.functional as F
 import yaml
+import torchvision
+
+import matplotlib.pyplot as plt
 
 from omegaconf import OmegaConf
 from torchvision.transforms import Compose, CenterCrop, ToTensor, Normalize, Resize, Lambda, InterpolationMode
+
+def show_tensor_images(images_tensor, num_images=8, file_path="output_image_grid.png"):
+    # Make a grid from batch
+    img_grid = torchvision.utils.make_grid(images_tensor[:num_images], nrow=4)
+    
+    # Convert to numpy for plotting
+    img_grid = img_grid.permute(1, 2, 0).numpy()
+    
+    plt.figure(figsize=(8, 8))
+    plt.imshow(img_grid)
+    plt.axis("off")
+    plt.tight_layout()
+    plt.savefig(file_path)
+    plt.close()
 
 def get_default_config(config_path='./config.yaml'):
     with open(config_path,'r') as f:

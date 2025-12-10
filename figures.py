@@ -1,10 +1,22 @@
-from scipy import stats
+import textwrap
 import torchvision
 import json
+import os
+import fire
 import numpy as np
-
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+from scipy import stats
+from torch.utils.data import Subset
+from transformers import set_seed
+
+from retrieval import main as retrieval_main
+from retrieval import load_mllm
+from dataloaders import get_dataloader
+from utils import get_default_config
+from prompts import get_composed_prompts
+from text_to_image_and_text import generate_texts
 
 def visualize_attention(weights, x_labels=None, y_labels=None, title='Attention Weights'):
     """
@@ -20,22 +32,8 @@ def visualize_attention(weights, x_labels=None, y_labels=None, title='Attention 
     plt.tight_layout()
 
 # Function to show a batch of images
-def show_tensor_images(images_tensor, num_images=8, file_path="output_image_grid.png"):
-    # Make a grid from batch
-    img_grid = torchvision.utils.make_grid(images_tensor[:num_images], nrow=4)
-    
-    # Convert to numpy for plotting
-    img_grid = img_grid.permute(1, 2, 0).numpy()
-    
-    plt.figure(figsize=(8, 8))
-    plt.imshow(img_grid)
-    plt.axis("off")
-    plt.tight_layout()
-    plt.savefig(file_path)
-    plt.close()
-
 def plot_llm_ablation_metrics(res_list_of_dict, xlabels=['Temperature', 'Top-p', 'Top-k'], ylabels=['mAP']*3, file_path="llm_ablation.pdf"):
-    fig, axes = plt.subplots(1, len(xlabels), figsize=(len(xlabels)*5, 4),sharey=True)
+    fig, axes = plt.subplots(1, len(xlabels), figsize=(len(xlabels)*4, 3),sharey=True)
     new_xlabels = [xlabel.replace(' ', '_') if ' ' in xlabel else xlabel for xlabel in xlabels]
     markers = ['o', 's', '^']
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
@@ -55,7 +53,7 @@ def plot_llm_ablation_metrics(res_list_of_dict, xlabels=['Temperature', 'Top-p',
 
 
 def plot_df_ablation_metrics(res_yes, res_no, xlabels, ylabels, file_path):
-    fig, axes = plt.subplots(1, len(xlabels), figsize=(5*len(xlabels), 4), sharey=True)
+    fig, axes = plt.subplots(1, len(xlabels), figsize=(4*len(xlabels), 3), sharey=True)
     new_xlabels = [xlabel.replace(' ', '_') if ' ' in xlabel else xlabel for xlabel in xlabels]
     markers = ['o', 's', '^']
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
@@ -83,6 +81,129 @@ def plot_df_ablation_metrics(res_yes, res_no, xlabels, ylabels, file_path):
     plt.savefig(file_path)
     plt.close()
 
+def plot_retrieval_example(queries, retrieved_images, filename="retrieval_example.pdf"):
+    """
+    query_text: string
+    retrieved_images: list of 5 images (numpy arrays or PIL images)
+    """
+    nrow = len(queries['reference_img']) * 2
+    ncol = len(retrieved_images[0])
+    subplot_size = 4
+    fig = plt.figure(figsize=(ncol*subplot_size, nrow*subplot_size))
+    
+    # Use a GridSpec with two rows
+    gs = fig.add_gridspec(nrow, ncol, height_ratios=[1]*nrow)
+
+    for i in range(len(queries['reference_img'])):
+        # ---- Row 1: Text spanning all 5 columns ----
+        ref_img = queries['reference_img'][i]
+        modification = "\n".join(textwrap.wrap(queries['relative_caption'][i], width=25))
+        target_desc = queries['composed_description'][i]
+        target_desc = "\n".join(textwrap.wrap(target_desc, width=25))
+        ref_ax = fig.add_subplot(gs[2*i, 1])
+        ref_ax.imshow(ref_img)
+        ref_ax.axis('off')
+        modification_ax = fig.add_subplot(gs[2*i, 2])
+        modification_ax.text(0.5, 0.5, modification, ha='center', va='center', fontsize=14)
+        modification_ax.axis('off')
+        ax_text = fig.add_subplot(gs[2*i, 3])
+        ax_text.text(
+            0.5, 0.5, target_desc,
+            ha='center', va='center', fontsize=14
+        )
+        ax_text.axis('off')
+
+        # ref_ax.text(-0.05, 0.5,                    # Position left of axes
+        #             'Reference Image',                   # This acts as your ylabel
+        #             transform=ref_ax.transAxes,        # Use axes coordinates
+        #             rotation=90,                    # Vertical
+        #             fontsize=10,
+        #             fontweight='bold',
+        #             va='center',
+        #             ha='center',
+        #             color='darkblue')
+        if i == 0:
+            ref_ax.set_title('Reference Image', fontsize=10, weight='bold', color='darkblue')
+            modification_ax.set_title('Modification', fontsize=10, weight='bold', color='darkblue')
+            ax_text.set_title('Target Description', fontsize=10, weight='bold', color='darkblue')
+
+        # ---- Row 2: Five retrieved images ----
+        for j in range(len(retrieved_images[i])):
+            ax = fig.add_subplot(gs[2*i+1, j])
+            ax.imshow(retrieved_images[i][j])
+            if j == 0:
+                ax.set_ylabel(f"Top-5 Results", fontsize=10, fontweight='bold', color='darkblue')
+            ax.set_xticks([])
+            ax.set_yticks([])
+            for spine in ax.spines.values():
+                spine.set_visible(False)
+    # Remove all gaps between image axes
+    plt.subplots_adjust(wspace=0, hspace=0)
+    plt.savefig(filename, bbox_inches='tight')
+    plt.close()
+
+def search_failure_cases(cfg, **kwargs):
+    seed = kwargs.get('seed', cfg['GENERAL']['SEED'])
+    set_seed(seed)
+    kwargs['extractor'] = 'OPENCLIP'
+    filename = f'failure_cases_{kwargs["extractor"].lower()}.json'
+    if os.path.exists(filename):
+        failure_info = json.load(open(filename, 'r'))
+    else:
+        avg_map, inference_time_per_sample, failure_info = retrieval_main(cfg, **kwargs)
+        with open(filename, 'w') as f:
+            json.dump(failure_info, f)
+    return failure_info
+
+def plot_failure_cases(**kwargs):
+    cfg = get_default_config("config.yaml")
+    task = kwargs.get('task', cfg['GENERAL']['TASK'])
+    split = kwargs.get('split', cfg['GENERAL']['SPLIT'])
+    dataset_name = kwargs.get('dataset', cfg['GENERAL']['DATASET'])
+    extractor = kwargs.get('extractor', cfg['GENERAL']['EXTRACTOR'])
+    batch_size = kwargs.get('batch_size', cfg['GENERAL']['BATCH_SIZE'])
+    seed = kwargs.get('seed', cfg['GENERAL']['SEED'])
+    set_seed(seed)
+    failure_info = search_failure_cases(cfg, **kwargs)
+
+    n_samples = 4
+    rand_idx = np.random.choice(len(failure_info['failure_id'])+1, size=n_samples, replace=False)
+    query_ids = [failure_info['failure_id'][idx] for idx in rand_idx]
+    retrieved_ids = [failure_info['retrieved_ids'][idx] for idx in rand_idx]
+
+    query_loader = get_dataloader(cfg, 
+                                split=split, 
+                                mode='relative',
+                                dataset_name=dataset_name, 
+                                extractor_name=extractor,
+                                batch_size=batch_size,
+                                transform=None
+                                )
+    query_subset = Subset(query_loader.dataset, query_ids)
+    ref_imgs = [item['reference_img'] for item in query_subset]
+    modifications = [item['relative_caption'] for item in query_subset]
+
+    composed_messages = {'texts':list(map(lambda x: get_composed_prompts(dataset_name, *x),zip(ref_imgs, modifications))),
+                                             'images':[]
+                                            }
+    gen_config, processor, text_generation_model = load_mllm(cfg, **kwargs)
+    generated_descriptions = generate_texts(composed_messages, gen_config, processor, text_generation_model)
+    queries = {'reference_img': ref_imgs,
+               'relative_caption': modifications,
+               'composed_description': generated_descriptions
+              }
+    target_loader = get_dataloader(cfg, 
+                                dataset_name=dataset_name, 
+                                split='val', 
+                                mode='classic',
+                                batch_size=batch_size, 
+                                extractor_name=extractor
+                                )
+    targets = [[item['target_image'] for item in Subset(target_loader.dataset, group)] for group in retrieved_ids]
+    
+    plot_retrieval_example(queries, targets, filename=f'{task}_failure_cases_{dataset_name}_{extractor}_{seed}.pdf')
+
+    
 
 if __name__ == "__main__":
     # with open('ablation_df_yes_results.json', 'r') as f:
@@ -116,3 +237,5 @@ if __name__ == "__main__":
         with open(f'./data/ablation_qwen_txt2img_circo_val_openclip_results_{seed}.json', 'r') as f:
             res_list_circo.append(json.load(f))
     plot_llm_ablation_metrics(res_list_circo, xlabels=['Temperature', 'Top-p', 'Top-k'], ylabels=['mAP','',''], file_path="llm_ablation_txt2img_circo_val_openclip.pdf")
+
+    # fire.Fire(plot_failure_cases)
