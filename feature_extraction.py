@@ -71,11 +71,13 @@ def get_metrics(feat1, feat2, k, target_length, metrics='recall', gt_img_ids=Non
     _, ids = sim.topk(k, dim=1)
     failure_info = {
         'failure_id': [],
+        'truth_id': [],
         'retrieved_ids': []
     }
     for i in range(sim.size(0)):
         if not torch.any(targets[i, ids[i]]):
             failure_info['failure_id'].append(i)
+            failure_info['truth_id'].append(torch.nonzero(targets[i]).squeeze().cpu().tolist())
             failure_info['retrieved_ids'].append(ids[i].cpu().tolist())
     # if metrics == 'map':
     #     print(f'manual mAP@{k}: {compute_map_at_k(sim, targets, k=k)*100}')

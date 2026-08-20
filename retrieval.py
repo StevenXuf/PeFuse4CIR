@@ -5,7 +5,7 @@ import time
 
 from tqdm import tqdm
 from diffusers import StableDiffusionXLInstructPix2PixPipeline, AutoPipelineForImage2Image, AutoPipelineForText2Image
-from transformers import Qwen2_5_VLForConditionalGeneration, LlavaForConditionalGeneration, AutoProcessor, GenerationConfig, set_seed #DeepseekVLForConditionalGeneration,
+from transformers import Qwen2_5_VLForConditionalGeneration, LlavaForConditionalGeneration, AutoProcessor, GenerationConfig, set_seed #DeepseekVLForConditionalGeneration
 
 from feature_extraction import get_feature_extractor, get_metrics
 from dataloaders import get_dataloader

@@ -42,13 +42,13 @@ case $task in
         ;;
 esac
 
-CUDA_VISIBLE_DEVICES=0 python3 -u main.py --task $task --dataset $dataset --split $split --extractor CLIP --batch_size $batch_size --temperature $temperature --top_p $top_p --llm_top_k $top_k --n_infer_step $n_infer_step --image_guidance_scale $image_guidance_scale --guidance_scale $guidance_scale --use_llm $use_llm &> ./${task}_${dataset}_CLIP_${log_params}.log &
+CUDA_VISIBLE_DEVICES=0 python3 -u retrieval.py --task $task --dataset $dataset --split $split --extractor CLIP --batch_size $batch_size --temperature $temperature --top_p $top_p --llm_top_k $top_k --n_infer_step $n_infer_step --image_guidance_scale $image_guidance_scale --guidance_scale $guidance_scale --use_llm $use_llm &> ./${task}_${dataset}_CLIP_${log_params}.log &
 
-CUDA_VISIBLE_DEVICES=1 python3 -u main.py --task $task --dataset $dataset --split $split --extractor OPENCLIP --batch_size $batch_size --temperature $temperature --top_p $top_p --llm_top_k $top_k --n_infer_step $n_infer_step --image_guidance_scale $image_guidance_scale --guidance_scale $guidance_scale --use_llm $use_llm &> ./${task}_${dataset}_OPENCLIP_${log_params}.log &
+CUDA_VISIBLE_DEVICES=1 python3 -u retrieval.py --task $task --dataset $dataset --split $split --extractor OPENCLIP --batch_size $batch_size --temperature $temperature --top_p $top_p --llm_top_k $top_k --n_infer_step $n_infer_step --image_guidance_scale $image_guidance_scale --guidance_scale $guidance_scale --use_llm $use_llm &> ./${task}_${dataset}_OPENCLIP_${log_params}.log &
 
-CUDA_VISIBLE_DEVICES=2 python3 -u main.py --task $task --dataset $dataset --split $split --extractor OPENVISION --batch_size $batch_size --temperature $temperature --top_p $top_p --llm_top_k $top_k --n_infer_step $n_infer_step --image_guidance_scale $image_guidance_scale --guidance_scale $guidance_scale --use_llm $use_llm &> ./${task}_${dataset}_OPENVISION_${log_params}.log &
+CUDA_VISIBLE_DEVICES=2 python3 -u retrieval.py --task $task --dataset $dataset --split $split --extractor OPENVISION --batch_size $batch_size --temperature $temperature --top_p $top_p --llm_top_k $top_k --n_infer_step $n_infer_step --image_guidance_scale $image_guidance_scale --guidance_scale $guidance_scale --use_llm $use_llm &> ./${task}_${dataset}_OPENVISION_${log_params}.log &
 
-CUDA_VISIBLE_DEVICES=3 python3 -u main.py --task $task --dataset $dataset --split $split --extractor SIGLIP2 --batch_size $batch_size --temperature $temperature --top_p $top_p --llm_top_k $top_k --n_infer_step $n_infer_step --image_guidance_scale $image_guidance_scale --guidance_scale $guidance_scale --use_llm $use_llm &> ./${task}_${dataset}_SIGLIP2_${log_params}.log &
+CUDA_VISIBLE_DEVICES=3 python3 -u retrieval.py --task $task --dataset $dataset --split $split --extractor SIGLIP2 --batch_size $batch_size --temperature $temperature --top_p $top_p --llm_top_k $top_k --n_infer_step $n_infer_step --image_guidance_scale $image_guidance_scale --guidance_scale $guidance_scale --use_llm $use_llm &> ./${task}_${dataset}_SIGLIP2_${log_params}.log &
 
 wait
 echo "All tasks completed."

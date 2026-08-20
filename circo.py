@@ -152,6 +152,7 @@ def get_circo_loader(data_path, batch_size=16, split='val', mode='relative', num
         'target_pil': [item for sublist in batch for item in sublist['gt_img']],
         'target_id': [item['gt_img_ids'] for item in batch],
         'caption': [f"{item['relative_caption']} and has {item['shared_concept']}." for item in batch],
+        'relative_caption': [item['relative_caption'] for item in batch],
         'concept': [item['shared_concept'] for item in batch],
         'target_length': list(map(len, [item['gt_img'] for item in batch])),
         'query_id': [item['query_id'] for item in batch]

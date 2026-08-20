@@ -9,7 +9,7 @@ Composed image retrieval (CIR) is the task of retrieving target images from a la
 
 The overall architecture of PEFUSE is illustrated below:
 
-![Model Architecture](figures/cir.png)
+![Model Architecture](assets/cir.png)
 
 ---
 

@@ -3,18 +3,20 @@ import torchvision
 import json
 import os
 import fire
+import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from scipy import stats
 from torch.utils.data import Subset
 from transformers import set_seed
+from diffusers import StableDiffusionXLInstructPix2PixPipeline
+
 
 from retrieval import main as retrieval_main
 from retrieval import load_mllm
 from dataloaders import get_dataloader
-from utils import get_default_config
+from utils import get_default_config, transform_image
 from prompts import get_composed_prompts
 from text_to_image_and_text import generate_texts
 
@@ -81,7 +83,7 @@ def plot_df_ablation_metrics(res_yes, res_no, xlabels, ylabels, file_path):
     plt.savefig(file_path)
     plt.close()
 
-def plot_retrieval_example(queries, retrieved_images, filename="retrieval_example.pdf"):
+def plot_retrieval_example(queries, retrieved_images, task, filename="retrieval_example.pdf"):
     """
     query_text: string
     retrieved_images: list of 5 images (numpy arrays or PIL images)
@@ -107,10 +109,13 @@ def plot_retrieval_example(queries, retrieved_images, filename="retrieval_exampl
         modification_ax.text(0.5, 0.5, modification, ha='center', va='center', fontsize=14)
         modification_ax.axis('off')
         ax_text = fig.add_subplot(gs[2*i, 3])
-        ax_text.text(
-            0.5, 0.5, target_desc,
-            ha='center', va='center', fontsize=14
-        )
+        if task == 'txt2img':
+            ax_text.text(
+                0.5, 0.5, target_desc,
+                ha='center', va='center', fontsize=14
+            )
+        elif task == 'img2img':
+            ax_text.imshow(queries['generated_target_images'][i])
         ax_text.axis('off')
 
         # ref_ax.text(-0.05, 0.5,                    # Position left of axes
@@ -125,7 +130,10 @@ def plot_retrieval_example(queries, retrieved_images, filename="retrieval_exampl
         if i == 0:
             ref_ax.set_title('Reference Image', fontsize=10, weight='bold', color='darkblue')
             modification_ax.set_title('Modification', fontsize=10, weight='bold', color='darkblue')
-            ax_text.set_title('Target Description', fontsize=10, weight='bold', color='darkblue')
+            if task == 'txt2img':
+                ax_text.set_title('Composed Description', fontsize=10, weight='bold', color='darkblue')
+            elif task == 'img2img':
+                ax_text.set_title('Synthesized Target', fontsize=10, weight='bold', color='darkblue')
 
         # ---- Row 2: Five retrieved images ----
         for j in range(len(retrieved_images[i])):
@@ -144,9 +152,10 @@ def plot_retrieval_example(queries, retrieved_images, filename="retrieval_exampl
 
 def search_failure_cases(cfg, **kwargs):
     seed = kwargs.get('seed', cfg['GENERAL']['SEED'])
+    task = kwargs.get('task', cfg['GENERAL']['TASK'])
     set_seed(seed)
     kwargs['extractor'] = 'OPENCLIP'
-    filename = f'failure_cases_{kwargs["extractor"].lower()}.json'
+    filename = f'failure_cases_{kwargs["extractor"].lower()}_{task}_{seed}.json'
     if os.path.exists(filename):
         failure_info = json.load(open(filename, 'r'))
     else:
@@ -184,14 +193,40 @@ def plot_failure_cases(**kwargs):
     modifications = [item['relative_caption'] for item in query_subset]
 
     composed_messages = {'texts':list(map(lambda x: get_composed_prompts(dataset_name, *x),zip(ref_imgs, modifications))),
-                                             'images':[]
-                                            }
+                        'images':[]
+                        }
     gen_config, processor, text_generation_model = load_mllm(cfg, **kwargs)
     generated_descriptions = generate_texts(composed_messages, gen_config, processor, text_generation_model)
     queries = {'reference_img': ref_imgs,
-               'relative_caption': modifications,
-               'composed_description': generated_descriptions
-              }
+            'relative_caption': modifications,
+            'composed_description': generated_descriptions
+            }
+    if task == 'img2img':
+        device = torch.device(f"cuda:{kwargs.get('device')}") if kwargs.get('device') is not None else torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        image_gen_model_name = kwargs.get('image_gen_model', cfg['GENERAL']['IMAGE_GEN_MODEL']).upper()
+        image_size = cfg['IMAGE-GENERATION'][image_gen_model_name]['IMAGE_SIZE']
+        n_infer_steps = kwargs.get('n_infer_steps', cfg['IMAGE-GENERATION'][image_gen_model_name]['NUM_INFERENCE_STEPS'])
+        image_guidance_scale = kwargs.get('image_guidance_scale', cfg['IMAGE-GENERATION'][image_gen_model_name]['IMAGE_GUIDANCE_SCALE'])
+        guidance_scale = kwargs.get('guidance_scale', cfg['IMAGE-GENERATION'][image_gen_model_name]['GUIDANCE_SCALE'])
+        image_generation_model = StableDiffusionXLInstructPix2PixPipeline.from_pretrained(cfg['IMAGE-GENERATION'][image_gen_model_name]['MODEL_NAME'], 
+                                                                                            torch_dtype=torch.float16).to(device)
+
+        generator = torch.Generator(device="cuda").manual_seed(seed)
+
+        img_transform_for_generation = transform_image(image_size)
+        ref_imgs = torch.stack([img_transform_for_generation(pil_img) for pil_img in ref_imgs]).to(device)
+        generated_target_images = image_generation_model(
+            prompt=generated_descriptions,
+            image=ref_imgs,
+            width=image_size,
+            height=image_size,
+            num_inference_steps=n_infer_steps,
+            image_guidance_scale=image_guidance_scale,
+            guidance_scale=guidance_scale,
+            generator=generator
+            ).images
+        queries['generated_target_images'] = generated_target_images
+
     target_loader = get_dataloader(cfg, 
                                 dataset_name=dataset_name, 
                                 split='val', 
@@ -201,7 +236,7 @@ def plot_failure_cases(**kwargs):
                                 )
     targets = [[item['target_image'] for item in Subset(target_loader.dataset, group)] for group in retrieved_ids]
     
-    plot_retrieval_example(queries, targets, filename=f'{task}_failure_cases_{dataset_name}_{extractor}_{seed}.pdf')
+    plot_retrieval_example(queries, targets, task=task, filename=f'{task}_failure_cases_{dataset_name}_{extractor}_{seed}.pdf')
 
     
 
@@ -214,15 +249,15 @@ if __name__ == "__main__":
     # file_path="df_ablation.pdf"
 
     ##plot df ablation with multiple seeds for CIRCO
-    res_df_circo_yes = []
-    res_df_circo_no = []
-    for seed in [0, 10, 42]:
-        with open(f'./data/ablation_sdxl_img2img_circo_val_openclip_yes_results_{seed}.json', 'r') as f:
-            res_df_circo_yes.append(json.load(f))
-        with open(f'./data/ablation_sdxl_img2img_circo_val_openclip_no_results_{seed}.json', 'r') as f:
-            res_df_circo_no.append(json.load(f))
-    file_path=f"sdxl_ablation_img2img_circo_val_openclip.pdf"
-    plot_df_ablation_metrics(res_df_circo_yes, res_df_circo_no, ['Guidance Scale', 'Num Infer Steps', 'Image Guidance Scale'], ['mAP','',''], file_path)
+    # res_df_circo_yes = []
+    # res_df_circo_no = []
+    # for seed in [0, 10, 42]:
+    #     with open(f'./data/ablation_sdxl_img2img_circo_val_openclip_yes_results_{seed}.json', 'r') as f:
+    #         res_df_circo_yes.append(json.load(f))
+    #     with open(f'./data/ablation_sdxl_img2img_circo_val_openclip_no_results_{seed}.json', 'r') as f:
+    #         res_df_circo_no.append(json.load(f))
+    # file_path=f"sdxl_ablation_img2img_circo_val_openclip.pdf"
+    # plot_df_ablation_metrics(res_df_circo_yes, res_df_circo_no, ['Guidance Scale', 'Num Infer Steps', 'Image Guidance Scale'], ['mAP','',''], file_path)
 
     ##plot llm ablation with multiple seeds for FASHIONIQ
     # res_list_fashioniq = []
@@ -232,10 +267,10 @@ if __name__ == "__main__":
     # plot_llm_ablation_metrics(res_list_fashioniq, xlabels=['Temperature', 'Top-p', 'Top-k'], ylabels=['Recall','',''], file_path="llm_ablation_txt2img_fashioniq_val_openclip.pdf")
 
     ##plot llm ablation with multiple seeds for CIRCO
-    res_list_circo = []
-    for seed in [0, 10, 42]:
-        with open(f'./data/ablation_qwen_txt2img_circo_val_openclip_results_{seed}.json', 'r') as f:
-            res_list_circo.append(json.load(f))
-    plot_llm_ablation_metrics(res_list_circo, xlabels=['Temperature', 'Top-p', 'Top-k'], ylabels=['mAP','',''], file_path="llm_ablation_txt2img_circo_val_openclip.pdf")
+    # res_list_circo = []
+    # for seed in [0, 10, 42]:
+    #     with open(f'./data/ablation_qwen_txt2img_circo_val_openclip_results_{seed}.json', 'r') as f:
+    #         res_list_circo.append(json.load(f))
+    # plot_llm_ablation_metrics(res_list_circo, xlabels=['Temperature', 'Top-p', 'Top-k'], ylabels=['mAP','',''], file_path="llm_ablation_txt2img_circo_val_openclip.pdf")
 
-    # fire.Fire(plot_failure_cases)
+    fire.Fire(plot_failure_cases)
