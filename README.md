@@ -19,7 +19,7 @@ If you use this work, please cite:
 
 ```bibtex
 @article{pefuse,
-  title     = {Training-Free Pseudo-Fusion Strategies for Composed Image Retrieval via Diffusion and Multimodal Large Language Models},
+  title     = {Training-Free Pseudo-Fusion for Composed Image Retrieval via Diffusion Models and Multimodal Large Language Models},
   author    = {Xu, Fan and Leiva, Luis A},
   journal   = {Transactions on Machine Learning Research},
   year      = {2026},
