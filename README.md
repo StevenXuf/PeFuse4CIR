@@ -18,10 +18,11 @@ The overall architecture of PEFUSE is illustrated below:
 If you use this work, please cite:
 
 ```bibtex
-@article{pefuse,
-  title     = {Training-Free Pseudo-Fusion for Composed Image Retrieval via Diffusion Models and Multimodal Large Language Models},
-  author    = {Xu, Fan and Leiva, Luis A},
-  journal   = {Transactions on Machine Learning Research},
-  year      = {2026},
-  url       = {https://openreview.net/forum?id=6W3pFEQXZc}
+@article{xu2026trainingfree,
+  title   = {Training-Free Pseudo-Fusion for Composed Image Retrieval via Diffusion Models and Multimodal Large Language Models},
+  author  = {Fan Xu and Luis A. Leiva},
+  journal = {Transactions on Machine Learning Research},
+  issn    = {2835-8856},
+  year    = {2026},
+  url     = {https://openreview.net/forum?id=6W3pFEQXZc}
 }
